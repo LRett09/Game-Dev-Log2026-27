@@ -16,9 +16,9 @@ All of these are form elements: <br><br>
   max="24:59:59"
   /><br>
 
-<select>
-  <option value="I am very cool" myCool="1">I am cool!</option>
-  <option value="I am not very cool" myCool="2">I am not cool!</option>
+<select id="coolSelect">
+  <option value="1">I am cool!</option>
+  <option value="2">I am not cool!</option>
 </select><br>
 
 <input
@@ -28,7 +28,8 @@ All of these are form elements: <br><br>
 />
 
 <script>
-function checkCool() {
- if (myCool==="1") {alert('you are not cool')} else {alert('you are very cool')}
- }
+function myCool() {
+  var choice = document.getElementById("coolSelect").value;
+  if (choice == "1") {alert('you are very cool')} else {alert('you are not cool')}
+}
 </script>
