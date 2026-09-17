@@ -27,11 +27,25 @@ All of these are form elements: <br><br>
   onclick=checkCool()
 />
 
+<input id="myTextBox" style="background-color:#000000; color:#ffffff"> 
+
+<input
+  type="button"
+  value="search"
+  onclick=mySearch()
+  />
+
 <script>
 function checkCool() {
   var choice = document.getElementById("coolSelect").value;
   if (choice == "1") {alert('you are not cool')} else {alert('you are very cool!')}
 }
+
+function mySearch() {
+  var text = document.getElementById("myTextBox").value;
+  if (text === "Logan") {alert('You found the Password!')} else {alert('the password is Logan')}
+}
+  
 </script><br><br>
 
-<input id="myTextBox" style="background-color:#000000; color:#ffffff"> 
+
