@@ -19,7 +19,7 @@ All of these are form elements: <br><br>
 <select id="coolSelect">
   <option value="1">I am cool!</option>
   <option value="2">I am not cool!</option>
-</select><br>
+</select>
 
 <input
   type="button"
@@ -33,7 +33,9 @@ All of these are form elements: <br><br>
   type="button"
   value="search"
   onclick=mySearch()
-  />
+  /><br>
+
+<div id="myOutput">Nothing yet!</div>
 
 <script>
 function checkCool() {
@@ -43,7 +45,7 @@ function checkCool() {
 
 function mySearch() {
   var text = document.getElementById("myTextBox").value;
-  if (text === "Logan") {alert('You found the Password!')} else {alert('the password is Logan')}
+  if (text === "Logan") {document.getElementById('myOutput').innerHTML = 'You found the Password!'} else {document.getElementById('myOutput').innerHTML = 'The password is Logan'}
 }
   
 </script><br><br>
