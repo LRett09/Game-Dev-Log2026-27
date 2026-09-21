@@ -25,3 +25,14 @@
   }"><br>
 
   <div id="myDiv01">Waiting for input...</div>
+
+<input id="myNum02" type=number value="8" ><br>
+
+<input type=button value="Add 2 numbers" onclick="{
+  let myIn01 = parseFloat(document.getElementById('myNum01').value)
+  let myIn02 = parseFloat(document.getElementById('myNum02').value)
+  let myAnswer = myIn01 + myIn02
+  document.getElementById('myDiv02').innerHTML = myIn01 + myIn02 is + myAnswer
+}"><br>
+
+<div id="myDiv02">Waiting for Addition...</div>
