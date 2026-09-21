@@ -15,6 +15,78 @@
         .progress-bar {
             transition: width 0.3s linear;
         }
+
+        /* --- SIDE MENU (Module Bay) --- */
+        #module-sidebar {
+            position: fixed;
+            top: 0;
+            right: -420px;          /* hidden off-screen to the right */
+            width: 420px;
+            max-width: 95vw;
+            height: 100vh;
+            background-color: #111827; /* gray-900 */
+            border-left: 2px solid #374151; /* gray-700 */
+            z-index: 1000;
+            overflow-y: auto;
+            transition: right 0.3s ease;
+            padding: 1.5rem;
+            box-sizing: border-box;
+        }
+
+        /* When the sidebar has the "open" class, slide it into view */
+        #module-sidebar.open {
+            right: 0;
+        }
+
+        /* Dark overlay behind the sidebar */
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;              /* covers the whole screen */
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 999;
+        }
+
+        #sidebar-overlay.open {
+            display: block;
+        }
+
+        /* The floating toggle button */
+        #module-toggle-btn {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            z-index: 1001;
+            writing-mode: vertical-rl;   /* rotates the text to read bottom-up */
+            text-orientation: mixed;
+            background-color: #0e7490;   /* cyan-700 */
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+            padding: 1rem 0.5rem;
+            border-radius: 8px 0 0 8px;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s, right 0.3s;
+            letter-spacing: 0.05em;
+        }
+
+        #module-toggle-btn:hover {
+            background-color: #0891b2; /* cyan-600 */
+        }
+
+        /* Move the toggle button left when sidebar is open */
+        body.sidebar-open #module-toggle-btn {
+            right: 420px;
+        }
+
+        @media (max-width: 440px) {
+            /* On very small screens the sidebar fills the screen, so hide the tab */
+            body.sidebar-open #module-toggle-btn {
+                right: 95vw;
+            }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen">
@@ -132,11 +204,7 @@
             </div>
         </div>
 
-        <!-- MODULE BAY -->
-        <div class="bg-gray-800 p-6 rounded-lg shadow-xl mb-8">
-            <h2 class="text-2xl font-semibold mb-3 border-b border-gray-700 pb-2 text-cyan-400">Module Bay</h2>
-            <div id="module-bay-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-        </div>
+        <!-- MODULE BAY is now in the collapsible side panel — see #module-sidebar below -->
 
         <!-- EVENT LOG -->
         <div class="bg-gray-800 p-6 rounded-lg shadow-xl mb-8">
@@ -238,62 +306,75 @@
             drillHead: {
                 name: 'Drill Head', slotUnlockCost: 0, slotUnlockDepth: 0,
                 options: {
-                    balanced:  { name: 'Balanced Bit',      desc: 'No bonus, no penalty.',                           bonus: {},                                                              unlockCost: 0,    unlockDepth: 0 },
-                    precision: { name: 'Precision Bit',     desc: '+35% Drill Speed, -20% Ore Value',                bonus: { drillSpeedMultiplier: 0.35, oreValueMultiplier: -0.20 },       unlockCost: 30,   unlockDepth: 0 },
-                    excavator: { name: 'Excavator Bit',     desc: '+40% Ore Value, -20% Drill Speed',                bonus: { oreValueMultiplier: 0.40, drillSpeedMultiplier: -0.20 },       unlockCost: 30,   unlockDepth: 0 },
-                    resonator: { name: 'Resonator Bit',     desc: '+60% Drill Speed, -30% Ore Value, +1 Heat/sec',   bonus: { drillSpeedMultiplier: 0.60, oreValueMultiplier: -0.30, heatRateBonus: 1 }, unlockCost: 500, unlockDepth: 500 },
-                    harvester: { name: 'Harvester Bit',     desc: '+80% Ore Value, -30% Drill Speed',                bonus: { oreValueMultiplier: 0.80, drillSpeedMultiplier: -0.30 },       unlockCost: 500,  unlockDepth: 500 },
-                    voidborer: { name: 'Voidborer Bit',     desc: '+100% Drill Speed, +60% Ore Value, +1.5 Wear/sec',bonus: { drillSpeedMultiplier: 1.00, oreValueMultiplier: 0.60, integrityWearFactor: 1.5 }, unlockCost: 8000, unlockDepth: 2000 },
+                    balanced:  { name: 'Balanced Bit',      desc: 'No bonus, no penalty.',                                bonus: {},                                                                          unlockCost: 0,    unlockDepth: 0 },
+                    precision: { name: 'Precision Bit',     desc: '+35% Drill Speed, -20% Ore Value',                     bonus: { drillSpeedMultiplier: 0.35, oreValueMultiplier: -0.20 },                   unlockCost: 30,   unlockDepth: 0 },
+                    excavator: { name: 'Excavator Bit',     desc: '+40% Ore Value, -20% Drill Speed',                     bonus: { oreValueMultiplier: 0.40, drillSpeedMultiplier: -0.20 },                   unlockCost: 30,   unlockDepth: 0 },
+                    // Resonator: unchanged — heat penalty keeps it honest
+                    resonator: { name: 'Resonator Bit',     desc: '+60% Drill Speed, -30% Ore Value, +1 Heat/sec',        bonus: { drillSpeedMultiplier: 0.60, oreValueMultiplier: -0.30, heatRateBonus: 1 },  unlockCost: 500,  unlockDepth: 500 },
+                    // Harvester: pulled back from +80% so it's a real step up from Excavator but not a no-brainer
+                    harvester: { name: 'Harvester Bit',     desc: '+60% Ore Value, -25% Drill Speed',                     bonus: { oreValueMultiplier: 0.60, drillSpeedMultiplier: -0.25 },                   unlockCost: 500,  unlockDepth: 500 },
+                    // Voidborer: ore bonus trimmed so the wear cost actually feels like a tradeoff
+                    voidborer: { name: 'Voidborer Bit',     desc: '+100% Drill Speed, +30% Ore Value, +1.5 Wear/sec',     bonus: { drillSpeedMultiplier: 1.00, oreValueMultiplier: 0.30, integrityWearFactor: 1.5 }, unlockCost: 8000, unlockDepth: 2000 },
                 },
             },
             reactorCore: {
                 name: 'Reactor Core', slotUnlockCost: 300, slotUnlockDepth: 0,
                 options: {
-                    stable:    { name: 'Stable Core',       desc: 'No bonus, no penalty.',                           bonus: {},                                                              unlockCost: 0,    unlockDepth: 0 },
-                    overdrive: { name: 'Overdrive Core',    desc: '+1.2 Power/sec, +2.5 Heat/sec',                   bonus: { powerRate: 1.2, heatRateBonus: 2.5 },                          unlockCost: 40,   unlockDepth: 0 },
-                    cryo:      { name: 'Cryo Core',         desc: '-2.5 Heat/sec, -1.0 Power/sec',                   bonus: { heatRateBonus: -2.5, powerRate: -1.0 },                        unlockCost: 40,   unlockDepth: 200 },
-                    fusion:    { name: 'Fusion Core',       desc: '+2.5 Power/sec, +4 Heat/sec',                     bonus: { powerRate: 2.5, heatRateBonus: 4 },                            unlockCost: 600,  unlockDepth: 750 },
-                    darkMatter:{ name: 'Dark Matter Core',  desc: '+4 Power/sec, -15% Power Consumption',            bonus: { powerRate: 4, powerConsumptionFactor: 0.85 },                  unlockCost: 12000, unlockDepth: 3000 },
+                    stable:    { name: 'Stable Core',       desc: 'No bonus, no penalty.',                                bonus: {},                                                                          unlockCost: 0,    unlockDepth: 0 },
+                    // Overdrive buffed so it's a real choice vs Cryo rather than obviously worse
+                    overdrive: { name: 'Overdrive Core',    desc: '+2.0 Power/sec, +3.0 Heat/sec',                        bonus: { powerRate: 2.0, heatRateBonus: 3.0 },                                      unlockCost: 40,   unlockDepth: 0 },
+                    // Cryo tuned slightly so Overdrive is now the riskier-but-bigger-upside option
+                    cryo:      { name: 'Cryo Core',         desc: '-2.0 Heat/sec, -0.8 Power/sec',                        bonus: { heatRateBonus: -2.0, powerRate: -0.8 },                                    unlockCost: 40,   unlockDepth: 200 },
+                    fusion:    { name: 'Fusion Core',       desc: '+2.5 Power/sec, +4 Heat/sec',                          bonus: { powerRate: 2.5, heatRateBonus: 4 },                                        unlockCost: 600,  unlockDepth: 750 },
+                    // Dark Matter: added heat cost so there's a reason not to always use it at 3km+
+                    darkMatter:{ name: 'Dark Matter Core',  desc: '+4 Power/sec, -15% Power Consumption, +2.5 Heat/sec',  bonus: { powerRate: 4, powerConsumptionFactor: 0.85, heatRateBonus: 2.5 },           unlockCost: 12000, unlockDepth: 3000 },
                 },
             },
             hullPlating: {
                 name: 'Hull Plating', slotUnlockCost: 500, slotUnlockDepth: 100,
                 options: {
-                    standard:   { name: 'Standard Plating',  desc: 'No bonus, no penalty.',                          bonus: {},                                                              unlockCost: 0,    unlockDepth: 0 },
-                    reinforced: { name: 'Reinforced Plating',desc: '-40% Bit Wear',                                  bonus: { integrityWearFactor: 0.6 },                                    unlockCost: 150,   unlockDepth: 0 },
-                    adaptive:   { name: 'Adaptive Plating',  desc: '+15% Event Resistance',                          bonus: { eventResist: 0.15 },                                           unlockCost: 650,   unlockDepth: 250 },
-                    ceramic:    { name: 'Ceramic Plating',   desc: '-50% Heat gain while Drilling',                  bonus: { heatFactor: 0.5 },                                             unlockCost: 1500,  unlockDepth: 1000 },
-                    obsidian:   { name: 'Obsidian Plating',  desc: '-70% Bit Wear, +20% Event Resistance',           bonus: { integrityWearFactor: 0.3, eventResist: 0.20 },                 unlockCost: 16000, unlockDepth: 4000 },
+                    standard:   { name: 'Standard Plating',  desc: 'No bonus, no penalty.',                               bonus: {},                                                                          unlockCost: 0,    unlockDepth: 0 },
+                    reinforced: { name: 'Reinforced Plating',desc: '-40% Bit Wear',                                       bonus: { integrityWearFactor: 0.6 },                                                unlockCost: 150,  unlockDepth: 0 },
+                    adaptive:   { name: 'Adaptive Plating',  desc: '+15% Event Resistance',                               bonus: { eventResist: 0.15 },                                                       unlockCost: 650,  unlockDepth: 250 },
+                    // Ceramic: reduced from -50% to -30% heat and adds a small speed penalty — not a free heat fix
+                    ceramic:    { name: 'Ceramic Plating',   desc: '-30% Heat gain, -10% Drill Speed',                    bonus: { heatFactor: 0.7, drillSpeedMultiplier: -0.10 },                            unlockCost: 1500, unlockDepth: 1000 },
+                    // Obsidian: wear reduction pulled back from -70% to -50% since it also gives event resist
+                    obsidian:   { name: 'Obsidian Plating',  desc: '-50% Bit Wear, +20% Event Resistance',                bonus: { integrityWearFactor: 0.5, eventResist: 0.20 },                             unlockCost: 16000, unlockDepth: 4000 },
                 },
             },
             fuelInjector: {
                 name: 'Fuel Injector', slotUnlockCost: 2000, slotUnlockDepth: 500,
                 options: {
-                    standard:  { name: 'Standard Feed',     desc: 'No bonus, no penalty.',                           bonus: {},                                                              unlockCost: 0,    unlockDepth: 500 },
-                    lean:      { name: 'Lean Mix',          desc: '-25% Power Consumption, -15% Drill Speed',        bonus: { powerConsumptionFactor: 0.75, drillSpeed: -1.5 },              unlockCost: 500,  unlockDepth: 500 },
-                    rich:      { name: 'Rich Mix',          desc: '+20% Drill Speed, +35% Power Consumption',        bonus: { drillSpeed: 2, powerConsumptionFactor: 1.35 },                 unlockCost: 4000,  unlockDepth: 1300 },
-                    catalytic: { name: 'Catalytic Injector',desc: '+1 Power/sec, -20% Power Consumption',            bonus: { powerRate: 1, powerConsumptionFactor: 0.80 },                  unlockCost: 12000, unlockDepth: 3500 },
-                    plasma:    { name: 'Plasma Injector',   desc: '+3 Power/sec, +50% Drill Speed, +3 Heat/sec',     bonus: { powerRate: 3, drillSpeed: 5, heatRateBonus: 3 },               unlockCost: 20000, unlockDepth: 5000 },
+                    standard:  { name: 'Standard Feed',     desc: 'No bonus, no penalty.',                                bonus: {},                                                                          unlockCost: 0,    unlockDepth: 500 },
+                    lean:      { name: 'Lean Mix',          desc: '-25% Power Consumption, -15% Drill Speed',             bonus: { powerConsumptionFactor: 0.75, drillSpeedMultiplier: -0.15 },               unlockCost: 500,  unlockDepth: 500 },
+                    // Rich Mix: now a proper % multiplier so "+20% speed" actually means that at any depth
+                    rich:      { name: 'Rich Mix',          desc: '+20% Drill Speed, +35% Power Consumption',             bonus: { drillSpeedMultiplier: 0.20, powerConsumptionFactor: 1.35 },                unlockCost: 4000, unlockDepth: 1300 },
+                    catalytic: { name: 'Catalytic Injector',desc: '+1 Power/sec, -20% Power Consumption',                 bonus: { powerRate: 1, powerConsumptionFactor: 0.80 },                              unlockCost: 12000, unlockDepth: 3500 },
+                    // Plasma: heat penalty reduced from +3 to +2 — still a real cost, not punishing
+                    plasma:    { name: 'Plasma Injector',   desc: '+3 Power/sec, +50% Drill Speed, +2 Heat/sec',          bonus: { powerRate: 3, drillSpeedMultiplier: 0.50, heatRateBonus: 2 },              unlockCost: 20000, unlockDepth: 5000 },
                 },
             },
             sensorArray: {
                 name: 'Sensor Array', slotUnlockCost: 5000, slotUnlockDepth: 2500,
                 options: {
-                    basic:     { name: 'Basic Sensors',     desc: 'No bonus, no penalty.',                           bonus: {},                                                              unlockCost: 0,    unlockDepth: 2500 },
-                    geo:       { name: 'Geo-Scanner',       desc: '+20% Ore Value (reads the rock strata)',          bonus: { oreValueMultiplier: 0.20 },                                    unlockCost: 500,  unlockDepth: 2500 },
-                    pressure:  { name: 'Pressure Gauge',    desc: '+20% Pressure Resistance',                        bonus: { pressureResist: 0.20 },                                        unlockCost: 500,  unlockDepth: 4000 },
-                    deepScan:  { name: 'Deep-Scan Array',   desc: '+40% Ore Value, +10% Event Resistance',           bonus: { oreValueMultiplier: 0.40, eventResist: 0.10 },                 unlockCost: 3000, unlockDepth: 5000 },
-                    oracle:    { name: 'Oracle Array',      desc: '+80% Ore Value, +25% Pressure Resistance',        bonus: { oreValueMultiplier: 0.80, pressureResist: 0.25 },              unlockCost: 40000, unlockDepth: 7000 },
+                    basic:     { name: 'Basic Sensors',     desc: 'No bonus, no penalty.',                                bonus: {},                                                                          unlockCost: 0,    unlockDepth: 2500 },
+                    geo:       { name: 'Geo-Scanner',       desc: '+20% Ore Value (reads the rock strata)',               bonus: { oreValueMultiplier: 0.20 },                                                unlockCost: 500,  unlockDepth: 2500 },
+                    pressure:  { name: 'Pressure Gauge',    desc: '+20% Pressure Resistance',                             bonus: { pressureResist: 0.20 },                                                    unlockCost: 500,  unlockDepth: 4000 },
+                    deepScan:  { name: 'Deep-Scan Array',   desc: '+40% Ore Value, +10% Event Resistance',                bonus: { oreValueMultiplier: 0.40, eventResist: 0.10 },                             unlockCost: 3000, unlockDepth: 5000 },
+                    oracle:    { name: 'Oracle Array',      desc: '+80% Ore Value, +25% Pressure Resistance',             bonus: { oreValueMultiplier: 0.80, pressureResist: 0.25 },                          unlockCost: 40000, unlockDepth: 7000 },
                 },
             },
             exhaustVent: {
                 name: 'Exhaust Vent', slotUnlockCost: 20000, slotUnlockDepth: 6000,
                 options: {
-                    passive:   { name: 'Passive Vent',      desc: 'No bonus, no penalty.',                           bonus: {},                                                              unlockCost: 0,    unlockDepth: 6000 },
-                    assisted:  { name: 'Fan-Assisted Vent', desc: '+2 Cooling/sec, -0.5 Power/sec',                  bonus: { heatRateBonus: -2, powerRate: -0.5 },                          unlockCost: 8000,  unlockDepth: 6000 },
-                    heat2ore:  { name: 'Thermal Converter', desc: 'Converts heat to +15% Ore Value',                bonus: { oreValueMultiplier: 0.15, heatFactor: 1.2 },                   unlockCost: 15000,  unlockDepth: 8000 },
-                    cryoVent:  { name: 'Cryo Exhaust',      desc: '+5 Cooling/sec, -0.8 Power/sec',                  bonus: { heatRateBonus: -5, powerRate: -0.8 },                          unlockCost: 50000, unlockDepth: 10000 },
-                    voidSink:  { name: 'Void Heat Sink',    desc: '+10 Cooling/sec, zero other trade-offs',          bonus: { heatRateBonus: -10 },                                          unlockCost: 100000, unlockDepth: 12500 },
+                    passive:   { name: 'Passive Vent',      desc: 'No bonus, no penalty.',                                bonus: {},                                                                          unlockCost: 0,    unlockDepth: 6000 },
+                    // Thermal Converter: heatFactor penalty removed — small ore bonus is trade-off enough
+                    assisted:  { name: 'Fan-Assisted Vent', desc: '+2 Cooling/sec, -0.5 Power/sec',                       bonus: { heatRateBonus: -2, powerRate: -0.5 },                                      unlockCost: 8000,  unlockDepth: 6000 },
+                    heat2ore:  { name: 'Thermal Converter', desc: '+15% Ore Value (converts waste heat)',                  bonus: { oreValueMultiplier: 0.15 },                                                unlockCost: 15000, unlockDepth: 8000 },
+                    // Cryo Exhaust: cooling nudged down to -4, cost reduced to compensate
+                    cryoVent:  { name: 'Cryo Exhaust',      desc: '+4 Cooling/sec, -0.8 Power/sec',                       bonus: { heatRateBonus: -4, powerRate: -0.8 },                                      unlockCost: 35000, unlockDepth: 10000 },
+                    // Void Heat Sink: added -1.5 power/sec so it has a real cost at deep depths
+                    voidSink:  { name: 'Void Heat Sink',    desc: '+10 Cooling/sec, -1.5 Power/sec',                      bonus: { heatRateBonus: -10, powerRate: -1.5 },                                     unlockCost: 100000, unlockDepth: 12500 },
                 },
             },
         };
@@ -1363,6 +1444,60 @@
             initializeGame();
             startGameLoop();
         };
+    </script>
+
+    <!-- ========== COLLAPSIBLE MODULE BAY SIDEBAR ========== -->
+
+    <!-- Dark overlay — clicking it closes the sidebar -->
+    <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- The sidebar panel itself -->
+    <div id="module-sidebar">
+        <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-4">
+            <h2 class="text-2xl font-bold text-cyan-400">⚙ Module Bay</h2>
+            <button onclick="closeSidebar()"
+                class="text-gray-400 hover:text-white text-2xl font-bold leading-none"
+                title="Close">✕</button>
+        </div>
+        <!-- This is the same container your existing refreshModuleBay() already fills -->
+        <div id="module-bay-container" class="flex flex-col gap-4"></div>
+    </div>
+
+    <!-- Floating tab on the right edge that opens/closes the sidebar -->
+    <button id="module-toggle-btn" onclick="toggleSidebar()" title="Open Module Bay">
+        ⚙ Module Bay
+    </button>
+
+    <script>
+        // ---- Sidebar open / close helpers ----
+
+        function openSidebar() {
+            document.getElementById('module-sidebar').classList.add('open');
+            document.getElementById('sidebar-overlay').classList.add('open');
+            document.body.classList.add('sidebar-open');
+            // Refresh the module bay whenever the panel is opened so it's always current
+            refreshModuleBay();
+        }
+
+        function closeSidebar() {
+            document.getElementById('module-sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('open');
+            document.body.classList.remove('sidebar-open');
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('module-sidebar');
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        // Allow pressing Escape to close the sidebar
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeSidebar();
+        });
     </script>
 </body>
 </html>
