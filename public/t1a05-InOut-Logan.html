@@ -28,6 +28,17 @@
 
 <h4> Combine two Inputs</h4>
 
+<script>
+
+  function myStandard() { 
+    document.getElementById('myDiv01').value = ' Waiting for input... '
+    document.getElementById('myDiv02').value = ' Waiting for Addition '
+    document.getElementById('myNum01').value = ' 4 '
+    document.getElementById('myNum02').value = ' 8 '
+  }
+  
+</script>
+
 <input id="myNum02" type=number value="8" ><br>
 
 <input type=button value="Add 2 numbers" onclick="{
@@ -36,5 +47,9 @@
   let myAnswer = myIn01 + myIn02
   document.getElementById('myDiv02').innerHTML = myIn01 + ' added = ' + myAnswer
 }"><br>
+
+<input type=button value="reset" onclick"{
+  myStandard()
+}">
 
 <div id="myDiv02">Waiting for Addition...</div>
