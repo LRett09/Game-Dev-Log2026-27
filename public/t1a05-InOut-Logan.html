@@ -1,4 +1,4 @@
-<h1 align=center> T1A05 INPUT OUTPUT </h1>
+a<h1 align=center> T1A05 INPUT OUTPUT </h1>
 
 <h2>Example input code</h2>
 <pre>
@@ -50,7 +50,15 @@
 
 <input type=button value="reset" onclick=
   'myStandard()'
-">
+"><br><br>
+
+<input type=button value="Add 2 numbers, then reset values" onclick="{
+  let myIn01 = parseFloat(document.getElementById('myNum01').value)
+  let myIn02 = parseFloat(document.getElementById('myNum02').value)
+  let myAnswer = myIn01 + myIn02
+  document.getElementById('myDiv02').innerHTML = myIn01 + ' added = ' + myAnswer
+  myStandard()
+}"><br>
 
 <div id="myDiv02">Waiting for Addition...</div>
 
