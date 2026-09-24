@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Deep Mine 1.1</title>
+    <title>The Deep Mine</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
@@ -87,13 +87,61 @@
                 right: 95vw;
             }
         }
+
+        /* --- PATCH NOTES MODAL --- */
+        #patch-notes-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        #patch-notes-overlay.open {
+            display: flex;
+        }
+        #patch-notes-modal {
+            background-color: #111827;
+            border: 2px solid #374151;
+            border-radius: 12px;
+            width: 560px;
+            max-width: 95vw;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        }
+        #patch-notes-modal .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #374151;
+            flex-shrink: 0;
+        }
+        #patch-notes-modal .modal-body {
+            overflow-y: auto;
+            padding: 1.25rem 1.5rem;
+            flex: 1;
+        }
+        .patch-entry + .patch-entry {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #1f2937;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen">
     <div class="max-w-6xl mx-auto bg-gray-900 rounded-xl shadow-2xl p-6 md:p-10">
-        <h1 class="text-4xl font-bold text-yellow-500 mb-2 border-b border-gray-700 pb-3">
-            The Deep Mine  Update 1.1 - Discoveries in the Deep
-        </h1>
+        <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-2">
+            <h1 class="text-4xl font-bold text-yellow-500">
+                The Deep Mine
+            </h1>
+            <button onclick="openPatchNotes()" class="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm font-semibold transition duration-150 border border-gray-600">
+                📋 Patch Notes
+            </button>
+        </div>
 
         <div id="permanent-stats-display" class="text-lg font-bold text-purple-400 mb-4 text-center">
             Permanent Research Points (PRP): 0
@@ -219,6 +267,71 @@
     </div>
 
     <script>
+        // ============================================================
+        //  PATCH NOTES — edit this array to update the patch notes.
+        //  Each entry is one version. Add new versions at the TOP.
+        //
+        //  Fields:
+        //    version : string  — e.g. "v1.2"
+        //    date    : string  — displayed as-is, e.g. "2024-06-01"
+        //    changes : array of strings — each string is one bullet point
+        // ============================================================
+        const PATCH_NOTES = [
+            {
+                version: 'v1.1',
+                date: '2026-09-24',
+                changes: [
+                    'Added drill bit integrity',
+					'Added Module Bay',
+					'Added anomoly events starting at 1000m',
+					'Added two new tiers of upgrades',
+					'Balanced nearly all upgrades and added depth requirements',
+					'Reworked scanner upgrade',
+					'Added new Permanent Upgrades',
+					'Fixed UI bugs',
+                ]
+            },
+            {
+                version: 'v1.0',
+                date: '2025-11-28',
+                changes: [
+                    'Initial release of The Deep Mine.',
+                    'Core drilling loop with power, oxygen, and heat systems.',
+                    'Skill tree with 7 tiers of upgrades.',
+                    'Permanent Research Points (PRP) carry over between runs.',
+                ]
+            },
+        ];
+        // ============================================================
+        //  END OF PATCH NOTES — do not edit below this line
+        // ============================================================
+
+        function openPatchNotes() {
+            document.getElementById('patch-notes-overlay').classList.add('open');
+        }
+        function closePatchNotes() {
+            document.getElementById('patch-notes-overlay').classList.remove('open');
+        }
+        function buildPatchNotesModal() {
+            const body = document.getElementById('patch-notes-body');
+            body.innerHTML = PATCH_NOTES.map(entry => `
+                <div class="patch-entry">
+                    <div class="flex items-baseline gap-3 mb-2">
+                        <span class="text-lg font-bold text-yellow-400">${entry.version}</span>
+                        <span class="text-xs text-gray-500">${entry.date}</span>
+                    </div>
+                    <ul class="space-y-1">
+                        ${entry.changes.map(c => `
+                            <li class="flex gap-2 text-sm text-gray-300">
+                                <span class="text-yellow-600 mt-0.5 flex-shrink-0">•</span>
+                                <span>${c}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `).join('');
+        }
+
         // --- CONSTANTS ---
         const UI_UPDATE_INTERVAL = 0.25;
 
@@ -1177,12 +1290,21 @@
                 .join('');
         }
 
+        let _lastAnomalyKey = null;
         function renderAnomaly() {
             if (!gameState.pendingAnomaly) {
-                ui['anomaly-panel'].classList.add('hidden');
-                ui['anomaly-panel'].innerHTML = '';
+                if (_lastAnomalyKey !== null) {
+                    ui['anomaly-panel'].classList.add('hidden');
+                    ui['anomaly-panel'].innerHTML = '';
+                    _lastAnomalyKey = null;
+                }
                 return;
             }
+            // Build a key from the option ids so we only rebuild the DOM when the anomaly actually changes
+            const anomalyKey = gameState.pendingAnomaly.map(o => o.id).join(',');
+            if (anomalyKey === _lastAnomalyKey) return; // nothing changed — don't touch the DOM
+            _lastAnomalyKey = anomalyKey;
+
             ui['anomaly-panel'].classList.remove('hidden');
             const optionsHtml = gameState.pendingAnomaly.map(opt => `
                 <button onclick="resolveAnomaly('${opt.id}')" class="flex-1 text-left p-4 rounded-lg bg-gray-800 hover:bg-gray-700 border border-yellow-600 transition duration-150">
@@ -1198,11 +1320,28 @@
             `;
         }
 
+        let _lastModuleBayKey = null;
         function refreshModuleBay() {
             const container = ui['module-bay-container'];
             if (!container) return;
-            container.innerHTML = '';
             const swapCost = getModuleSwapCost();
+
+            // Build a fingerprint of all state that affects what the module bay renders.
+            // Only rebuild the DOM when something actually changes, to prevent hover flicker.
+            const bayKey = JSON.stringify({
+                slots: gameState.unlockedModuleSlots,
+                options: gameState.unlockedModuleOptions,
+                modules: gameState.modules,
+                swapCost,
+                ore: Math.floor(gameState.ore),   // floor so tiny ore ticks don't force a rebuild
+                depth: Math.floor(gameState.depth),
+                gameOver: gameState.gameOver,
+                isPaused: gameState.isPaused,
+            });
+            if (bayKey === _lastModuleBayKey) return;
+            _lastModuleBayKey = bayKey;
+
+            container.innerHTML = '';
 
             for (const slotId in MODULE_SLOTS) {
                 const slot = MODULE_SLOTS[slotId];
@@ -1441,12 +1580,24 @@
             cacheUIElements();
             buildPrpShop();
             buildSkillTree();
+            buildPatchNotesModal();
             initializeGame();
             startGameLoop();
         };
     </script>
 
     <!-- ========== COLLAPSIBLE MODULE BAY SIDEBAR ========== -->
+
+    <!-- PATCH NOTES MODAL -->
+    <div id="patch-notes-overlay" onclick="closePatchNotes()">
+        <div id="patch-notes-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 class="text-xl font-bold text-yellow-400">📋 Patch Notes</h2>
+                <button onclick="closePatchNotes()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
+            </div>
+            <div id="patch-notes-body" class="modal-body"></div>
+        </div>
+    </div>
 
     <!-- Dark overlay — clicking it closes the sidebar -->
     <div id="sidebar-overlay" onclick="closeSidebar()"></div>
