@@ -136,7 +136,7 @@
     <div class="max-w-6xl mx-auto bg-gray-900 rounded-xl shadow-2xl p-6 md:p-10">
         <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-2">
             <h1 class="text-4xl font-bold text-yellow-500">
-                The Deep Mine
+                The Deep Mine   Version 1.2
             </h1>
             <button onclick="openPatchNotes()" class="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm font-semibold transition duration-150 border border-gray-600">
                 📋 Patch Notes
@@ -246,6 +246,9 @@
                 <button id="ascend-button" onclick="ascendGame()" class="px-6 py-3 rounded-xl bg-purple-700 hover:bg-purple-500 text-white font-bold shadow-md transition duration-150">
                     Ascend
                 </button>
+                <button id="surface-sample-button" onclick="surfaceSample()" class="hidden px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-500 text-white font-bold shadow-md transition duration-150">
+                    Surface Sample
+                </button>
                 <button onclick="restartGame()" class="px-6 py-3 rounded-xl bg-gray-600 hover:bg-gray-500 text-white font-bold shadow-md transition duration-150">
                     Restart game
                 </button>
@@ -277,6 +280,15 @@
         //    changes : array of strings — each string is one bullet point
         // ============================================================
         const PATCH_NOTES = [
+            {
+                version: 'v1.2',
+                date: '2026-09-24',
+                changes: [
+                    'Reworked F1 "Cave Adapted": now unlocks the Surface Sample ability instead of teleporting you to 1000m.',
+                    'Surface Sample: sacrifice 500m of depth to instantly gain 1 PRP — no reset, upgrades and resources are kept.',
+                    'Surface Sample button appears in the controls panel once Cave Adapted is researched.',
+                ]
+            },
             {
                 version: 'v1.1',
                 date: '2026-09-24',
@@ -350,6 +362,9 @@
         const HARDNESS_DIVISOR  = 2000;
         const HARDNESS_EXPONENT = 1.15;
 
+        // Surface Sample (Cave Adapted F1 ability)
+        const SURFACE_SAMPLE_DEPTH_COST = 500;  // meters sacrificed per use
+
         // Scanner Boost
         const SCAN_BOOST_POWER_COST = 20;
         const SCAN_BOOST_ORE_COST = 15;
@@ -398,7 +413,7 @@
             'E2': { name: 'Temporal Accelerator',   cost: 4500,      effect: '+15 Base Drill Speed',                  prereq: 'D2', minDepth: 1000, bonus: { drillSpeed: 15 } },
             'E3': { name: 'Infinite Reactor',       cost: 4500,      effect: '+3 Power/sec (barely keeps up)',        prereq: 'D3', minDepth: 1000, bonus: { powerRate: 3 } },
 
-            'F1': { name: 'Cave Adapted',           cost: 60000,     effect: 'Returns you to the surface', prereq: 'E1', minDepth: 5000, specialEffect: { depthSet: 1000 } },
+            'F1': { name: 'Cave Adapted',           cost: 60000,     effect: 'Surface Sample: Spend 500m depth, gain 1 PRP instantly', prereq: 'E1', minDepth: 5000, bonus: { caveAdapted: true } },
             'F2': { name: 'Cloning',                cost: 60000,     effect: 'All hands on deck!',                    prereq: 'E2', minDepth: 5000, bonus: { megaCritChance: 0.10, megaCritMultiplier: 2.5 } },
             'F3': { name: 'Scrap Refinery',         cost: 60000,     effect: 'Scrap is worth 80 instead of 1',        prereq: 'E3', minDepth: 5000, bonus: { ScrapValue: 80 } },
 
@@ -565,7 +580,7 @@
                 'oxygen-bar-text', 'integrity-bar', 'integrity-bar-text', 'temp-bar', 'temp-bar-text',
                 'active-effects', 'event-log', 'anomaly-panel', 'drill-button', 'refill-power-button',
                 'refill-oxygen-button', 'repair-button', 'pause-button', 'message-box', 'ascend-button',
-                'prp-shop-container', 'module-bay-container', 'skill-tree-container'
+                'prp-shop-container', 'module-bay-container', 'skill-tree-container', 'surface-sample-button'
             ];
             ids.forEach(id => ui[id] = document.getElementById(id));
         }
@@ -733,7 +748,7 @@
                 critChance: gameState.baseCritChance, depthValueBonus: 0, powerGainOnDrill: 0, megaCritChance: 0,
                 pressureResist: gameState.basePressureResist, oxygenPressureResist: 0, eventResist: 0, ScrapValue: 0, autoOps: false,
                 heatRateBonus: 0, powerConsumptionFactor: 1, critMultiplier: 1, heatFactor: 1, coolingFactor: 1, megaCritMultiplier: 1,
-                drillSpeedMultiplier: 1, integrityWearFactor: 1,
+                drillSpeedMultiplier: 1, integrityWearFactor: 1, caveAdapted: false,
             };
 
             for (const skillId of gameState.unlockedSkills) {
@@ -1031,6 +1046,22 @@
             updateUI();
         }
 
+        function surfaceSample() {
+            if (gameState.gameOver || gameState.isPaused || !gameState.mods.caveAdapted) return;
+            if (gameState.depth < SURFACE_SAMPLE_DEPTH_COST) {
+                gameState.message = `Surface Sample needs at least ${SURFACE_SAMPLE_DEPTH_COST}m of depth to sacrifice.`;
+                return updateUI();
+            }
+            gameState.drilling = false;
+            gameState.depth -= SURFACE_SAMPLE_DEPTH_COST;
+            gameState.currentLevelResource = getCurrentResource(gameState.depth).name;
+            gameState.permanentResearchPoints += 1;
+            gameState.message = `Surface Sample: Pulled core samples up ${SURFACE_SAMPLE_DEPTH_COST}m. +1 PRP gained!`;
+            gameState.eventLog.unshift({ text: `${(gameState.depth + SURFACE_SAMPLE_DEPTH_COST).toFixed(0)}m → ${gameState.depth.toFixed(0)}m — Surface Sample: core extracted, +1 PRP.`, bad: false });
+            if (gameState.eventLog.length > 6) gameState.eventLog.pop();
+            updateUI();
+        }
+
         function buyPrpUpgrade(upgradeId) {
             if (gameState.gameOver || gameState.isPaused) return;
             const upgrade = PRP_UPGRADES[upgradeId];
@@ -1262,6 +1293,22 @@
                 ui['ascend-button'].innerText = 'Ascend (reach 500m)';
                 ui['ascend-button'].disabled = true;
                 ui['ascend-button'].className = 'px-6 py-3 rounded-xl bg-purple-800 opacity-50 cursor-not-allowed text-white font-bold shadow-md';
+            }
+
+            // Surface Sample button (Cave Adapted F1)
+            const ssBtn = ui['surface-sample-button'];
+            if (ssBtn) {
+                if (gameState.mods.caveAdapted) {
+                    ssBtn.classList.remove('hidden');
+                    const canSample = gameState.depth >= SURFACE_SAMPLE_DEPTH_COST && !gameState.gameOver && !gameState.isPaused;
+                    ssBtn.innerText = `Surface Sample (-${SURFACE_SAMPLE_DEPTH_COST}m → +1 PRP)`;
+                    ssBtn.disabled = !canSample;
+                    ssBtn.className = canSample
+                        ? 'px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-500 text-white font-bold shadow-md transition duration-150'
+                        : 'px-6 py-3 rounded-xl bg-emerald-900 opacity-50 cursor-not-allowed text-white font-bold shadow-md';
+                } else {
+                    ssBtn.classList.add('hidden');
+                }
             }
 
             refreshPrpShop();
