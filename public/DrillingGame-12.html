@@ -16,7 +16,7 @@
         .progress-bar { transition: width 0.3s linear; }
 
         /* --- MODULE BAY SIDEBAR --- */
-        #module-sidebar {
+        .side-panel {
             position: fixed; top: 0; right: -420px;
             width: 420px; max-width: 95vw; height: 100vh;
             background-color: #111827;
@@ -25,7 +25,7 @@
             transition: right 0.3s ease;
             padding: 1.5rem; box-sizing: border-box;
         }
-        #module-sidebar.open { right: 0; }
+        .side-panel.open { right: 0; }
 
         #sidebar-overlay {
             display: none; position: fixed; inset: 0;
@@ -33,12 +33,12 @@
         }
         #sidebar-overlay.open { display: block; }
 
-        #module-toggle-btn {
-            position: fixed; top: 50%; right: 0;
+        .side-tab {
+            position: fixed; right: 0;
             transform: translateY(-50%);
             z-index: 1001;
             writing-mode: vertical-rl; text-orientation: mixed;
-            background-color: #0e7490; color: white;
+            color: white;
             font-weight: bold; font-size: 0.85rem;
             padding: 1rem 0.5rem;
             border-radius: 8px 0 0 8px;
@@ -46,10 +46,14 @@
             transition: background-color 0.2s, right 0.3s;
             letter-spacing: 0.05em;
         }
-        #module-toggle-btn:hover { background-color: #0891b2; }
-        body.sidebar-open #module-toggle-btn { right: 420px; }
+        #module-toggle-btn   { top: calc(50% - 80px); background-color: #0e7490; }
+        #module-toggle-btn:hover   { background-color: #0891b2; }
+        #workshop-toggle-btn { top: calc(50% + 80px); background-color: #a16207; }
+        #workshop-toggle-btn:hover { background-color: #ca8a04; }
+        /* When any panel is open, both tabs slide left so they stay attached to its edge */
+        body.sidebar-open .side-tab { right: 420px; }
         @media (max-width: 440px) {
-            body.sidebar-open #module-toggle-btn { right: 95vw; }
+            body.sidebar-open .side-tab { right: 95vw; }
         }
 
         /* --- PATCH NOTES MODAL --- */
@@ -104,6 +108,23 @@
             border: none; cursor: pointer; transition: background 0.15s;
         }
         .dev-apply-btn:hover { background: #6d28d9; }
+
+        /* --- NEXT ORE HINT: always reserve room for 2 lines so the page never jumps --- */
+        #next-resource-hint { min-height: 2.5rem; }
+
+        /* --- ASCEND CONFIRM POPUP --- */
+        #ascend-confirm-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2500; align-items: center; justify-content: center;
+        }
+        #ascend-confirm-overlay.open { display: flex; }
+        #ascend-confirm-modal {
+            background-color: #111827; border: 2px solid #7e22ce;
+            border-radius: 12px; width: 420px; max-width: 92vw;
+            padding: 1.5rem; text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen">
@@ -115,7 +136,7 @@
 
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-2">
-            <h1 class="text-4xl font-bold text-yellow-500">The Deep Mine Version 1.2 (Update WIP Expect Bugs)</h1>
+            <h1 class="text-4xl font-bold text-yellow-500">The Deep Mine Version 1.2: Better Ascension </h1>
             <div class="flex gap-2">
                 <button onclick="openPatchNotes()" class="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm font-semibold transition duration-150 border border-gray-600">
                     📋 Patch Notes
@@ -131,13 +152,14 @@
         </div>
 
         <p class="text-gray-400 mb-6">
-            Drill deep, manage your resources, and specialize your crew. Everything gets worse the further down you go:
-            rock hardens, life support works harder, the reactor strains, the bit wears out, and the mine throws hazards at you. Can you reach the bottom?
+            Drill deep, but be warned: the lower you go the more dangerous the caves get. Upgrade your drill with new skills,
+			modules, and research permanent upgrades. Can you reach the bottom?
         </p>
 
         <!-- Permanent Research Shop -->
-        <h2 class="text-3xl font-bold text-purple-400 mb-4 border-b border-gray-700 pb-2">Permanent research</h2>
-        <div id="prp-shop-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"></div>
+        <h2 class="text-3xl font-bold text-purple-400 mb-1 border-b border-gray-700 pb-2">Ascension tree</h2>
+        <p class="text-sm text-gray-400 mb-4">Spend PRP on permanent perks that change how every future run plays. Each path unlocks from top to bottom.</p>
+        <div id="ascension-container" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8"></div>
 
         <!-- Message Box -->
         <div id="message-box" class="hidden p-4 mb-4 rounded-lg bg-red-600 font-semibold text-center shadow-inner"></div>
@@ -207,13 +229,16 @@
 
             <div id="active-effects" class="mb-4 min-h-[2rem]"></div>
 
+            <!-- Automation routines (shown once Autonomous Operations is unlocked) -->
+            <div id="auto-ops-panel" class="hidden mb-6 p-4 rounded-lg bg-gray-900 border border-sky-700"></div>
+
             <div class="flex flex-wrap justify-center gap-4">
                 <button id="drill-button"          onclick="toggleDrill()"    class="px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold shadow-md transition duration-150">Start drill</button>
                 <button id="pause-button"          onclick="togglePause()"    class="px-6 py-3 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-gray-900 font-bold shadow-md transition duration-150">Pause game</button>
                 <button id="refill-power-button"   onclick="refillPower()"    class="px-6 py-3 rounded-xl bg-red-500 hover:bg-red-400 text-white font-bold shadow-md transition duration-150">Refill power</button>
                 <button id="refill-oxygen-button"  onclick="refillOxygen()"   class="px-6 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-white font-bold shadow-md transition duration-150">Refill oxygen</button>
                 <button id="repair-button"         onclick="repairDrill()"    class="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold shadow-md transition duration-150">Repair drill</button>
-                <button id="ascend-button"         onclick="ascendGame()"     class="px-6 py-3 rounded-xl bg-purple-700 hover:bg-purple-500 text-white font-bold shadow-md transition duration-150">Ascend</button>
+                <button id="ascend-button"         onclick="requestAscend()"     class="px-6 py-3 rounded-xl bg-purple-700 hover:bg-purple-500 text-white font-bold shadow-md transition duration-150">Ascend</button>
                 <button id="surface-sample-button" onclick="surfaceSample()"  class="hidden px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-500 text-white font-bold shadow-md transition duration-150">Surface Sample</button>
                 <button                            onclick="restartGame()"    class="px-6 py-3 rounded-xl bg-gray-600 hover:bg-gray-500 text-white font-bold shadow-md transition duration-150">Restart game</button>
             </div>
@@ -237,7 +262,7 @@
          ============================ -->
     <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
-    <div id="module-sidebar">
+    <div id="module-sidebar" class="side-panel">
         <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-4">
             <h2 class="text-2xl font-bold text-cyan-400">⚙ Module Bay</h2>
             <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
@@ -245,7 +270,19 @@
         <div id="module-bay-container" class="flex flex-col gap-4"></div>
     </div>
 
-    <button id="module-toggle-btn" onclick="toggleSidebar()" title="Open Module Bay">⚙ Module Bay</button>
+    <!-- Workshop panel: same idea as the Module Bay, but for Ore-bought stat upgrades -->
+    <div id="workshop-sidebar" class="side-panel">
+        <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-2">
+            <h2 class="text-2xl font-bold text-yellow-400">🔨 Workshop</h2>
+            <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
+        </div>
+        <p class="text-sm text-gray-400 mb-2">Stackable upgrades bought with Ore. The only way to raise your max Power, Oxygen and Integrity. They reset when you ascend.</p>
+        <p id="workshop-ore" class="text-lg font-bold text-yellow-500 mb-4">0.0 Ore</p>
+        <div id="workshop-container" class="flex flex-col gap-4"></div>
+    </div>
+
+    <button id="module-toggle-btn"   class="side-tab" onclick="togglePanel('module-sidebar')"   title="Open Module Bay">⚙ Module Bay</button>
+    <button id="workshop-toggle-btn" class="side-tab" onclick="togglePanel('workshop-sidebar')" title="Open Workshop">🔨 Workshop</button>
 
 
     <!-- ============================
@@ -265,6 +302,21 @@
     <!-- ============================
          DEV MODE PANEL
          ============================ -->
+    <!-- ============================
+         ASCEND CONFIRMATION POPUP
+         ============================ -->
+    <div id="ascend-confirm-overlay">
+        <div id="ascend-confirm-modal">
+            <h2 class="text-xl font-bold text-purple-400 mb-3">Ascend?</h2>
+            <p id="ascend-confirm-text" class="text-gray-300 mb-6"></p>
+            <div class="flex justify-center gap-4">
+                <button onclick="cancelAscend()"  class="px-5 py-2 rounded-xl bg-gray-600 hover:bg-gray-500 text-white font-bold">Cancel</button>
+                <button onclick="confirmAscend()" class="px-5 py-2 rounded-xl bg-purple-700 hover:bg-purple-500 text-white font-bold">Yes, ascend</button>
+            </div>
+        </div>
+    </div>
+
+
     <div id="dev-panel">
         <h3>🛠 Dev Mode</h3>
         <p class="dev-section-label">Resources</p>
@@ -292,19 +344,19 @@
     //  Fields: version (string), date (string), changes (string[])
     // ============================================================
     const PATCH_NOTES = [
+        
         {
-            version: 'v1.2', date: '2026-10-??',
+            version: 'v1.2', date: '2026-09-29',
             changes: [
                 'Reworked F1 "Cave Adapted": now unlocks the Surface Sample ability instead of teleporting you to 1000m.',
+				'Reworked Autonomous Operations - choose two systems to automate at a time',
                 'Surface Sample: sacrifice 750m of depth to instantly gain 1 PRP — no reset, upgrades and resources are kept.',
 				'Added dev mode for testing reasons',
 				'Fixed another UI bug',
-				'PLANNED: Balancing module prices and depths',
-				'PLANNED: Balancing PRP gain rate and upgrade prices',
-				'PLANNED: Reworking the automation upgrade so the game is still interactive',
-				'PLANNED: Adding in new PRP upgrades that add a bit more depth to the game over simple buffs',
-				'PLANNED: Adding new modules (NOT module slots)',
-				'PLANNED: Adding music (may or may not be this update, might be a later update)',
+				'Balanced module prices and depths',
+				'Balanced PRP gain rate and upgrade prices',
+				'Ascension upgrades now in new workshop panel',
+				'New ascension upgrades system',
             ]
         },
         {
@@ -353,7 +405,8 @@
     const HARDNESS_EXPONENT = 1.15;
 
     // Surface Sample (Cave Adapted F1 ability)
-    const SURFACE_SAMPLE_DEPTH_COST = 750;
+    const SURFACE_SAMPLE_BASE_COST     = 750;  // depth cost of your FIRST Surface Sample each run
+    const SURFACE_SAMPLE_COST_INCREASE = 250;  // extra depth added to the cost after every use
 
     // Scanner Boost
     const SCAN_BOOST_POWER_COST       = 20;
@@ -374,15 +427,36 @@
     //  GAME DATA
     // ============================================================
 
-    const PRP_UPGRADES = {
-        'PRP_DS': { id: 'PRP_DS', name: 'Drill Efficiency',      cost: 1, effect: '+0.5 Base Drill Speed',   stat: 'baseDrillSpeed',     value: 0.5,  maxTier: 12 },
-        'PRP_CC': { id: 'PRP_CC', name: 'Critical Upgrades',     cost: 1, effect: '+1% Critical chance',     stat: 'baseCritChance',     value: 0.01, maxTier: 10 },
-        'PRP_MP': { id: 'PRP_MP', name: 'Reactor Capacity',      cost: 2, effect: '+25 Max Power',           stat: 'maxPower',           value: 25,   maxTier: 8  },
-        'PRP_MO': { id: 'PRP_MO', name: 'Life Support Capacity', cost: 2, effect: '+25 Max Oxygen',          stat: 'maxOxygen',          value: 25,   maxTier: 8  },
-        'PRP_OV': { id: 'PRP_OV', name: 'Ore Magnets',           cost: 5, effect: '+2 Base Ore Value',       stat: 'baseOreValue',       value: 2,    maxTier: 10 },
-        'PRP_IN': { id: 'PRP_IN', name: 'Reinforced Bit',        cost: 2, effect: '+25 Max Drill Integrity', stat: 'maxIntegrity',       value: 25,   maxTier: 6  },
-        'PRP_PR': { id: 'PRP_PR', name: 'Pressure Plating',      cost: 4, effect: '+5% Pressure Resistance', stat: 'basePressureResist', value: 0.05, maxTier: 6  },
-        'PRP_CL': { id: 'PRP_CL', name: 'Coolant Reserves',      cost: 3, effect: '+0.35 Cooling / sec',     stat: 'baseCoolingBonus',   value: 0.35, maxTier: 6  },
+    // Workshop: tiered upgrades bought with ORE. They reset every run.
+    // cost = price of tier 1, growth = how much the price multiplies per tier.
+    const WORKSHOP_UPGRADES = {
+        'W_DS': { id: 'W_DS', name: 'Drill Efficiency',      cost: 25,  growth: 1.55, effect: '+0.5 Base Drill Speed',   stat: 'baseDrillSpeed',     value: 0.5,  maxTier: 12 },
+        'W_CC': { id: 'W_CC', name: 'Critical Upgrades',     cost: 40,  growth: 1.60, effect: '+1% Critical chance',     stat: 'baseCritChance',     value: 0.01, maxTier: 10 },
+        'W_MP': { id: 'W_MP', name: 'Reactor Capacity',      cost: 40,  growth: 1.70, effect: '+25 Max Power',           stat: 'maxPower',           value: 25,   maxTier: 8  },
+        'W_MO': { id: 'W_MO', name: 'Life Support Capacity', cost: 40,  growth: 1.70, effect: '+25 Max Oxygen',          stat: 'maxOxygen',          value: 25,   maxTier: 8  },
+        'W_OV': { id: 'W_OV', name: 'Ore Magnets',           cost: 120, growth: 1.90, effect: '+0.25 Base Ore Value',    stat: 'baseOreValue',       value: 0.25, maxTier: 10 },
+        'W_IN': { id: 'W_IN', name: 'Reinforced Bit',        cost: 50,  growth: 1.80, effect: '+25 Max Drill Integrity', stat: 'maxIntegrity',       value: 25,   maxTier: 6  },
+        'W_PR': { id: 'W_PR', name: 'Pressure Plating',      cost: 300, growth: 2.00, effect: '+5% Pressure Resistance', stat: 'basePressureResist', value: 0.05, maxTier: 6  },
+        'W_CL': { id: 'W_CL', name: 'Coolant Reserves',      cost: 150, growth: 1.90, effect: '+0.35 Cooling / sec',     stat: 'baseCoolingBonus',   value: 0.35, maxTier: 6  },
+    };
+
+    // Ascension tree: one-time perks bought with PRP. They last forever.
+    // "bonus" keys feed the same mods system the skills use (see recalculateMods).
+    const ASC_BRANCHES = {
+        Fortune:  { icon: '💰', color: 'yellow', blurb: 'Turn every ascension into wealth.' },
+        Voyager:  { icon: '🧭', color: 'cyan',   blurb: 'Start deeper and cheat death.' },
+        Engineer: { icon: '⚙️', color: 'orange', blurb: 'Skip the slow start of every run.' },
+    };
+    const ASCENSION_UPGRADES = {
+        FOR1: { branch: 'Fortune',  name: 'Compound Interest',  cost: 3,  prereq: null,   effect: '+2% Ore Value for every time you have ascended (max +100%)', bonus: { compoundInterest: 0.02 } },
+        FOR2: { branch: 'Fortune',  name: "Prospector's Eye",   cost: 8,  prereq: 'FOR1', effect: 'Anomaly ore rewards are doubled',                            bonus: { anomalyBonus: 1 } },
+        FOR3: { branch: 'Fortune',  name: 'Golden Age',         cost: 25, prereq: 'FOR2', effect: 'Every 1000m you drill triggers 15s of x3 Ore',               bonus: { goldenAge: true } },
+        VOY1: { branch: 'Voyager',  name: 'Deep Drop',          cost: 3,  prereq: null,   effect: 'Each new run starts at 10% of your record depth (max 1500m)', bonus: { deepDrop: 0.10 } },
+        VOY2: { branch: 'Voyager',  name: 'Second Wind',        cost: 10, prereq: 'VOY1', effect: 'Once per run, a fatal overheat or suffocation is cancelled', bonus: { secondWind: true } },
+        VOY3: { branch: 'Voyager',  name: 'Abyssal Attunement', cost: 20, prereq: 'VOY2', effect: '+1% Ore Value per 500m of your record depth',                bonus: { recordDepthBonus: 0.00002 } },
+        ENG1: { branch: 'Engineer', name: 'Foundry Memory',     cost: 3,  prereq: null,   effect: 'Each new run starts with all Tier 1 skills installed',       bonus: { startTier: 1 } },
+        ENG2: { branch: 'Engineer', name: 'Core Resonance',     cost: 10, prereq: 'ENG1', effect: 'Surface Sample gives +1 PRP and costs 200m less',            bonus: { sampleBonusPrp: 1, sampleDiscount: 200 } },
+        ENG3: { branch: 'Engineer', name: 'Master Blueprints',  cost: 25, prereq: 'ENG2', effect: 'Each new run starts with Tier 1, 2 and 3 skills installed',  bonus: { startTier: 2 } },
     };
 
     const SKILLS = {
@@ -408,17 +482,17 @@
         'E2': { name: 'Temporal Accelerator',  cost: 4500,     effect: '+15 Base Drill Speed',                  prereq: 'D2', minDepth: 1000,  bonus: { drillSpeed: 15 } },
         'E3': { name: 'Infinite Reactor',      cost: 4500,     effect: '+3 Power/sec (barely keeps up)',        prereq: 'D3', minDepth: 1000,  bonus: { powerRate: 3 } },
         // Tier F — Scrap
-        'F1': { name: 'Cave Adapted',          cost: 60000,    effect: 'Surface Sample: Spend 500m depth, gain 1 PRP instantly', prereq: 'E1', minDepth: 5000,  bonus: { caveAdapted: true } },
-        'F2': { name: 'Cloning',               cost: 60000,    effect: 'All hands on deck!',                    prereq: 'E2', minDepth: 5000,  bonus: { megaCritChance: 0.10, megaCritMultiplier: 2.5 } },
+        'F1': { name: 'Cave Adapted',          cost: 60000,    effect: 'Activates Surface Sampler',             prereq: 'E1', minDepth: 5000,  bonus: { caveAdapted: true } },
+        'F2': { name: 'Cloning',               cost: 60000,    effect: 'Higher chance of MegaCrits',            prereq: 'E2', minDepth: 5000,  bonus: { megaCritChance: 0.10, megaCritMultiplier: 2.5 } },
         'F3': { name: 'Scrap Refinery',        cost: 60000,    effect: 'Scrap is worth 80 instead of 1',        prereq: 'E3', minDepth: 5000,  bonus: { ScrapValue: 80 } },
         // Tier G — Foundations of Magic
-        'G1': { name: 'Portal to the Unknown', cost: 900000,   effect: 'You find a portal',                     prereq: 'F1', minDepth: 8000,  specialEffect: { depthSet: 10000 } },
-        'G2': { name: 'Magical Enhancements',  cost: 900000,   effect: "It's good you're learning",             prereq: 'F2', minDepth: 8000,  bonus: { oreValueMultiplier: 2.0 } },
-        'G3': { name: 'Protective Barrier',    cost: 900000,   effect: 'With magic we cannot fail',             prereq: 'F3', minDepth: 8000,  bonus: { failureReduction: 0.3, eventResist: 0.25 } },
+        'G1': { name: 'Portal to the Unknown', cost: 900000,   effect: 'You are taken to 10000m',               prereq: 'F1', minDepth: 8000,  specialEffect: { depthSet: 10000 } },
+        'G2': { name: 'Magical Enhancements',  cost: 900000,   effect: "Ores are double the price",             prereq: 'F2', minDepth: 8000,  bonus: { oreValueMultiplier: 2.0 } },
+        'G3': { name: 'Protective Barrier',    cost: 900000,   effect: 'More failure reduction',                prereq: 'F3', minDepth: 8000,  bonus: { failureReduction: 0.3, eventResist: 0.25 } },
         // Tier H — Deep Core Engineering
         'H1': { name: 'Pressure Hull',         cost: 8000000,  effect: 'Halves depth pressure on life support', prereq: 'G1', minDepth: 13000, bonus: { pressureResist: 0.5 } },
         'H2': { name: 'Phase Drill',           cost: 8000000,  effect: 'x2.5 Drill Speed (beats hard rock)',    prereq: 'G2', minDepth: 13000, bonus: { drillSpeedMultiplier: 1.5 } },
-        'H3': { name: 'Autonomous Operations', cost: 8000000,  effect: 'Auto-resupply, auto-repair, auto-cool', prereq: 'G3', minDepth: 13000, bonus: { autoOps: true } },
+        'H3': { name: 'Autonomous Operations', cost: 8000000,  effect: 'automate any 2 systems at once',        prereq: 'G3', minDepth: 13000, bonus: { autoOps: true } },
         // Tier I — Singularity
         'I1': { name: 'Singularity Compressor',cost: 80000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'H1', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
         'I2': { name: 'Chrono Drill',          cost: 80000000, effect: 'x2 more Drill Speed',                   prereq: 'H2', minDepth: 21000, bonus: { drillSpeedMultiplier: 2.0 } },
@@ -444,49 +518,49 @@
                 balanced:  { name: 'Balanced Bit',    desc: 'No bonus, no penalty.',                             bonus: {},                                                                             unlockCost: 0,      unlockDepth: 0    },
                 precision: { name: 'Precision Bit',   desc: '+35% Drill Speed, -20% Ore Value',                  bonus: { drillSpeedMultiplier: 0.35, oreValueMultiplier: -0.20 },                    unlockCost: 30,     unlockDepth: 0    },
                 excavator: { name: 'Excavator Bit',   desc: '+40% Ore Value, -20% Drill Speed',                  bonus: { oreValueMultiplier: 0.40, drillSpeedMultiplier: -0.20 },                    unlockCost: 30,     unlockDepth: 0    },
-                resonator: { name: 'Resonator Bit',   desc: '+60% Drill Speed, -30% Ore Value, +1 Heat/sec',     bonus: { drillSpeedMultiplier: 0.60, oreValueMultiplier: -0.30, heatRateBonus: 1 }, unlockCost: 500,    unlockDepth: 500  },
-                harvester: { name: 'Harvester Bit',   desc: '+60% Ore Value, -25% Drill Speed',                  bonus: { oreValueMultiplier: 0.60, drillSpeedMultiplier: -0.25 },                    unlockCost: 500,    unlockDepth: 500  },
-                voidborer: { name: 'Voidborer Bit',   desc: '+100% Drill Speed, +30% Ore Value, +1.5 Wear/sec', bonus: { drillSpeedMultiplier: 1.00, oreValueMultiplier: 0.30, integrityWearFactor: 1.5 }, unlockCost: 8000, unlockDepth: 2000 },
+                resonator: { name: 'Resonator Bit',   desc: '+60% Drill Speed, -30% Ore Value, +1 Heat/sec',     bonus: { drillSpeedMultiplier: 0.60, oreValueMultiplier: -0.30, heatRateBonus: 1 }, unlockCost: 1000,    unlockDepth: 500  },
+                harvester: { name: 'Harvester Bit',   desc: '+60% Ore Value, -25% Drill Speed',                  bonus: { oreValueMultiplier: 0.60, drillSpeedMultiplier: -0.25 },                    unlockCost: 1000,    unlockDepth: 500  },
+                voidborer: { name: 'Voidborer Bit',   desc: '+100% Drill Speed, +30% Ore Value, +1.5 Wear/sec', bonus: { drillSpeedMultiplier: 1.00, oreValueMultiplier: 0.30, integrityWearFactor: 1.5 }, unlockCost: 10000, unlockDepth: 2500 },
             },
         },
         reactorCore: {
-            name: 'Reactor Core', slotUnlockCost: 300, slotUnlockDepth: 0,
+            name: 'Reactor Core', slotUnlockCost: 300, slotUnlockDepth: 300,
             options: {
-                stable:    { name: 'Stable Core',      desc: 'No bonus, no penalty.',                            bonus: {},                                                                  unlockCost: 0,     unlockDepth: 0    },
-                overdrive: { name: 'Overdrive Core',   desc: '+2.0 Power/sec, +3.0 Heat/sec',                   bonus: { powerRate: 2.0, heatRateBonus: 3.0 },                              unlockCost: 40,    unlockDepth: 0    },
-                cryo:      { name: 'Cryo Core',        desc: '-2.0 Heat/sec, -0.8 Power/sec',                   bonus: { heatRateBonus: -2.0, powerRate: -0.8 },                            unlockCost: 40,    unlockDepth: 200  },
-                fusion:    { name: 'Fusion Core',      desc: '+2.5 Power/sec, +4 Heat/sec',                     bonus: { powerRate: 2.5, heatRateBonus: 4 },                                unlockCost: 600,   unlockDepth: 750  },
-                darkMatter:{ name: 'Dark Matter Core', desc: '+4 Power/sec, -15% Power Consumption, +2.5 Heat/sec', bonus: { powerRate: 4, powerConsumptionFactor: 0.85, heatRateBonus: 2.5 }, unlockCost: 12000, unlockDepth: 3000 },
+                stable:    { name: 'Stable Core',      desc: 'No bonus, no penalty.',                            bonus: {},                                                                  unlockCost: 0,     unlockDepth: 300    },
+                overdrive: { name: 'Overdrive Core',   desc: '+2.0 Power/sec, +3.0 Heat/sec',                   bonus: { powerRate: 2.0, heatRateBonus: 3.0 },                              unlockCost: 400,    unlockDepth: 300    },
+                cryo:      { name: 'Cryo Core',        desc: '-2.0 Heat/sec, -0.8 Power/sec',                   bonus: { heatRateBonus: -2.0, powerRate: -0.8 },                            unlockCost: 650,    unlockDepth: 500  },
+                fusion:    { name: 'Fusion Core',      desc: '+2.5 Power/sec, +4 Heat/sec',                     bonus: { powerRate: 2.5, heatRateBonus: 4 },                                unlockCost: 1200,   unlockDepth: 1000  },
+                darkMatter:{ name: 'Dark Matter Core', desc: '+4 Power/sec, -15% Power Consumption, +2.5 Heat/sec', bonus: { powerRate: 4, powerConsumptionFactor: 0.85, heatRateBonus: 2.5 }, unlockCost: 12500, unlockDepth: 3000 },
             },
         },
         hullPlating: {
-            name: 'Hull Plating', slotUnlockCost: 500, slotUnlockDepth: 100,
+            name: 'Hull Plating', slotUnlockCost: 500, slotUnlockDepth: 600,
             options: {
-                standard:   { name: 'Standard Plating',  desc: 'No bonus, no penalty.',              bonus: {},                                                    unlockCost: 0,     unlockDepth: 0    },
-                reinforced: { name: 'Reinforced Plating', desc: '-40% Bit Wear',                      bonus: { integrityWearFactor: 0.6 },                          unlockCost: 150,   unlockDepth: 0    },
-                adaptive:   { name: 'Adaptive Plating',   desc: '+15% Event Resistance',              bonus: { eventResist: 0.15 },                                 unlockCost: 650,   unlockDepth: 250  },
-                ceramic:    { name: 'Ceramic Plating',    desc: '-30% Heat gain, -10% Drill Speed',   bonus: { heatFactor: 0.7, drillSpeedMultiplier: -0.10 },      unlockCost: 1500,  unlockDepth: 1000 },
-                obsidian:   { name: 'Obsidian Plating',   desc: '-50% Bit Wear, +20% Event Resistance', bonus: { integrityWearFactor: 0.5, eventResist: 0.20 },    unlockCost: 16000, unlockDepth: 4000 },
+                standard:   { name: 'Standard Plating',  desc: 'No bonus, no penalty.',              bonus: {},                                                    unlockCost: 0,     unlockDepth: 600    },
+                reinforced: { name: 'Reinforced Plating', desc: '-40% Bit Wear',                      bonus: { integrityWearFactor: 0.6 },                          unlockCost: 850,   unlockDepth: 600    },
+                adaptive:   { name: 'Adaptive Plating',   desc: '+15% Event Resistance',              bonus: { eventResist: 0.15 },                                 unlockCost: 1200,   unlockDepth: 700  },
+                ceramic:    { name: 'Ceramic Plating',    desc: '-30% Heat gain, -10% Drill Speed',   bonus: { heatFactor: 0.7, drillSpeedMultiplier: -0.10 },      unlockCost: 4000,  unlockDepth: 2000 },
+                obsidian:   { name: 'Obsidian Plating',   desc: '-50% Bit Wear, +20% Event Resistance', bonus: { integrityWearFactor: 0.5, eventResist: 0.20 },    unlockCost: 16000, unlockDepth: 4500 },
             },
         },
         fuelInjector: {
-            name: 'Fuel Injector', slotUnlockCost: 2000, slotUnlockDepth: 500,
+            name: 'Fuel Injector', slotUnlockCost: 2000, slotUnlockDepth: 1000,
             options: {
-                standard:  { name: 'Standard Feed',      desc: 'No bonus, no penalty.',                         bonus: {},                                                              unlockCost: 0,     unlockDepth: 500  },
-                lean:      { name: 'Lean Mix',            desc: '-25% Power Consumption, -15% Drill Speed',      bonus: { powerConsumptionFactor: 0.75, drillSpeedMultiplier: -0.15 },  unlockCost: 500,   unlockDepth: 500  },
-                rich:      { name: 'Rich Mix',            desc: '+20% Drill Speed, +35% Power Consumption',      bonus: { drillSpeedMultiplier: 0.20, powerConsumptionFactor: 1.35 },   unlockCost: 4000,  unlockDepth: 1300 },
-                catalytic: { name: 'Catalytic Injector',  desc: '+1 Power/sec, -20% Power Consumption',          bonus: { powerRate: 1, powerConsumptionFactor: 0.80 },                 unlockCost: 12000, unlockDepth: 3500 },
-                plasma:    { name: 'Plasma Injector',     desc: '+3 Power/sec, +50% Drill Speed, +2 Heat/sec',   bonus: { powerRate: 3, drillSpeedMultiplier: 0.50, heatRateBonus: 2 }, unlockCost: 20000, unlockDepth: 5000 },
+                standard:  { name: 'Standard Feed',      desc: 'No bonus, no penalty.',                         bonus: {},                                                              unlockCost: 0,     unlockDepth: 1000  },
+                lean:      { name: 'Lean Mix',            desc: '-25% Power Consumption, -15% Drill Speed',      bonus: { powerConsumptionFactor: 0.75, drillSpeedMultiplier: -0.15 },  unlockCost: 1200,   unlockDepth: 1000  },
+                rich:      { name: 'Rich Mix',            desc: '+20% Drill Speed, +35% Power Consumption',      bonus: { drillSpeedMultiplier: 0.20, powerConsumptionFactor: 1.35 },   unlockCost: 5000,  unlockDepth: 2500 },
+                catalytic: { name: 'Catalytic Injector',  desc: '+1 Power/sec, -20% Power Consumption',          bonus: { powerRate: 1, powerConsumptionFactor: 0.80 },                 unlockCost: 12000, unlockDepth: 4000 },
+                plasma:    { name: 'Plasma Injector',     desc: '+3 Power/sec, +50% Drill Speed, +2 Heat/sec',   bonus: { powerRate: 3, drillSpeedMultiplier: 0.50, heatRateBonus: 2 }, unlockCost: 20000, unlockDepth: 6500 },
             },
         },
         sensorArray: {
             name: 'Sensor Array', slotUnlockCost: 5000, slotUnlockDepth: 2500,
             options: {
                 basic:    { name: 'Basic Sensors',  desc: 'No bonus, no penalty.',                        bonus: {},                                                   unlockCost: 0,     unlockDepth: 2500 },
-                geo:      { name: 'Geo-Scanner',    desc: '+20% Ore Value (reads the rock strata)',        bonus: { oreValueMultiplier: 0.20 },                         unlockCost: 500,   unlockDepth: 2500 },
-                pressure: { name: 'Pressure Gauge', desc: '+20% Pressure Resistance',                     bonus: { pressureResist: 0.20 },                             unlockCost: 500,   unlockDepth: 4000 },
-                deepScan: { name: 'Deep-Scan Array',desc: '+40% Ore Value, +10% Event Resistance',        bonus: { oreValueMultiplier: 0.40, eventResist: 0.10 },      unlockCost: 3000,  unlockDepth: 5000 },
-                oracle:   { name: 'Oracle Array',   desc: '+80% Ore Value, +25% Pressure Resistance',     bonus: { oreValueMultiplier: 0.80, pressureResist: 0.25 },   unlockCost: 40000, unlockDepth: 7000 },
+                geo:      { name: 'Geo-Scanner',    desc: '+20% Ore Value (reads the rock strata)',        bonus: { oreValueMultiplier: 0.20 },                         unlockCost: 3000,   unlockDepth: 2500 },
+                pressure: { name: 'Pressure Gauge', desc: '+20% Pressure Resistance',                     bonus: { pressureResist: 0.20 },                             unlockCost: 4500,   unlockDepth: 4000 },
+                deepScan: { name: 'Deep-Scan Array',desc: '+40% Ore Value, +10% Event Resistance',        bonus: { oreValueMultiplier: 0.40, eventResist: 0.10 },      unlockCost: 13000,  unlockDepth: 5000 },
+                oracle:   { name: 'Oracle Array',   desc: '+80% Ore Value, +25% Pressure Resistance',     bonus: { oreValueMultiplier: 0.80, pressureResist: 0.25 },   unlockCost: 42000, unlockDepth: 7000 },
             },
         },
         exhaustVent: {
@@ -552,6 +626,21 @@
 
 
     // ============================================================
+    //  AUTOMATION ROUTINES (unlocked by the H3 skill)
+    //  AUTO_SLOTS = how many routines can run at the same time.
+    //  AUTO_COST_MULT = automation charges this much extra ore
+    //  compared to refilling by hand (1.5 = 50% more expensive).
+    // ============================================================
+    const AUTO_SLOTS     = 2;
+    const AUTO_COST_MULT = 1.5;
+    const AUTO_ROUTINES = {
+        power:  { name: 'Auto-Power',  icon: '⚡', desc: 'Refills Power below 25%' },
+        oxygen: { name: 'Auto-Oxygen', icon: '💨', desc: 'Refills Oxygen below 25%' },
+        repair: { name: 'Auto-Repair', icon: '🔧', desc: 'Repairs the bit below 25%' },
+        cool:   { name: 'Auto-Cool',   icon: '❄️', desc: 'Pauses drill at 88% heat, resumes at 30%' },
+    };
+
+    // ============================================================
     //  GLOBAL STATE
     // ============================================================
 
@@ -580,7 +669,10 @@
         unlockedModuleSlots: { drillHead: true, reactorCore: true, hullPlating: true },
         unlockedModuleOptions: { drillHead: { balanced: true }, reactorCore: { stable: true }, hullPlating: { standard: true } },
         // Permanent progression
-        permanentResearchPoints: 0, prpTiers: {},
+        permanentResearchPoints: 0, workshopTiers: {},
+        ascensionOwned: [], totalAscensions: 0, secondWindUsed: false,
+        surfaceSamplesUsed: 0,
+        autoActive: [],
         unlockedSkills: [], mods: {},
         // Internal
         timeSinceLastUIUpdate: 0,
@@ -596,7 +688,8 @@
             'oxygen-bar-text', 'integrity-bar', 'integrity-bar-text', 'temp-bar', 'temp-bar-text',
             'active-effects', 'event-log', 'anomaly-panel', 'drill-button', 'refill-power-button',
             'refill-oxygen-button', 'repair-button', 'pause-button', 'message-box', 'ascend-button',
-            'prp-shop-container', 'module-bay-container', 'skill-tree-container', 'surface-sample-button',
+            'workshop-container', 'module-bay-container', 'skill-tree-container', 'surface-sample-button',
+            'auto-ops-panel', 'ascension-container', 'workshop-ore',
         ];
         ids.forEach(id => ui[id] = document.getElementById(id));
     }
@@ -623,13 +716,13 @@
     function getResourceValue(resource){ return (resource.name === 'Scrap' && gameState.mods.ScrapValue > 0) ? gameState.mods.ScrapValue : resource.value; }
 
     // Cost helpers
-    function getPrpCost(id)        { return Math.ceil(PRP_UPGRADES[id].cost * Math.pow(1.55, gameState.prpTiers[id] || 0)); }
+    function getWorkshopCost(id)   { const u = WORKSHOP_UPGRADES[id]; return Math.ceil(u.cost * Math.pow(u.growth, gameState.workshopTiers[id] || 0)); }
     function getModuleSwapCost()   { return Math.ceil(15 * (1 + getKm() * 1.2)); }
     function getPowerRefillCost()  { return Math.ceil(3 * (1 + getKm() * 0.95)); }
     function getOxygenRefillCost() { return Math.ceil(6 * (1 + getKm() * 0.95)); }
     function getFullRepairCost()   { return Math.ceil(8 * (1 + getKm() * 1.7)); }
     function getRepairCost()       { return Math.max(1, Math.ceil(getFullRepairCost() * (gameState.maxIntegrity - gameState.integrity) / gameState.maxIntegrity)); }
-    function getAscendGain(depth)  { return depth < 500 ? 0 : Math.floor(Math.pow(depth / 500, 0.8)); }
+    function getAscendGain(depth)  { return depth < 500 ? 0 : Math.floor(Math.pow(depth / 500, 0.9)); }
 
     // Rate helpers
     function getEffectMods() {
@@ -670,7 +763,9 @@
     }
     function getEffectiveDrillSpeed() { return getRawDrillSpeed() / getHardness(); }
     function getOreMultiplier() {
-        return gameState.baseOreValue * Math.max(0.1, 1 + gameState.mods.oreValueMultiplier + gameState.depth * gameState.mods.depthValueBonus);
+        const m = gameState.mods;
+        const compound = Math.min(1, gameState.totalAscensions * m.compoundInterest);
+        return gameState.baseOreValue * Math.max(0.1, 1 + m.oreValueMultiplier + gameState.depth * m.depthValueBonus + gameState.maxDepth * m.recordDepthBonus + compound);
     }
 
 
@@ -678,10 +773,14 @@
     //  STATE MANAGEMENT
     // ============================================================
 
+    // Current depth cost of Surface Sample: base cost + increase for every sample already used this run
+    function getSurfaceSampleCost() {
+        return Math.max(100, SURFACE_SAMPLE_BASE_COST + gameState.surfaceSamplesUsed * SURFACE_SAMPLE_COST_INCREASE - gameState.mods.sampleDiscount);
+    }
+
     function initializeGame() {
         const previousPrp    = gameState.permanentResearchPoints || 0;
         const globalMaxDepth = gameState.maxDepth || 0;
-        const savedPrpTiers  = gameState.prpTiers || {};
 
         gameState = {
             ...gameState,
@@ -699,12 +798,27 @@
             unlockedModuleSlots: { drillHead: true, reactorCore: true, hullPlating: true },
             unlockedModuleOptions: { drillHead: { balanced: true }, reactorCore: { stable: true }, hullPlating: { standard: true } },
             mods: {}, unlockedSkills: [], timeSinceLastUIUpdate: 0,
-            permanentResearchPoints: previousPrp, maxDepth: globalMaxDepth, prpTiers: savedPrpTiers,
+            surfaceSamplesUsed: 0, autoActive: [],
+            permanentResearchPoints: previousPrp, maxDepth: globalMaxDepth, workshopTiers: {}, secondWindUsed: false,
         };
 
-        for (const id in PRP_UPGRADES) gameState.prpTiers[id] = gameState.prpTiers[id] || 0;
+        for (const id in WORKSHOP_UPGRADES) gameState.workshopTiers[id] = gameState.workshopTiers[id] || 0;
         applyPermanentBonuses();
         recalculateMods();
+
+        // Ascension perks that shape the START of a run
+        const tiers = 'ABCDEFGHI';
+        if (gameState.mods.startTier > 0) {   // Foundry Memory / Master Blueprints
+            gameState.unlockedSkills = Object.keys(SKILLS).filter(id => tiers.indexOf(id[0]) < gameState.mods.startTier);
+            recalculateMods();
+        }
+        const startDepth = Math.min(1500, Math.floor(gameState.maxDepth * gameState.mods.deepDrop));   // Deep Drop
+        if (startDepth > 0) {
+            gameState.depth = startDepth;
+            gameState.currentLevelResource = getCurrentResource(startDepth).name;
+            gameState.nextAnomalyDepth = startDepth >= ANOMALY_START_DEPTH ? startDepth + ANOMALY_INTERVAL : ANOMALY_START_DEPTH;
+            gameState.message = `Deep Drop: this run begins at ${startDepth}m.`;
+        }
         gameState.power     = gameState.maxPower;
         gameState.oxygen    = gameState.maxOxygen;
         gameState.integrity = gameState.maxIntegrity;
@@ -712,12 +826,12 @@
     }
 
     function applyPermanentBonuses() {
-        const { prpTiers, power, oxygen, integrity } = gameState;
+        const { workshopTiers, power, oxygen, integrity } = gameState;
         gameState.baseDrillSpeed = 1; gameState.maxPower = 100; gameState.maxOxygen = 100; gameState.maxIntegrity = 100;
         gameState.baseOreValue = 1; gameState.baseCritChance = 0; gameState.basePressureResist = 0; gameState.baseCoolingBonus = 0;
-        for (const id in PRP_UPGRADES) {
-            const { stat, value } = PRP_UPGRADES[id];
-            const tier = prpTiers[id] || 0;
+        for (const id in WORKSHOP_UPGRADES) {
+            const { stat, value } = WORKSHOP_UPGRADES[id];
+            const tier = workshopTiers[id] || 0;
             if (tier > 0) gameState[stat] += tier * value;
         }
         gameState.power     = Math.min(power,     gameState.maxPower);
@@ -745,10 +859,13 @@
             heatRateBonus: 0, powerConsumptionFactor: 1, critMultiplier: 1, heatFactor: 1,
             coolingFactor: 1, megaCritMultiplier: 1, drillSpeedMultiplier: 1,
             integrityWearFactor: 1, caveAdapted: false,
+            compoundInterest: 0, anomalyBonus: 0, goldenAge: false, deepDrop: 0, secondWind: false,
+            recordDepthBonus: 0, startTier: 0, sampleBonusPrp: 0, sampleDiscount: 0,
         };
         for (const skillId of gameState.unlockedSkills) {
             if (SKILLS[skillId]?.bonus) applyBonusToMods(SKILLS[skillId].bonus);
         }
+        for (const ascId of gameState.ascensionOwned) applyBonusToMods(ASCENSION_UPGRADES[ascId].bonus);
         for (const slotId in MODULE_SLOTS) {
             if (!gameState.unlockedModuleSlots[slotId]) continue;
             const option = MODULE_SLOTS[slotId].options[gameState.modules[slotId]];
@@ -796,8 +913,10 @@
         handleEvents(dt);
         if (gameState.mods.autoOps) handleAutoOps();
 
-        if (gameState.temperature >= 100) { handleGameOver('Critical overheat');  return; }
-        if (gameState.oxygen      <= 0)   { handleGameOver('Oxygen depletion');   return; }
+        if (gameState.temperature >= 100 || gameState.oxygen <= 0) {
+            if (gameState.mods.secondWind && !gameState.secondWindUsed) triggerSecondWind();
+            else { handleGameOver(gameState.temperature >= 100 ? 'Critical overheat' : 'Oxygen depletion'); return; }
+        }
 
         if (gameState.timeSinceLastUIUpdate >= UI_UPDATE_INTERVAL) {
             updateUI();
@@ -838,6 +957,7 @@
         const previousDepth = gameState.depth;
         gameState.depth    += depthGained;
         gameState.maxDepth  = Math.max(gameState.maxDepth, gameState.depth);
+        if (mods.goldenAge && Math.floor(gameState.depth / 1000) > Math.floor(previousDepth / 1000)) triggerGoldenAge();
 
         let oreMultiplier = getOreMultiplier() * getEffectMods().oreMult;
         if (mods.megaCritChance > 0 && Math.random() < mods.megaCritChance * dt) {
@@ -894,14 +1014,46 @@
     }
 
     function handleAutoOps() {
-        if (gameState.drilling && gameState.temperature >= 88) {
-            gameState.drilling = false; gameState.autoResumeDrill = true; gameState.message = 'Auto-cool engaged. Drill paused.';
-        } else if (!gameState.drilling && gameState.autoResumeDrill && gameState.temperature <= 30 && !gameState.pendingAnomaly) {
-            gameState.drilling = true; gameState.autoResumeDrill = false; gameState.message = 'Auto-cool complete. Drill re-engaged.';
+        const active = gameState.autoActive;
+
+        // Each block only runs if that routine is switched on.
+        if (active.includes('cool')) {
+            if (gameState.drilling && gameState.temperature >= 88) {
+                gameState.drilling = false; gameState.autoResumeDrill = true; gameState.message = 'Auto-cool engaged. Drill paused.';
+            } else if (!gameState.drilling && gameState.autoResumeDrill && gameState.temperature <= 30 && !gameState.pendingAnomaly) {
+                gameState.drilling = true; gameState.autoResumeDrill = false; gameState.message = 'Auto-cool complete. Drill re-engaged.';
+            }
         }
-        if (gameState.oxygen   < gameState.maxOxygen   * 0.25) { const c = Math.ceil(getOxygenRefillCost() * 1.5); if (gameState.ore >= c) { gameState.ore -= c; gameState.oxygen   = gameState.maxOxygen;    } }
-        if (gameState.power    < gameState.maxPower    * 0.25) { const c = Math.ceil(getPowerRefillCost()  * 1.5); if (gameState.ore >= c) { gameState.ore -= c; gameState.power    = gameState.maxPower;     } }
-        if (gameState.integrity< gameState.maxIntegrity* 0.25) { const c = Math.ceil(getRepairCost()       * 1.5); if (gameState.ore >= c) { gameState.ore -= c; gameState.integrity= gameState.maxIntegrity; } }
+        if (active.includes('oxygen') && gameState.oxygen < gameState.maxOxygen * 0.25) {
+            const c = Math.ceil(getOxygenRefillCost() * AUTO_COST_MULT);
+            if (gameState.ore >= c) { gameState.ore -= c; gameState.oxygen = gameState.maxOxygen; gameState.message = `Auto-Oxygen refilled for ${c} Ore.`; }
+        }
+        if (active.includes('power') && gameState.power < gameState.maxPower * 0.25) {
+            const c = Math.ceil(getPowerRefillCost() * AUTO_COST_MULT);
+            if (gameState.ore >= c) { gameState.ore -= c; gameState.power = gameState.maxPower; gameState.message = `Auto-Power refilled for ${c} Ore.`; }
+        }
+        if (active.includes('repair') && gameState.integrity < gameState.maxIntegrity * 0.25) {
+            const c = Math.ceil(getRepairCost() * AUTO_COST_MULT);
+            if (gameState.ore >= c) { gameState.ore -= c; gameState.integrity = gameState.maxIntegrity; gameState.message = `Auto-Repair fixed the bit for ${c} Ore.`; }
+        }
+    }
+
+    // Called when the player clicks one of the routine buttons.
+    function toggleAutoRoutine(id) {
+        if (gameState.gameOver || gameState.isPaused || !gameState.mods.autoOps) return;
+        const active = gameState.autoActive;
+        const i = active.indexOf(id);
+        if (i !== -1) {                                   // already on -> turn it off
+            active.splice(i, 1);
+            if (id === 'cool') gameState.autoResumeDrill = false;   // don't surprise-restart the drill later
+            gameState.message = `${AUTO_ROUTINES[id].name} switched off.`;
+        } else if (active.length >= AUTO_SLOTS) {         // all slots full
+            gameState.message = `All ${AUTO_SLOTS} automation slots are in use. Switch one off first.`;
+        } else {                                          // free slot -> turn it on
+            active.push(id);
+            gameState.message = `${AUTO_ROUTINES[id].name} switched on.`;
+        }
+        updateUI();
     }
 
     function handleGameOver(reason) {
@@ -916,7 +1068,7 @@
     // ============================================================
 
     function getAnomalyOptions() {
-        const perUnit = getOreMultiplier() * getResourceValue(getCurrentResource(gameState.depth));
+        const perUnit = getOreMultiplier() * getResourceValue(getCurrentResource(gameState.depth)) * (1 + gameState.mods.anomalyBonus);
         return [
             {
                 id: 'overclock', label: 'Overclock the Rig',
@@ -1038,36 +1190,72 @@
 
     function surfaceSample() {
         if (gameState.gameOver || gameState.isPaused || !gameState.mods.caveAdapted) return;
-        if (gameState.depth < SURFACE_SAMPLE_DEPTH_COST) {
-            gameState.message = `Surface Sample needs at least ${SURFACE_SAMPLE_DEPTH_COST}m of depth to sacrifice.`;
+        const cost = getSurfaceSampleCost();
+        if (gameState.depth < cost) {
+            gameState.message = `Surface Sample needs at least ${cost}m of depth to sacrifice.`;
             return updateUI();
         }
         const prevDepth = gameState.depth;
         gameState.drilling = false;
-        gameState.depth   -= SURFACE_SAMPLE_DEPTH_COST;
+        gameState.depth   -= cost;
+        gameState.surfaceSamplesUsed++;   // next sample will cost more
         gameState.currentLevelResource = getCurrentResource(gameState.depth).name;
-        gameState.permanentResearchPoints += 1;
-        gameState.message = `Surface Sample: Pulled core samples up ${SURFACE_SAMPLE_DEPTH_COST}m. +1 PRP gained!`;
-        gameState.eventLog.unshift({ text: `${prevDepth.toFixed(0)}m → ${gameState.depth.toFixed(0)}m — Surface Sample: core extracted, +1 PRP.`, bad: false });
+        const gain = 1 + gameState.mods.sampleBonusPrp;
+        gameState.permanentResearchPoints += gain;
+        gameState.message = `Surface Sample: Pulled core samples up ${cost}m. +${gain} PRP gained! Next sample costs ${getSurfaceSampleCost()}m.`;
+        gameState.eventLog.unshift({ text: `${prevDepth.toFixed(0)}m → ${gameState.depth.toFixed(0)}m — Surface Sample: core extracted, +${gain} PRP.`, bad: false });
         if (gameState.eventLog.length > 6) gameState.eventLog.pop();
         updateUI();
     }
 
-    function buyPrpUpgrade(upgradeId) {
+    function buyWorkshopUpgrade(upgradeId) {
         if (gameState.gameOver || gameState.isPaused) return;
-        const upgrade    = PRP_UPGRADES[upgradeId];
-        const currentTier = gameState.prpTiers[upgradeId] || 0;
-        const cost       = getPrpCost(upgradeId);
+        const upgrade     = WORKSHOP_UPGRADES[upgradeId];
+        const currentTier = gameState.workshopTiers[upgradeId] || 0;
+        const cost        = getWorkshopCost(upgradeId);
 
-        if (currentTier >= upgrade.maxTier)                           gameState.message = `${upgrade.name} is already at max tier (${upgrade.maxTier}).`;
-        else if (gameState.permanentResearchPoints < cost)            gameState.message = `Not enough PRP. ${upgrade.name} Tier ${currentTier + 1} costs ${cost}.`;
+        if (currentTier >= upgrade.maxTier)  gameState.message = `${upgrade.name} is already at max tier (${upgrade.maxTier}).`;
+        else if (gameState.ore < cost)       gameState.message = `Not enough Ore. ${upgrade.name} Tier ${currentTier + 1} costs ${fmt(cost)}.`;
         else {
-            gameState.permanentResearchPoints -= cost;
-            gameState.prpTiers[upgradeId]++;
+            gameState.ore -= cost;
+            gameState.workshopTiers[upgradeId]++;
             applyPermanentBonuses(); recalculateMods();
-            gameState.message = `${upgrade.name} upgraded to Tier ${gameState.prpTiers[upgradeId]}.`;
+            gameState.message = `${upgrade.name} upgraded to Tier ${gameState.workshopTiers[upgradeId]}.`;
         }
         updateUI();
+    }
+
+    // --- Ascension: buying perks and their special effects ---
+    function buyAscension(id) {
+        if (gameState.gameOver || gameState.isPaused) return;
+        const u = ASCENSION_UPGRADES[id];
+        if (gameState.ascensionOwned.includes(id)) return;
+        if (u.prereq && !gameState.ascensionOwned.includes(u.prereq)) gameState.message = `${u.name} requires ${ASCENSION_UPGRADES[u.prereq].name} first.`;
+        else if (gameState.permanentResearchPoints < u.cost)           gameState.message = `Not enough PRP. ${u.name} costs ${u.cost}.`;
+        else {
+            gameState.permanentResearchPoints -= u.cost;
+            gameState.ascensionOwned.push(id);
+            recalculateMods();
+            gameState.message = `Ascension perk unlocked: ${u.name}!`;
+        }
+        updateUI();
+    }
+
+    // Golden Age: a free, temporary x3 Ore effect (reuses the activeEffects system)
+    function triggerGoldenAge() {
+        gameState.activeEffects = gameState.activeEffects.filter(e => e.id !== 'golden');
+        gameState.activeEffects.push({ id: 'golden', name: 'Golden Age', bad: false, remaining: 15, effect: { oreMult: 3 } });
+        gameState.message = `GOLDEN AGE! ${Math.floor(gameState.depth / 1000) * 1000}m reached. Triple ore for 15s.`;
+    }
+
+    // Second Wind: rescue the run once instead of ending it
+    function triggerSecondWind() {
+        gameState.secondWindUsed = true;
+        gameState.oxygen      = Math.max(gameState.oxygen, gameState.maxOxygen * 0.5);
+        gameState.temperature = Math.min(gameState.temperature, 40);
+        gameState.message = 'SECOND WIND! The ascension echo saved your run. Oxygen restored and heat vented.';
+        gameState.eventLog.unshift({ text: `${gameState.depth.toFixed(0)}m — Second Wind saved the run.`, bad: false });
+        if (gameState.eventLog.length > 6) gameState.eventLog.pop();
     }
 
     function buySkill(skillId) {
@@ -1144,11 +1332,40 @@
 
     function restartGame() { initializeGame(); startGameLoop(); }
 
+    // Step 1: player clicks Ascend. Pause the game and show the popup.
+    function requestAscend() {
+        if (gameState.gameOver || gameState.isPaused) return;
+        const prpGained = getAscendGain(gameState.depth);
+        if (prpGained <= 0) { gameState.message = 'You must reach at least 500m to ascend.'; return updateUI(); }
+        gameState.isPaused = true;   // the game loop stops while this is true
+        document.getElementById('ascend-confirm-text').innerText =
+            `You are at ${gameState.depth.toFixed(0)}m. Ascending gives you ${prpGained} PRP, but resets your current run. Are you sure?`;
+        document.getElementById('ascend-confirm-overlay').classList.add('open');
+        updateUI();
+    }
+
+    // Step 2a: player says Cancel. Hide the popup and un-pause.
+    function cancelAscend() {
+        document.getElementById('ascend-confirm-overlay').classList.remove('open');
+        gameState.isPaused = false;
+        gameState.message  = 'Ascend cancelled. Game resumed.';
+        startGameLoop();             // restart the loop that stopped when we paused
+        updateUI();
+    }
+
+    // Step 2b: player says Yes. Hide the popup, un-pause, then ascend for real.
+    function confirmAscend() {
+        document.getElementById('ascend-confirm-overlay').classList.remove('open');
+        gameState.isPaused = false;
+        ascendGame();
+    }
+
     function ascendGame() {
         if (gameState.gameOver || gameState.isPaused) return;
         const prpGained = getAscendGain(gameState.depth);
         if (prpGained <= 0) { gameState.message = 'You must reach at least 500m to ascend.'; return updateUI(); }
         gameState.permanentResearchPoints += prpGained;
+        gameState.totalAscensions++;
         initializeGame(); startGameLoop();
     }
 
@@ -1162,6 +1379,7 @@
 
         // Stats panel
         ui['ore-count'].innerText   = `${fmt(gameState.ore)} Ore`;
+        ui['workshop-ore'].innerText = `You have ${fmt(gameState.ore)} Ore`;
         ui['depth-count'].innerText = `${gameState.depth.toFixed(1)}m`;
         ui['resource-type'].innerText = gameState.currentLevelResource;
         const curRes   = getCurrentResource(gameState.depth);
@@ -1238,6 +1456,7 @@
         renderEffects();
         renderEventLog();
         renderAnomaly();
+        renderAutoOps();
 
         // Control buttons
         ui['drill-button'].innerText = gameState.pendingAnomaly ? 'Resolve anomaly first' : (gameState.drilling ? 'Stop drill' : 'Start drill');
@@ -1278,8 +1497,8 @@
         if (ssBtn) {
             if (gameState.mods.caveAdapted) {
                 ssBtn.classList.remove('hidden');
-                const canSample = gameState.depth >= SURFACE_SAMPLE_DEPTH_COST && !gameState.gameOver && !gameState.isPaused;
-                ssBtn.innerText  = `Surface Sample (-${SURFACE_SAMPLE_DEPTH_COST}m → +1 PRP)`;
+                const canSample = gameState.depth >= getSurfaceSampleCost() && !gameState.gameOver && !gameState.isPaused;
+                ssBtn.innerText  = `Surface Sample (-${getSurfaceSampleCost()}m → +${1 + gameState.mods.sampleBonusPrp} PRP)`;
                 ssBtn.disabled   = !canSample;
                 ssBtn.className  = canSample
                     ? 'px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-500 text-white font-bold shadow-md transition duration-150'
@@ -1289,9 +1508,45 @@
             }
         }
 
-        refreshPrpShop();
+        refreshWorkshop();
+        refreshAscension();
         refreshSkillTree();
         refreshModuleBay();
+    }
+
+    // Only rebuild the buttons when something actually changed,
+    // otherwise a click could get lost when the panel redraws mid-press.
+    let _lastAutoKey = null;
+    function renderAutoOps() {
+        const panel = ui['auto-ops-panel'];
+        if (!gameState.mods.autoOps) {
+            if (_lastAutoKey !== null) { panel.classList.add('hidden'); panel.innerHTML = ''; _lastAutoKey = null; }
+            return;
+        }
+        const active = gameState.autoActive;
+        const key = active.join(',');
+        if (key === _lastAutoKey) return;
+        _lastAutoKey = key;
+
+        panel.classList.remove('hidden');
+        const full = active.length >= AUTO_SLOTS;
+        const buttons = Object.keys(AUTO_ROUTINES).map(id => {
+            const r = AUTO_ROUTINES[id];
+            const on = active.includes(id);
+            const cls = on
+                ? 'bg-sky-700 border-sky-300 text-white'
+                : (full ? 'bg-gray-800 border-gray-700 text-gray-500' : 'bg-gray-800 hover:bg-gray-700 border-gray-600 text-gray-200');
+            return `<button onclick="toggleAutoRoutine('${id}')" class="text-left p-3 rounded-lg border transition duration-150 ${cls}">
+                <div class="font-bold">${r.icon} ${r.name} <span class="text-xs font-semibold">${on ? '· ON' : '· OFF'}</span></div>
+                <div class="text-xs opacity-80 mt-1">${r.desc}</div>
+            </button>`;
+        }).join('');
+        panel.innerHTML = `
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-bold text-sky-300">Autonomous Operations</h3>
+                <span class="text-sm text-gray-400">Slots: ${active.length}/${AUTO_SLOTS} · refills cost ${AUTO_COST_MULT}x Ore</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${buttons}</div>`;
     }
 
     function renderEffects() {
@@ -1461,18 +1716,18 @@
         }
     }
 
-    // PRP Shop — build once, update each tick
-    const prpNodes = {};
-    function buildPrpShop() {
-        const shopContainer = ui['prp-shop-container'];
+    // Workshop — build once, update each tick
+    const workshopNodes = {};
+    function buildWorkshop() {
+        const shopContainer = ui['workshop-container'];
         if (!shopContainer || shopContainer.childElementCount) return;
-        for (const id in PRP_UPGRADES) {
-            const upgrade = PRP_UPGRADES[id];
+        for (const id in WORKSHOP_UPGRADES) {
+            const upgrade = WORKSHOP_UPGRADES[id];
             const card    = document.createElement('div');
             card.className = 'bg-gray-800 p-4 rounded-xl shadow-inner flex flex-col justify-between border border-gray-700';
             card.innerHTML = `
                 <div>
-                    <h4 class="text-lg font-bold text-purple-300">${upgrade.name}</h4>
+                    <h4 class="text-lg font-bold text-yellow-300">${upgrade.name}</h4>
                     <p class="prp-tier    text-sm text-gray-300 mt-1"></p>
                     <p class="prp-current text-sm text-gray-400"></p>
                 </div>
@@ -1482,9 +1737,9 @@
                 </div>`;
             const button = card.querySelector('.prp-btn');
             button.dataset.baseClass = button.className;
-            button.addEventListener('click', () => buyPrpUpgrade(id));
+            button.addEventListener('click', () => buyWorkshopUpgrade(id));
             shopContainer.appendChild(card);
-            prpNodes[id] = {
+            workshopNodes[id] = {
                 tier:    card.querySelector('.prp-tier'),
                 current: card.querySelector('.prp-current'),
                 next:    card.querySelector('.prp-next'),
@@ -1493,15 +1748,15 @@
         }
     }
 
-    function refreshPrpShop() {
-        for (const id in PRP_UPGRADES) {
-            const nodes = prpNodes[id];
+    function refreshWorkshop() {
+        for (const id in WORKSHOP_UPGRADES) {
+            const nodes = workshopNodes[id];
             if (!nodes) continue;
-            const upgrade    = PRP_UPGRADES[id];
-            const currentTier = gameState.prpTiers[id] || 0;
-            const cost       = getPrpCost(id);
+            const upgrade    = WORKSHOP_UPGRADES[id];
+            const currentTier = gameState.workshopTiers[id] || 0;
+            const cost       = getWorkshopCost(id);
             const isMax      = currentTier >= upgrade.maxTier;
-            const canAfford  = gameState.permanentResearchPoints >= cost;
+            const canAfford  = gameState.ore >= cost;
 
             nodes.tier.textContent    = `Tier ${currentTier} of ${upgrade.maxTier}`;
             nodes.current.textContent = `Current: ${typeof gameState[upgrade.stat] === 'number' ? gameState[upgrade.stat].toFixed(2) : 'N/A'}`;
@@ -1509,10 +1764,59 @@
 
             let state, label;
             if (isMax)           { state = 'bg-gray-600 opacity-90 cursor-default';               label = 'Maxed out'; }
-            else if (gameState.isPaused) { state = 'bg-blue-900 opacity-50 cursor-not-allowed';  label = 'Research (paused)'; }
-            else if (canAfford)  { state = 'bg-purple-700 hover:bg-purple-500 cursor-pointer hover:scale-[1.02]'; label = `Research (${cost} PRP)`; }
-            else                 { state = 'bg-red-800 opacity-70 cursor-not-allowed';            label = `Research (needs ${cost} PRP)`; }
+            else if (gameState.isPaused) { state = 'bg-blue-900 opacity-50 cursor-not-allowed';  label = 'Upgrade (paused)'; }
+            else if (canAfford)  { state = 'bg-yellow-700 hover:bg-yellow-600 cursor-pointer hover:scale-[1.02]'; label = `Upgrade (${fmt(cost)} Ore)`; }
+            else                 { state = 'bg-red-800 opacity-70 cursor-not-allowed';            label = `Upgrade (needs ${fmt(cost)} Ore)`; }
             setButtonState(nodes.button, state, label, isMax || gameState.isPaused || !canAfford);
+        }
+    }
+
+    // Ascension tree — build once, update each tick
+    const ascNodes = {};
+    function buildAscension() {
+        const container = ui['ascension-container'];
+        if (!container || container.childElementCount) return;
+        for (const branch in ASC_BRANCHES) {
+            const info = ASC_BRANCHES[branch];
+            const column = document.createElement('div');
+            column.className = `bg-gray-800 p-4 rounded-xl border border-${info.color}-700 flex flex-col gap-3`;
+            column.innerHTML = `<div class="text-center border-b border-gray-700 pb-2">
+                <h3 class="text-xl font-bold text-${info.color}-300">${info.icon} Path of the ${branch}</h3>
+                <p class="text-xs text-gray-400">${info.blurb}</p></div>`;
+            for (const id in ASCENSION_UPGRADES) {
+                const u = ASCENSION_UPGRADES[id];
+                if (u.branch !== branch) continue;
+                const card = document.createElement('div');
+                card.innerHTML = `<button class="w-full p-3 rounded-lg text-left text-white shadow-md transition duration-150">
+                    <span class="block font-bold">${u.name}</span>
+                    <span class="block text-sm font-light">${u.effect}</span>
+                    <span class="asc-status block mt-1 text-xs"></span></button>`;
+                const button = card.querySelector('button');
+                button.dataset.baseClass = button.className;
+                button.addEventListener('click', () => buyAscension(id));
+                column.appendChild(card);
+                ascNodes[id] = { button, status: card.querySelector('.asc-status') };
+            }
+            container.appendChild(column);
+        }
+    }
+
+    function refreshAscension() {
+        for (const id in ASCENSION_UPGRADES) {
+            const nodes = ascNodes[id];
+            if (!nodes) continue;
+            const u         = ASCENSION_UPGRADES[id];
+            const owned     = gameState.ascensionOwned.includes(id);
+            const prereqMet = !u.prereq || gameState.ascensionOwned.includes(u.prereq);
+            const canAfford = gameState.permanentResearchPoints >= u.cost;
+            let state, status, blocked = true;
+            if (owned)           { state = 'bg-purple-800 border-2 border-purple-400 cursor-default'; status = 'Ascended'; }
+            else if (!prereqMet) { state = 'bg-gray-700 cursor-not-allowed'; status = `Cost: ${u.cost} PRP<br><span class="text-red-300">Requires ${ASCENSION_UPGRADES[u.prereq].name}</span>`; }
+            else if (!canAfford) { state = 'bg-red-900 opacity-70 cursor-not-allowed'; status = `Cost: ${u.cost} PRP`; }
+            else                 { state = 'bg-purple-700 hover:bg-purple-500 cursor-pointer hover:scale-[1.02]'; status = `Cost: ${u.cost} PRP`; blocked = false; }
+            if (gameState.isPaused && !owned) { state += ' opacity-50'; blocked = true; }
+            nodes.status.innerHTML = status;
+            setButtonState(nodes.button, state, null, blocked);
         }
     }
 
@@ -1597,19 +1901,20 @@
     //  MODULE BAY SIDEBAR
     // ============================================================
 
-    function openSidebar() {
-        document.getElementById('module-sidebar').classList.add('open');
+    // Every slide-out panel has the class "side-panel". Only one can be open at a time.
+    function openPanel(panelId) {
+        document.querySelectorAll('.side-panel').forEach(p => p.classList.toggle('open', p.id === panelId));
         document.getElementById('sidebar-overlay').classList.add('open');
         document.body.classList.add('sidebar-open');
-        refreshModuleBay();
+        if (panelId === 'module-sidebar') refreshModuleBay();
     }
     function closeSidebar() {
-        document.getElementById('module-sidebar').classList.remove('open');
+        document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('open'));
         document.getElementById('sidebar-overlay').classList.remove('open');
         document.body.classList.remove('sidebar-open');
     }
-    function toggleSidebar() {
-        document.getElementById('module-sidebar').classList.contains('open') ? closeSidebar() : openSidebar();
+    function togglePanel(panelId) {
+        document.getElementById(panelId).classList.contains('open') ? closeSidebar() : openPanel(panelId);
     }
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
 
@@ -1694,7 +1999,7 @@
     }
 
     function devMaxOut() {
-        gameState.ore         += 999999;
+        gameState.ore         += 999999999;
         gameState.power        = gameState.maxPower;
         gameState.oxygen       = gameState.maxOxygen;
         gameState.integrity    = gameState.maxIntegrity;
@@ -1712,7 +2017,8 @@
 
     window.onload = function () {
         cacheUIElements();
-        buildPrpShop();
+        buildWorkshop();
+        buildAscension();
         buildSkillTree();
         buildPatchNotesModal();
         initializeGame();
