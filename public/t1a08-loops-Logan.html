@@ -33,6 +33,8 @@ weird number: <input id="myWeird" type=number value="2" ><br>
   let myMax = parseInt(document.getElementById('myNum01').value)
 
   for (let myLoop = 0; myLoop < myMax; myLoop++){
+    if (myLoop % 2 == 0){
+      myTemp += 'Even Number,'
   }
   document.getElementById('myDiv01').innerHTML = myTemp
   }">
