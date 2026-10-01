@@ -7,11 +7,12 @@
     b { color: blue; }
   </style>
   <script>
+      let myNum = 3;
+      let myString = ' Hello ';
+      let myFloat = 17.5;
+      let myBool = true;
+    
     function sayHello() {
-      myNum = 3;
-      myString = ' Hello ';
-      myFloat = 17.5;
-      myBool = true;
       myOut = document.getElementById('myDiv01');
       myOut.innerHTML = myNum + myString + myFloat + ', ' + myBool
       if (myBool) {myOut.innerHTML += ', WOW';}
@@ -21,7 +22,10 @@
 
 <body>
 
-  <button onclick=document.getElementById('myBool').innerHTML = false; >Make False</button><br>
+  <button onclick="myBool = false">Make False</button><br>
+  <button onclick="myNum = 10">Make Ten</button><br>
+  <button onclick="myString = ' Bye ' ">Make See ya later</button><br>
+  <button onclick="myFloat = 13.5">Make 13.5</button><br>
   
   <p>This is <b>bold</b> text.</p>
   <button onclick="sayHello()">Display Values</button>
