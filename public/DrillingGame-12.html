@@ -346,7 +346,7 @@
     const PATCH_NOTES = [
         
         {
-            version: 'v1.2', date: '2026-09-29',
+            version: 'v1.2', date: '2026-10-01',
             changes: [
                 'Reworked F1 "Cave Adapted": now unlocks the Surface Sample ability instead of teleporting you to 1000m.',
 				'Reworked Autonomous Operations - choose two systems to automate at a time',
@@ -430,14 +430,14 @@
     // Workshop: tiered upgrades bought with ORE. They reset every run.
     // cost = price of tier 1, growth = how much the price multiplies per tier.
     const WORKSHOP_UPGRADES = {
-        'W_DS': { id: 'W_DS', name: 'Drill Efficiency',      cost: 25,  growth: 1.55, effect: '+0.5 Base Drill Speed',   stat: 'baseDrillSpeed',     value: 0.5,  maxTier: 12 },
-        'W_CC': { id: 'W_CC', name: 'Critical Upgrades',     cost: 40,  growth: 1.60, effect: '+1% Critical chance',     stat: 'baseCritChance',     value: 0.01, maxTier: 10 },
-        'W_MP': { id: 'W_MP', name: 'Reactor Capacity',      cost: 40,  growth: 1.70, effect: '+25 Max Power',           stat: 'maxPower',           value: 25,   maxTier: 8  },
-        'W_MO': { id: 'W_MO', name: 'Life Support Capacity', cost: 40,  growth: 1.70, effect: '+25 Max Oxygen',          stat: 'maxOxygen',          value: 25,   maxTier: 8  },
-        'W_OV': { id: 'W_OV', name: 'Ore Magnets',           cost: 120, growth: 1.90, effect: '+0.25 Base Ore Value',    stat: 'baseOreValue',       value: 0.25, maxTier: 10 },
-        'W_IN': { id: 'W_IN', name: 'Reinforced Bit',        cost: 50,  growth: 1.80, effect: '+25 Max Drill Integrity', stat: 'maxIntegrity',       value: 25,   maxTier: 6  },
-        'W_PR': { id: 'W_PR', name: 'Pressure Plating',      cost: 300, growth: 2.00, effect: '+5% Pressure Resistance', stat: 'basePressureResist', value: 0.05, maxTier: 6  },
-        'W_CL': { id: 'W_CL', name: 'Coolant Reserves',      cost: 150, growth: 1.90, effect: '+0.35 Cooling / sec',     stat: 'baseCoolingBonus',   value: 0.35, maxTier: 6  },
+        'W_DS': { id: 'W_DS', name: 'Drill Efficiency',      cost: 100,  growth: 1.55, effect: '+0.5 Base Drill Speed',   stat: 'baseDrillSpeed',     value: 0.5,  maxTier: 12 },
+        'W_CC': { id: 'W_CC', name: 'Critical Upgrades',     cost: 140,  growth: 1.60, effect: '+1% Critical chance',     stat: 'baseCritChance',     value: 0.01, maxTier: 10 },
+        'W_MP': { id: 'W_MP', name: 'Reactor Capacity',      cost: 250,  growth: 1.70, effect: '+25 Max Power',           stat: 'maxPower',           value: 25,   maxTier: 8  },
+        'W_MO': { id: 'W_MO', name: 'Life Support Capacity', cost: 250,  growth: 1.70, effect: '+25 Max Oxygen',          stat: 'maxOxygen',          value: 25,   maxTier: 8  },
+        'W_IN': { id: 'W_IN', name: 'Reinforced Bit',        cost: 375,  growth: 1.80, effect: '+25 Max Drill Integrity', stat: 'maxIntegrity',       value: 25,   maxTier: 6  },
+		'W_OV': { id: 'W_OV', name: 'Ore Magnets',           cost: 500, growth: 1.90, effect: '+0.25 Base Ore Value',    stat: 'baseOreValue',       value: 0.25, maxTier: 10 },
+        'W_CL': { id: 'W_CL', name: 'Coolant Reserves',      cost: 550, growth: 2.00, effect: '+0.35 Cooling / sec',     stat: 'baseCoolingBonus',   value: 0.35, maxTier: 6  },
+		'W_PR': { id: 'W_PR', name: 'Pressure Plating',      cost: 700, growth: 3.50, effect: '+5% Pressure Resistance', stat: 'basePressureResist', value: 0.05, maxTier: 6  },
     };
 
     // Ascension tree: one-time perks bought with PRP. They last forever.
@@ -448,16 +448,16 @@
         Engineer: { icon: '⚙️', color: 'orange', blurb: 'Skip the slow start of every run.' },
     };
     const ASCENSION_UPGRADES = {
-        FOR1: { branch: 'Fortune',  name: 'Compound Interest',  cost: 3,  prereq: null,   effect: '+2% Ore Value for every time you have ascended (max +100%)', bonus: { compoundInterest: 0.02 } },
-        FOR2: { branch: 'Fortune',  name: "Prospector's Eye",   cost: 8,  prereq: 'FOR1', effect: 'Anomaly ore rewards are doubled',                            bonus: { anomalyBonus: 1 } },
-        FOR3: { branch: 'Fortune',  name: 'Golden Age',         cost: 25, prereq: 'FOR2', effect: 'Every 1000m you drill triggers 15s of x3 Ore',               bonus: { goldenAge: true } },
-        VOY1: { branch: 'Voyager',  name: 'Deep Drop',          cost: 3,  prereq: null,   effect: 'Each new run starts at 10% of your record depth (max 1500m)', bonus: { deepDrop: 0.10 } },
-        VOY2: { branch: 'Voyager',  name: 'Second Wind',        cost: 10, prereq: 'VOY1', effect: 'Once per run, a fatal overheat or suffocation is cancelled', bonus: { secondWind: true } },
-        VOY3: { branch: 'Voyager',  name: 'Abyssal Attunement', cost: 20, prereq: 'VOY2', effect: '+1% Ore Value per 500m of your record depth',                bonus: { recordDepthBonus: 0.00002 } },
-        ENG1: { branch: 'Engineer', name: 'Foundry Memory',     cost: 3,  prereq: null,   effect: 'Each new run starts with all Tier 1 skills installed',       bonus: { startTier: 1 } },
-        ENG2: { branch: 'Engineer', name: 'Core Resonance',     cost: 10, prereq: 'ENG1', effect: 'Surface Sample gives +1 PRP and costs 200m less',            bonus: { sampleBonusPrp: 1, sampleDiscount: 200 } },
-        ENG3: { branch: 'Engineer', name: 'Master Blueprints',  cost: 25, prereq: 'ENG2', effect: 'Each new run starts with Tier 1, 2 and 3 skills installed',  bonus: { startTier: 2 } },
-    };
+        FOR1: { branch: 'Fortune',  name: 'Compound Interest',  cost: 1,  prereq: null,   effect: '+2% Ore Value for every time you have ascended (max +100%)', bonus: { compoundInterest: 0.02 } },
+        FOR2: { branch: 'Fortune',  name: "Prospector's Eye",   cost: 10,  prereq: 'FOR1', effect: 'Anomaly ore rewards are doubled',                            bonus: { anomalyBonus: 1 } },
+        FOR3: { branch: 'Fortune',  name: 'Golden Age',         cost: 20, prereq: 'FOR2', effect: 'Every 1000m you drill triggers 15s of x3 Ore',               bonus: { goldenAge: true } },
+        VOY1: { branch: 'Voyager',  name: 'Deep Drop',          cost: 1,  prereq: null,   effect: 'Each new run starts at 10% of your record depth (max 1500m)', bonus: { deepDrop: 0.10 } },
+        VOY2: { branch: 'Voyager',  name: 'Second Wind',        cost: 12, prereq: 'VOY1', effect: 'Once per run, a fatal overheat or suffocation is cancelled', bonus: { secondWind: true } },
+        VOY3: { branch: 'Voyager',  name: 'Abyssal Attunement', cost: 24, prereq: 'VOY2', effect: '+1% Ore Value per 500m of your record depth',                bonus: { recordDepthBonus: 0.00002 } },
+        ENG1: { branch: 'Engineer', name: 'Foundry Memory',     cost: 1,  prereq: null,   effect: 'Each new run starts with all Tier 1 skills installed',       bonus: { startTier: 1 } },
+        ENG2: { branch: 'Engineer', name: 'Core Resonance',     cost: 8, prereq: 'ENG1', effect: 'Surface Sample gives +1 PRP and costs 200m less',            bonus: { sampleBonusPrp: 1, sampleDiscount: 200 } },
+        ENG3: { branch: 'Engineer', name: 'Master Blueprints',  cost: 26, prereq: 'ENG2', effect: 'Each new run starts with Tier 1, 2 and 3 skills installed',  bonus: { startTier: 2 } },
+    }
 
     const SKILLS = {
         // Tier A — Foundation
