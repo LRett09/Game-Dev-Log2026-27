@@ -13,6 +13,10 @@
     let myReply = myIn01 + ' + 10 = ' + mySum
     return myReply
   }
+
+  function myReset() {
+    let myIn01 = 3
+  }
   
 </script>
 
@@ -32,10 +36,16 @@ Functions are used to sensibly organize code. They are "Called" elsewhere. Infor
   document.getElementById('myDiv01').innerHTML = myOtherFunction()
   }"><br>
 
-<div id="myDiv01">...</div>
+<div id="myDiv01">...</div><br>
 
-You can call functions from multiple different places like the first button and this button here both call the same function:
+You can call functions from multiple different places like the first button and this button here both call the same function: <br>
 
 <input type=button value="Function Example" onClick="{
   document.getElementById('myDiv01').innerHTML = myExampleFunction()
+  }">
+
+More example functions: <br>
+
+<input type=button value="Reset Value" onClick="{
+  document.getElementById('myIn01').value = myReset()
   }">
