@@ -30,6 +30,12 @@ Functions are used to sensibly organize code. They are "Called" elsewhere. Infor
 
 <input type=button value="Add 10" onClick="{
   document.getElementById('myDiv01').innerHTML = myOtherFunction()
-  }">
+  }"><br>
 
-  <div id="myDiv01">...</div>
+<div id="myDiv01">...</div>
+
+You can call functions from multiple different places like the first button and this button here both call the same function:
+
+<input type=button value="Function Example" onClick="{
+  document.getElementById('myDiv01').innerHTML = myExampleFunction()
+  }">
