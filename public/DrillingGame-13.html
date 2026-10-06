@@ -125,6 +125,20 @@
             padding: 1.5rem; text-align: center;
             box-shadow: 0 25px 60px rgba(0,0,0,0.6);
         }
+
+        /* --- SHOP SCREEN --- */
+        #shop-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1200; align-items: center; justify-content: center;
+        }
+        #shop-overlay.open { display: flex; }
+        #shop-modal {
+            background-color: #111827; border: 2px solid #059669;
+            border-radius: 12px; width: 760px; max-width: 95vw; max-height: 92vh;
+            overflow-y: auto; padding: 1.5rem;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen">
@@ -136,7 +150,7 @@
 
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-2">
-            <h1 class="text-4xl font-bold text-yellow-500">The Deep Mine Version 1.3: WIP </h1>
+            <h1 class="text-4xl font-bold text-yellow-500">The Deep Mine Version 1.3: Merchants of the Mine </h1>
             <div class="flex gap-2">
                 <button onclick="openPatchNotes()" class="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm font-semibold transition duration-150 border border-gray-600">
                     📋 Patch Notes
@@ -273,7 +287,7 @@
             <h2 class="text-2xl font-bold text-yellow-400">🔨 Workshop</h2>
             <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
         </div>
-        <p class="text-sm text-gray-400 mb-2">Stackable upgrades bought with Ore. The only way to raise your max Power, Oxygen and Integrity. They reset when you ascend.</p>
+        <p class="text-sm text-gray-400 mb-2">Your stackable upgrades. They can only be bought from shops you come across while drilling, and they reset when you ascend.</p>
         <p id="workshop-ore" class="text-lg font-bold text-yellow-500 mb-4">0.0 Ore</p>
         <div id="workshop-container" class="flex flex-col gap-4"></div>
     </div>
@@ -292,6 +306,26 @@
                 <button onclick="closePatchNotes()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
             </div>
             <div id="patch-notes-body" class="modal-body"></div>
+        </div>
+    </div>
+
+
+    <!-- ============================
+         SHOP SCREEN
+         Opens by itself every so often while drilling (see openShop in the script).
+         The game loop is stopped while it is open, so nothing drains.
+         ============================ -->
+    <div id="shop-overlay">
+        <div id="shop-modal">
+            <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-3">
+                <h2 class="text-2xl font-bold text-emerald-400">🏪 Wandering Shop</h2>
+                <p id="shop-ore" class="text-lg font-bold text-yellow-500"></p>
+            </div>
+            <p class="text-sm text-gray-400 mb-1">You have come across a shop deep in the rock. Power, oxygen, heat and every timer are frozen while you are here.</p>
+            <p class="text-sm text-gray-400 mb-3">Each item can be bought once, and the shop is gone for good when you leave. Choose carefully!</p>
+            <p id="shop-message" class="text-sm font-semibold text-amber-300 mb-3 min-h-[1.25rem]"></p>
+            <div id="shop-items" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5"></div>
+            <button onclick="leaveShop()" class="w-full px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-500 text-white font-bold shadow-md transition duration-150">Leave shop and keep drilling</button>
         </div>
     </div>
 
@@ -327,6 +361,7 @@
         <div class="dev-row"><label>Heat %</label>    <input type="number" id="dev-heat"      placeholder="e.g. 0"     min="0" max="99"></div>
         <button class="dev-apply-btn" onclick="devApply()">✔ Apply Changes</button>
         <button class="dev-apply-btn" style="background:#065f46" onclick="devMaxOut()">⚡ Max Out Resources</button>
+        <button class="dev-apply-btn" style="background:#b45309" onclick="devOpenShop()">🏪 Open Shop Now</button>
     </div>
 
 
@@ -342,13 +377,14 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.3', date: '2026-10-01',
+			version: 'v1.3', date: '2026-10-06',
 			changes: [
-				'All of these are planned and not confirmed.',
-				'Removing Anomoly system',
-				'Removing ability to buy modules and workshop upgrades whenever',
-				'Adding a shop event where you can buy a random assortment of modules or upgrades',
-				'Adding ability to choose between good events',
+				'Update is WIP',
+				'Shops now appear every so often while drilling and sell a random mix of workshop upgrades and modules.',
+				'Power, oxygen, heat and all timers are frozen while you are in a shop.',
+				'Workshop upgrades and new modules can only be bought in shops. The Module Bay still lets you swap between modules you own.',
+				'Removed Anomoly system',
+				'Removed ability to buy modules and workshop upgrades whenever',
 				]
 				},
         {
@@ -426,6 +462,13 @@
     const EVENT_BASE_INTERVAL   = 50;
     const EVENT_INTERVAL_SCALE  = 0.13;
     const EVENT_MIN_INTERVAL    = 11;
+
+    // Shops
+    // The gap to the next shop = SHOP_BASE_INTERVAL + (current depth x SHOP_DEPTH_SCALE),
+    // then randomised between 70% and 130%. So shops are close together early and spread out deeper.
+    const SHOP_BASE_INTERVAL = 200;   // metres between shops at the surface
+    const SHOP_DEPTH_SCALE   = 0.12;  // extra gap per metre of depth
+    const SHOP_ITEM_COUNT    = 4;     // how many items each shop sells
 
 
     // ============================================================
@@ -777,6 +820,7 @@
             unlockedModuleOptions: { drillHead: { balanced: true }, reactorCore: { stable: true }, hullPlating: { standard: true } },
             mods: {}, unlockedSkills: [], timeSinceLastUIUpdate: 0,
             surfaceSamplesUsed: 0, autoActive: [], autoResumeDrill: false,
+            inShop: false, shopStock: [], shopWasDrilling: false, nextShopDepth: 0,
             permanentResearchPoints: previousPrp, maxDepth: globalMaxDepth, workshopTiers: {}, secondWindUsed: false,
         };
 
@@ -799,6 +843,8 @@
         gameState.power     = gameState.maxPower;
         gameState.oxygen    = gameState.maxOxygen;
         gameState.integrity = gameState.maxIntegrity;
+        gameState.nextShopDepth = rollNextShopDepth(gameState.depth);   // schedule the first shop of the run
+        document.getElementById('shop-overlay').classList.remove('open');
         updateUI();
     }
 
@@ -863,7 +909,7 @@
     }
 
     function gameLoop(currentTime) {
-        if (gameState.gameOver || gameState.isPaused) { lastTime = 0; return; }
+        if (gameState.gameOver || gameState.isPaused || gameState.inShop) { lastTime = 0; return; }
         if (lastTime === 0) { lastTime = currentTime; requestAnimationFrame(gameLoop); return; }
 
         const dt = Math.min((currentTime - lastTime) / 1000, 0.5);
@@ -892,6 +938,9 @@
             if (gameState.mods.secondWind && !gameState.secondWindUsed) triggerSecondWind();
             else { handleGameOver(gameState.temperature >= 100 ? 'Critical overheat' : 'Oxygen depletion'); return; }
         }
+
+        // Reached the next shop? openShop() freezes the game, so we stop the loop here.
+        if (gameState.depth >= gameState.nextShopDepth && openShop()) return;
 
         if (gameState.timeSinceLastUIUpdate >= UI_UPDATE_INTERVAL) {
             updateUI();
@@ -1120,23 +1169,6 @@
         updateUI();
     }
 
-    function buyWorkshopUpgrade(upgradeId) {
-        if (gameState.gameOver || gameState.isPaused) return;
-        const upgrade     = WORKSHOP_UPGRADES[upgradeId];
-        const currentTier = gameState.workshopTiers[upgradeId] || 0;
-        const cost        = getWorkshopCost(upgradeId);
-
-        if (currentTier >= upgrade.maxTier)  gameState.message = `${upgrade.name} is already at max tier (${upgrade.maxTier}).`;
-        else if (gameState.ore < cost)       gameState.message = `Not enough Ore. ${upgrade.name} Tier ${currentTier + 1} costs ${fmt(cost)}.`;
-        else {
-            gameState.ore -= cost;
-            gameState.workshopTiers[upgradeId]++;
-            applyPermanentBonuses(); recalculateMods();
-            gameState.message = `${upgrade.name} upgraded to Tier ${gameState.workshopTiers[upgradeId]}.`;
-        }
-        updateUI();
-    }
-
     // --- Ascension: buying perks and their special effects ---
     function buyAscension(id) {
         if (gameState.gameOver || gameState.isPaused) return;
@@ -1194,42 +1226,6 @@
         updateUI();
     }
 
-    function purchaseModuleSlot(slotId) {
-        if (gameState.gameOver || gameState.isPaused) return;
-        const slot = MODULE_SLOTS[slotId];
-        if (gameState.unlockedModuleSlots[slotId])      { gameState.message = `${slot.name} slot is already installed.`;                        return updateUI(); }
-        if (gameState.depth < slot.slotUnlockDepth)     { gameState.message = `${slot.name} slot requires depth of ${slot.slotUnlockDepth}m.`; return updateUI(); }
-        if (gameState.ore   < slot.slotUnlockCost)      { gameState.message = `Need ${slot.slotUnlockCost} Ore to install the ${slot.name} slot.`; return updateUI(); }
-
-        gameState.ore -= slot.slotUnlockCost;
-        gameState.unlockedModuleSlots[slotId] = true;
-        const firstOptId = Object.keys(slot.options)[0];
-        if (!gameState.unlockedModuleOptions[slotId]) gameState.unlockedModuleOptions[slotId] = {};
-        gameState.unlockedModuleOptions[slotId][firstOptId] = true;
-        gameState.modules[slotId] = firstOptId;
-        recalculateMods();
-        gameState.message = `${slot.name} slot installed! First module loaded automatically.`;
-        updateUI();
-    }
-
-    function purchaseModuleOption(slotId, optionId) {
-        if (gameState.gameOver || gameState.isPaused) return;
-        const slot   = MODULE_SLOTS[slotId];
-        const option = slot.options[optionId];
-        if (!gameState.unlockedModuleSlots[slotId])          { gameState.message = `You must install the ${slot.name} slot first.`;           return updateUI(); }
-        if (gameState.unlockedModuleOptions[slotId]?.[optionId]) { setModule(slotId, optionId); return; }
-        if (gameState.depth < option.unlockDepth)            { gameState.message = `${option.name} requires depth of ${option.unlockDepth}m.`; return updateUI(); }
-        if (gameState.ore   < option.unlockCost)             { gameState.message = `Need ${option.unlockCost} Ore to research ${option.name}.`; return updateUI(); }
-
-        gameState.ore -= option.unlockCost;
-        if (!gameState.unlockedModuleOptions[slotId]) gameState.unlockedModuleOptions[slotId] = {};
-        gameState.unlockedModuleOptions[slotId][optionId] = true;
-        gameState.modules[slotId] = optionId;
-        recalculateMods();
-        gameState.message = `${option.name} researched and installed!`;
-        updateUI();
-    }
-
     function setModule(slotId, optionId) {
         if (gameState.modules[slotId] === optionId) return;
         const slot   = MODULE_SLOTS[slotId];
@@ -1238,6 +1234,168 @@
         if (gameState.ore < cost) { gameState.message = `Need ${cost} Ore to install the ${option.name}.`; return updateUI(); }
         gameState.ore -= cost; gameState.modules[slotId] = optionId; recalculateMods();
         gameState.message = `${option.name} installed in the ${slot.name} slot.`;
+        updateUI();
+    }
+
+    // ============================================================
+    //  SHOPS
+    //  A shop appears when your depth reaches gameState.nextShopDepth.
+    //  1) buildShopPool()  lists everything that COULD be sold right now
+    //  2) openShop()       shuffles that list and picks a few items
+    //  3) buyShopItem()    spends Ore and applies the item
+    //  4) leaveShop()      throws away the stock and restarts the game loop
+    //  The game loop does nothing while gameState.inShop is true,
+    //  which is exactly why Power and Oxygen stop draining.
+    // ============================================================
+
+    function rollNextShopDepth(fromDepth) {
+        const gap = SHOP_BASE_INTERVAL + fromDepth * SHOP_DEPTH_SCALE;
+        return fromDepth + gap * (0.7 + Math.random() * 0.6);
+    }
+
+    // Randomly reorders an array (Fisher-Yates shuffle)
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    // Everything the shop is allowed to sell right now:
+    //  - the next tier of any workshop upgrade that is not maxed
+    //  - a new slot, if you are deep enough and do not own it
+    //  - a module you do not own yet, for a slot you have, if you are deep enough
+    function buildShopPool() {
+        const pool = [];
+        for (const id in WORKSHOP_UPGRADES) {
+            if ((gameState.workshopTiers[id] || 0) < WORKSHOP_UPGRADES[id].maxTier) pool.push({ type: 'workshop', id });
+        }
+        for (const slotId in MODULE_SLOTS) {
+            const slot = MODULE_SLOTS[slotId];
+            if (!gameState.unlockedModuleSlots[slotId]) {
+                if (gameState.depth >= slot.slotUnlockDepth) pool.push({ type: 'slot', slotId });
+                continue;
+            }
+            const owned = gameState.unlockedModuleOptions[slotId] || {};
+            for (const optId in slot.options) {
+                if (!owned[optId] && gameState.depth >= slot.options[optId].unlockDepth) pool.push({ type: 'module', slotId, optId });
+            }
+        }
+        return pool;
+    }
+
+    // Turns a shop item into the name / description / price shown on its card
+    function getShopItemInfo(item) {
+        if (item.type === 'workshop') {
+            const u    = WORKSHOP_UPGRADES[item.id];
+            const tier = gameState.workshopTiers[item.id] || 0;
+            return { tag: '🔨 Workshop upgrade', color: 'yellow', name: `${u.name} (Tier ${tier + 1})`, desc: u.effect, price: getWorkshopCost(item.id) };
+        }
+        const slot = MODULE_SLOTS[item.slotId];
+        if (item.type === 'slot') {
+            const names = Object.values(slot.options).slice(1).map(o => o.name).join(', ');
+            return { tag: '⚙ New module slot', color: 'purple', name: `${slot.name} Slot`,
+                     desc: `Installs the ${slot.name} slot so future shops can sell you modules for it. Possible modules: ${names}.`, price: slot.slotUnlockCost };
+        }
+        const opt = slot.options[item.optId];
+        return { tag: `⚙ ${slot.name} module`, color: 'cyan', name: opt.name, desc: opt.desc, price: opt.unlockCost };
+    }
+
+    // Returns true if a shop opened, false if there was nothing to sell
+    function openShop() {
+        gameState.nextShopDepth = rollNextShopDepth(gameState.depth);   // always schedule the next one
+        const pool = buildShopPool();
+        if (!pool.length) return false;
+
+        // Pick the stock and remember each item's card info at this moment
+        gameState.shopStock = shuffleArray(pool).slice(0, SHOP_ITEM_COUNT)
+            .map(item => ({ ...item, info: getShopItemInfo(item), sold: false }));
+
+        gameState.shopWasDrilling = gameState.drilling;   // so we can carry on drilling afterwards
+        gameState.drilling = false;
+        gameState.inShop   = true;
+        closeSidebar();
+        logEvent(`${gameState.depth.toFixed(0)}m — Found a wandering shop.`);
+        setShopMessage('');
+        renderShop();
+        document.getElementById('shop-overlay').classList.add('open');
+        updateUI();
+        return true;
+    }
+
+    function setShopMessage(text) { document.getElementById('shop-message').innerText = text; }
+
+    const SHOP_CARD_COLORS = { yellow: 'border-yellow-600 text-yellow-300', cyan: 'border-cyan-600 text-cyan-300', purple: 'border-purple-600 text-purple-300' };
+
+    function renderShop() {
+        document.getElementById('shop-ore').innerText = `${fmt(gameState.ore)} Ore`;
+        document.getElementById('shop-items').innerHTML = gameState.shopStock.map((item, i) => {
+            const info = item.info;
+            if (item.sold) {
+                return `<div class="bg-gray-900 p-4 rounded-xl border border-gray-700 opacity-50 flex flex-col justify-center text-center">
+                    <h3 class="font-bold text-gray-400">${info.name}</h3>
+                    <p class="text-sm text-gray-500 mt-1">SOLD</p></div>`;
+            }
+            const afford = gameState.ore >= info.price;
+            // Modules install straight away, so tell the player what they are replacing
+            const note = item.type === 'module'
+                ? `<p class="text-xs text-gray-500 mt-2">Installs now, replacing ${MODULE_SLOTS[item.slotId].options[gameState.modules[item.slotId]].name} (which you keep in the Module Bay).</p>`
+                : '';
+            return `<div class="bg-gray-800 p-4 rounded-xl border ${SHOP_CARD_COLORS[info.color]} flex flex-col justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide opacity-80">${info.tag}</p>
+                    <h3 class="text-lg font-bold mt-1">${info.name}</h3>
+                    <p class="text-sm text-gray-300 mt-1">${info.desc}</p>
+                    ${note}
+                </div>
+                <button onclick="buyShopItem(${i})" ${afford ? '' : 'disabled'}
+                    class="mt-4 p-3 rounded-xl text-white font-semibold shadow-md transition duration-150 ${afford ? 'bg-green-700 hover:bg-green-500 cursor-pointer' : 'bg-red-900 opacity-70 cursor-not-allowed'}">
+                    ${afford ? `Buy (${fmt(info.price)} Ore)` : `Needs ${fmt(info.price)} Ore`}
+                </button></div>`;
+        }).join('');
+    }
+
+    function buyShopItem(index) {
+        if (!gameState.inShop) return;
+        const item = gameState.shopStock[index];
+        if (!item || item.sold) return;
+        const info = item.info;
+        if (gameState.ore < info.price) { setShopMessage(`Not enough Ore. ${info.name} costs ${fmt(info.price)}.`); return; }
+
+        gameState.ore -= info.price;
+        item.sold = true;
+
+        if (item.type === 'workshop') {
+            gameState.workshopTiers[item.id]++;
+            applyPermanentBonuses();
+        } else if (item.type === 'slot') {
+            const slot = MODULE_SLOTS[item.slotId];
+            const firstOptId = Object.keys(slot.options)[0];   // the plain "no bonus" module comes with the slot
+            gameState.unlockedModuleSlots[item.slotId] = true;
+            gameState.unlockedModuleOptions[item.slotId] = { ...(gameState.unlockedModuleOptions[item.slotId] || {}), [firstOptId]: true };
+            gameState.modules[item.slotId] = firstOptId;
+        } else {
+            gameState.unlockedModuleOptions[item.slotId][item.optId] = true;
+            gameState.modules[item.slotId] = item.optId;       // install it straight away
+        }
+        recalculateMods();
+
+        setShopMessage(`Bought ${info.name}.`);
+        gameState.message = `Bought ${info.name} from the shop.`;
+        renderShop();
+        updateUI();   // keeps the page behind the shop (workshop panel, module bay) up to date
+    }
+
+    function leaveShop() {
+        if (!gameState.inShop) return;
+        gameState.inShop    = false;
+        gameState.shopStock = [];
+        document.getElementById('shop-overlay').classList.remove('open');
+        if (gameState.shopWasDrilling && gameState.power > 0) gameState.drilling = true;
+        gameState.shopWasDrilling = false;
+        gameState.message = 'You leave the shop behind and carry on.';
+        startGameLoop();   // the loop stopped when the shop opened, so start it again
         updateUI();
     }
 
@@ -1508,123 +1666,76 @@
             .join('');
     }
 
-    // Module Bay — only rebuilds DOM when affordability/state actually changes (prevents hover flicker while drilling)
+    // Module Bay: shows the modules you OWN and lets you swap between them for a small Ore fee.
+    // New modules can only be bought in shops. It only rebuilds when something changed,
+    // otherwise buttons would flicker while you hover over them.
     let _lastModuleBayKey = null;
     function refreshModuleBay() {
         const container = ui['module-bay-container'];
         if (!container) return;
-        const swapCost = getModuleSwapCost();
-
-        // Compute affordability flags — deliberately not using raw ore/depth values so
-        // constant drilling increments don't trigger a rebuild every UI tick.
+        const swapCost      = getModuleSwapCost();
         const canAffordSwap = gameState.ore >= swapCost && !gameState.gameOver && !gameState.isPaused;
-        const researchAffordability = {};
-        for (const slotId in MODULE_SLOTS) {
-            researchAffordability[slotId] = {};
-            for (const optId in MODULE_SLOTS[slotId].options) {
-                const opt      = MODULE_SLOTS[slotId].options[optId];
-                const depthMet = gameState.depth >= (opt.unlockDepth || 0);
-                const canAfford = gameState.ore >= opt.unlockCost && !gameState.gameOver && !gameState.isPaused;
-                researchAffordability[slotId][optId] = depthMet ? (canAfford ? 'buy' : 'locked-ore') : 'locked-depth';
-            }
-            const slot     = MODULE_SLOTS[slotId];
-            const depthMet = gameState.depth >= slot.slotUnlockDepth;
-            const canAfford = gameState.ore >= slot.slotUnlockCost && !gameState.gameOver && !gameState.isPaused;
-            researchAffordability[slotId]._slot = depthMet ? (canAfford ? 'buy' : 'locked-ore') : 'locked-depth';
-        }
 
         const bayKey = JSON.stringify({
-            slots: gameState.unlockedModuleSlots,
-            options: gameState.unlockedModuleOptions,
-            modules: gameState.modules,
-            swapCost, canAffordSwap, researchAffordability,
-            gameOver: gameState.gameOver, isPaused: gameState.isPaused,
+            slots: gameState.unlockedModuleSlots, options: gameState.unlockedModuleOptions,
+            modules: gameState.modules, swapCost, canAffordSwap,
         });
         if (bayKey === _lastModuleBayKey) return;
         _lastModuleBayKey = bayKey;
 
         container.innerHTML = '';
         for (const slotId in MODULE_SLOTS) {
-            const slot        = MODULE_SLOTS[slotId];
-            const slotUnlocked = gameState.unlockedModuleSlots[slotId];
-            const activeOptKey = gameState.modules[slotId];
-            const unlockedOpts = gameState.unlockedModuleOptions[slotId] || {};
-            const slotCard    = document.createElement('div');
+            const slot = MODULE_SLOTS[slotId];
+            const card = document.createElement('div');
 
-            if (!slotUnlocked) {
-                const depthMet   = gameState.depth >= slot.slotUnlockDepth;
-                const canAfford  = gameState.ore   >= slot.slotUnlockCost;
-                const canInstall = depthMet && canAfford && !gameState.gameOver && !gameState.isPaused;
-                const lockNote   = !depthMet ? `<span class="text-orange-400">Reach ${slot.slotUnlockDepth}m to install</span>`
-                                 : !canAfford ? `<span class="text-red-400">Need ${slot.slotUnlockCost.toLocaleString()} Ore</span>` : '';
-                const previewHTML = Object.values(slot.options).map(opt => `
-                    <div class="p-2 rounded border border-gray-700 bg-gray-800 opacity-50">
-                        <span class="block font-bold text-sm text-gray-400">${opt.name}</span>
-                        <span class="block text-xs text-gray-500 mt-1">${opt.desc}</span>
-                    </div>`).join('');
+            // Slot not installed yet
+            if (!gameState.unlockedModuleSlots[slotId]) {
+                card.className = 'bg-gray-900 p-4 rounded-xl border-2 border-dashed border-gray-600 opacity-80';
+                card.innerHTML = `
+                    <h3 class="text-lg font-bold text-gray-400">🔒 ${slot.name} Slot</h3>
+                    <p class="text-xs text-gray-500 mt-1">Not installed. This slot can turn up in a shop once you reach ${slot.slotUnlockDepth}m.</p>`;
+                container.appendChild(card);
+                continue;
+            }
 
-                slotCard.className = 'bg-gray-900 p-4 rounded-xl border-2 border-dashed border-gray-600 flex flex-col gap-3 opacity-80';
-                slotCard.innerHTML = `
-                    <div class="flex items-center justify-between border-b border-gray-700 pb-2">
-                        <h3 class="text-lg font-bold text-gray-400">🔒 ${slot.name} Slot</h3>
-                        <span class="text-xs text-gray-500">Install: ${slot.slotUnlockCost.toLocaleString()} Ore</span>
-                    </div>
-                    ${lockNote ? `<p class="text-xs mt-1">${lockNote}</p>` : ''}
-                    <div class="flex flex-col gap-2 mt-1 mb-2">${previewHTML}</div>
-                    <button onclick="purchaseModuleSlot('${slotId}')"
-                        class="w-full py-2 rounded-lg font-bold text-sm transition duration-150 ${canInstall ? 'bg-yellow-600 hover:bg-yellow-500 text-white cursor-pointer' : 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-60'}"
-                        ${canInstall ? '' : 'disabled'}>
-                        Install ${slot.name} Slot (${slot.slotUnlockCost.toLocaleString()} Ore)
-                    </button>`;
-            } else {
-                let optionsHTML = '';
-                for (const optId in slot.options) {
-                    const opt       = slot.options[optId];
-                    const isSelected = activeOptKey === optId;
-                    const isUnlocked = !!unlockedOpts[optId];
-                    const depthMet   = gameState.depth >= (opt.unlockDepth || 0);
-                    let btnClass, btnLabel, btnDisabled;
-
-                    if (isSelected) {
-                        btnClass = 'p-3 rounded-lg border-2 border-cyan-400 bg-cyan-950 text-cyan-200 text-left cursor-default';
-                        btnLabel = '<span class="text-xs font-bold text-cyan-400 ml-1">✔ ACTIVE</span>';
-                        btnDisabled = true;
-                    } else if (!isUnlocked && !depthMet) {
-                        btnClass = 'p-3 rounded-lg border border-gray-800 bg-gray-900 text-gray-600 text-left cursor-not-allowed opacity-50';
-                        btnLabel = `<span class="text-xs text-orange-400 block mt-1">🔒 Depth: ${opt.unlockDepth}m</span>`;
-                        btnDisabled = true;
-                    } else if (!isUnlocked) {
-                        const affordable = gameState.ore >= opt.unlockCost && !gameState.gameOver && !gameState.isPaused;
-                        btnClass    = affordable ? 'p-3 rounded-lg border border-yellow-600 bg-yellow-900 hover:bg-yellow-800 text-yellow-200 text-left cursor-pointer transition duration-150' : 'p-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-500 text-left cursor-not-allowed opacity-60';
-                        btnLabel    = `<span class="text-xs ${affordable ? 'text-yellow-400' : 'text-red-400'} block mt-1">🔬 Research: ${opt.unlockCost.toLocaleString()} Ore</span>`;
-                        btnDisabled = !affordable;
-                    } else {
-                        const affordable = gameState.ore >= swapCost && !gameState.gameOver && !gameState.isPaused;
-                        btnClass    = affordable ? 'p-3 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 text-gray-200 text-left cursor-pointer transition duration-150' : 'p-3 rounded-lg border border-gray-800 bg-gray-900 text-gray-500 text-left cursor-not-allowed opacity-60';
-                        btnLabel    = `<span class="text-xs ${affordable ? 'text-gray-400' : 'text-red-400'} block mt-1">↔ Swap: ${swapCost} Ore</span>`;
-                        btnDisabled = !affordable;
-                    }
-
+            // Slot installed: list only the modules we own
+            const owned = gameState.unlockedModuleOptions[slotId] || {};
+            let optionsHTML = '', ownedCount = 0;
+            for (const optId in slot.options) {
+                if (!owned[optId]) continue;
+                ownedCount++;
+                const opt = slot.options[optId];
+                if (gameState.modules[slotId] === optId) {
                     optionsHTML += `
-                        <button onclick="purchaseModuleOption('${slotId}', '${optId}')" class="${btnClass}" ${btnDisabled ? 'disabled' : ''}>
-                            <span class="block font-bold text-sm">${opt.name}${btnLabel}</span>
+                        <div class="p-3 rounded-lg border-2 border-cyan-400 bg-cyan-950 text-cyan-200 text-left">
+                            <span class="block font-bold text-sm">${opt.name} <span class="text-xs font-bold text-cyan-400 ml-1">✔ ACTIVE</span></span>
+                            <span class="block text-xs text-gray-400 mt-1">${opt.desc}</span>
+                        </div>`;
+                } else {
+                    const cls = canAffordSwap
+                        ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-gray-200 cursor-pointer'
+                        : 'border-gray-800 bg-gray-900 text-gray-500 cursor-not-allowed opacity-60';
+                    optionsHTML += `
+                        <button onclick="setModule('${slotId}', '${optId}')" class="p-3 rounded-lg border text-left transition duration-150 ${cls}" ${canAffordSwap ? '' : 'disabled'}>
+                            <span class="block font-bold text-sm">${opt.name} <span class="text-xs ${canAffordSwap ? 'text-gray-400' : 'text-red-400'} ml-1">↔ Swap: ${swapCost} Ore</span></span>
                             <span class="block text-xs text-gray-400 mt-1">${opt.desc}</span>
                         </button>`;
                 }
-
-                slotCard.className = 'bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col gap-3';
-                slotCard.innerHTML = `
-                    <div class="flex items-center justify-between border-b border-gray-700 pb-2">
-                        <h3 class="text-lg font-bold text-cyan-300">${slot.name} Slot</h3>
-                        <span class="text-xs text-gray-500">Swap cost: ${swapCost} Ore</span>
-                    </div>
-                    <div class="flex flex-col gap-2 mt-2">${optionsHTML}</div>`;
             }
-            container.appendChild(slotCard);
+            const missing = Object.keys(slot.options).length - ownedCount;
+            card.className = 'bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col gap-3';
+            card.innerHTML = `
+                <div class="flex items-center justify-between border-b border-gray-700 pb-2">
+                    <h3 class="text-lg font-bold text-cyan-300">${slot.name} Slot</h3>
+                    <span class="text-xs text-gray-500">Swap cost: ${swapCost} Ore</span>
+                </div>
+                <div class="flex flex-col gap-2">${optionsHTML}</div>
+                ${missing > 0 ? `<p class="text-xs text-gray-500">${missing} more module${missing === 1 ? '' : 's'} can be found in shops.</p>` : ''}`;
+            container.appendChild(card);
         }
     }
 
-    // Workshop — build once, update each tick
+    // Workshop panel: read-only list of the upgrades you own (they are bought in shops now)
     const workshopNodes = {};
     function buildWorkshop() {
         const shopContainer = ui['workshop-container'];
@@ -1632,27 +1743,14 @@
         for (const id in WORKSHOP_UPGRADES) {
             const upgrade = WORKSHOP_UPGRADES[id];
             const card    = document.createElement('div');
-            card.className = 'bg-gray-800 p-4 rounded-xl shadow-inner flex flex-col justify-between border border-gray-700';
+            card.className = 'bg-gray-800 p-4 rounded-xl shadow-inner border border-gray-700';
             card.innerHTML = `
-                <div>
-                    <h4 class="text-lg font-bold text-yellow-300">${upgrade.name}</h4>
-                    <p class="prp-tier    text-sm text-gray-300 mt-1"></p>
-                    <p class="prp-current text-sm text-gray-400"></p>
-                </div>
-                <div class="mt-3">
-                    <p class="prp-next text-sm font-semibold text-green-400"></p>
-                    <button class="prp-btn mt-3 p-3 rounded-xl text-white font-semibold shadow-md transition duration-150 transform w-full"></button>
-                </div>`;
-            const button = card.querySelector('.prp-btn');
-            button.dataset.baseClass = button.className;
-            button.addEventListener('click', () => buyWorkshopUpgrade(id));
+                <h4 class="text-lg font-bold text-yellow-300">${upgrade.name}</h4>
+                <p class="prp-tier    text-sm text-gray-300 mt-1"></p>
+                <p class="prp-current text-sm text-gray-400"></p>
+                <p class="text-xs text-gray-500 mt-1">${upgrade.effect} per tier</p>`;
             shopContainer.appendChild(card);
-            workshopNodes[id] = {
-                tier:    card.querySelector('.prp-tier'),
-                current: card.querySelector('.prp-current'),
-                next:    card.querySelector('.prp-next'),
-                button,
-            };
+            workshopNodes[id] = { tier: card.querySelector('.prp-tier'), current: card.querySelector('.prp-current') };
         }
     }
 
@@ -1660,22 +1758,10 @@
         for (const id in WORKSHOP_UPGRADES) {
             const nodes = workshopNodes[id];
             if (!nodes) continue;
-            const upgrade    = WORKSHOP_UPGRADES[id];
+            const upgrade     = WORKSHOP_UPGRADES[id];
             const currentTier = gameState.workshopTiers[id] || 0;
-            const cost       = getWorkshopCost(id);
-            const isMax      = currentTier >= upgrade.maxTier;
-            const canAfford  = gameState.ore >= cost;
-
-            nodes.tier.textContent    = `Tier ${currentTier} of ${upgrade.maxTier}`;
+            nodes.tier.textContent    = currentTier >= upgrade.maxTier ? `Tier ${currentTier} of ${upgrade.maxTier} (maxed)` : `Tier ${currentTier} of ${upgrade.maxTier}`;
             nodes.current.textContent = `Current: ${typeof gameState[upgrade.stat] === 'number' ? gameState[upgrade.stat].toFixed(2) : 'N/A'}`;
-            nodes.next.textContent    = isMax ? 'Fully researched' : `${upgrade.effect} (Tier ${currentTier + 1})`;
-
-            let state, label;
-            if (isMax)           { state = 'bg-gray-600 opacity-90 cursor-default';               label = 'Maxed out'; }
-            else if (gameState.isPaused) { state = 'bg-blue-900 opacity-50 cursor-not-allowed';  label = 'Upgrade (paused)'; }
-            else if (canAfford)  { state = 'bg-yellow-700 hover:bg-yellow-600 cursor-pointer hover:scale-[1.02]'; label = `Upgrade (${fmt(cost)} Ore)`; }
-            else                 { state = 'bg-red-800 opacity-70 cursor-not-allowed';            label = `Upgrade (needs ${fmt(cost)} Ore)`; }
-            setButtonState(nodes.button, state, label, isMax || gameState.isPaused || !canAfford);
         }
     }
 
@@ -1904,6 +1990,11 @@
         _lastModuleBayKey = null; // force module bay to rebuild for depth-gated options
         gameState.message = '🛠 Dev: values applied.';
         updateUI();
+    }
+
+    function devOpenShop() {
+        if (gameState.gameOver || gameState.isPaused || gameState.inShop) return;
+        if (!openShop()) { gameState.message = '🛠 Dev: nothing left to sell.'; updateUI(); }
     }
 
     function devMaxOut() {
