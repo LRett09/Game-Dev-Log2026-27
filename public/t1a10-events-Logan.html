@@ -42,6 +42,7 @@ Events are HTML code that activates Javascript code. Here are some examples:
     onBlur="{
      document.getElementById('myFourthDiv').innerHTML = 'you exited the box'
     }">
+<div id="myFifthDiv">press and release the mouse</div>
 
 <body
  onKeyPress="{
@@ -53,14 +54,14 @@ onMouseMove="{
     document.getElementById('myClickTest').innerHTML = 'For all that mouse moving your not clicking the button...'
     }"
 onMouseDown="{
-    document.getElementById('myFourthDiv').innerHTML = 'you pressed the mouse.'
+    document.getElementById('myFifthDiv').innerHTML = 'you pressed the mouse.'
 }"
 onMouseUp="{
-    document.getElementById('myFourthDiv').innerHTML = 'you released the mouse.'
+    document.getElementById('myFifthDiv').innerHTML = 'you released the mouse.'
 }"
 onTouchStart="{
-    document.getElementById('myFourthDiv').innerHTML = 'you touched the screen.'
+    document.getElementById('myFifthDiv').innerHTML = 'you touched the screen.'
 }"
 onTouchEnd="{
-    document.getElementById('myFourthDiv').innerHTML = 'you stopped touching the screen.'
+    document.getElementById('myFifthDiv').innerHTML = 'you stopped touching the screen.'
 }">
