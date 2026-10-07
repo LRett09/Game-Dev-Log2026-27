@@ -33,9 +33,10 @@ Events are HTML code that activates Javascript code
 
 //onFocus - not sure yet
 
-<script>
-    onKeyPress( w )="{
-    document.getElementById('myPressW').innerHTML = 'You Pressed W!'
-    }"
-</script>
+<body onKeyPress="{
+    if (event.key == 'w') {
+        document.getElementById('myPressW').innerHTML = 'You Pressed W!'
+    }
+}">
+        
   
