@@ -30,7 +30,9 @@ Events are HTML code that activates Javascript code. Here are some examples:
     document.getElementById('myClickTest').innerHTML = 'That was a double click!'
     }">
 
-//onChange - not sure yet
+<input type="text" value="Dont you change this..." onChange="{
+    document.getElementById('myPressW').innerHTML = 'hey you just changed the text I told you not to! >:('
+    }">
 
 //onBlur - not sure yet
 
