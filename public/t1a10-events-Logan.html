@@ -43,21 +43,24 @@ Events are HTML code that activates Javascript code. Here are some examples:
      document.getElementById('myFourthDiv').innerHTML = 'you exited the box'
     }">
 
-<body onKeyPress="{
+<body
+ onKeyPress="{
     if (event.key == 'w') {
         document.getElementById('myPressW').innerHTML = 'You Pressed W!'
     }
-}">
-
-<body onMouseMove="{
+}"
+onMouseMove="{
     document.getElementById('myClickTest').innerHTML = 'For all that mouse moving your not clicking the button...'
-    }">
-
-<body onTouchStart="{
-    document.getElementById('myFourthDiv').innerHTML = 'you touched the screen.'
     }"
-    onTouchEnd="{
+onMouseDown="{
+    document.getElementById('myFourthDiv').innerHTML = 'you pressed the mouse.'
+}"
+onMouseUp="{
+    document.getElementById('myFourthDiv').innerHTML = 'you released the mouse.'
+}"
+onTouchStart="{
+    document.getElementById('myFourthDiv').innerHTML = 'you touched the screen.'
+}"
+onTouchEnd="{
     document.getElementById('myFourthDiv').innerHTML = 'you stopped touching the screen.'
-    }">
-        
-  
+}">
