@@ -23,15 +23,12 @@ Events are HTML code that activates Javascript code. Here are some examples:
 
 <div id="myClickTest">Click the button below me!</div>
 
-<input type=button id="myButton01" onClick="{
+<input type=button value="Update the div above me!" id="myButton01" onClick="{
     document.getElementById('myClickTest').innerHTML = 'Now try double clicking!'
     }"
     ondblClick="{
     document.getElementById('myClickTest').innerHTML = 'That was a double click!'
     }">
-
-
-//onMouseMove - not sure yet
 
 //onChange - not sure yet
 
@@ -46,5 +43,9 @@ Events are HTML code that activates Javascript code. Here are some examples:
         document.getElementById('myPressW').innerHTML = 'You Pressed W!'
     }
 }">
+
+<body onMouseMove="{
+    document.getElementById('myClickTest').innerHTML = 'For all that mouse moving your not clicking the button...'
+    }">
         
   
