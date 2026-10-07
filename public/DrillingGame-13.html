@@ -84,6 +84,7 @@
             z-index: 1500; background-color: #0d1117;
             border: 2px solid #7c3aed; border-radius: 12px;
             padding: 1rem 1.25rem; width: 280px;
+            box-sizing: border-box;   /* width includes padding + border, so nothing spills out */
             box-shadow: 0 8px 32px rgba(124,58,237,0.4);
         }
         #dev-panel.open { display: block; }
@@ -96,7 +97,9 @@
         .dev-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
         .dev-row label { color: #9ca3af; font-size: 0.78rem; width: 70px; flex-shrink: 0; }
         .dev-row input {
-            flex: 1; background: #1f2937; border: 1px solid #374151;
+            flex: 1; min-width: 0;   /* min-width: 0 lets the input shrink to fit the row instead of overflowing */
+            box-sizing: border-box;  /* padding and border count toward the input's width */
+            background: #1f2937; border: 1px solid #374151;
             border-radius: 6px; color: #e5e7eb; font-size: 0.82rem;
             padding: 0.3rem 0.5rem; outline: none;
         }
@@ -384,6 +387,7 @@
 				'Removed Anomoly system',
 				'Removed ability to buy modules and workshop upgrades whenever',
 				'You can now favorite one workshop upgrade and one module slot (the star button). Favorited upgrades and modules for the favorited slot appear in shops more often, but it is not guaranteed.',
+				'Heavily reduced prices of tier 7, 8, and 9 upgrades',
 				]
 				},
         {
@@ -534,17 +538,17 @@
         'F2': { name: 'Cloning',               cost: 60000,    effect: 'Higher chance of MegaCrits',            prereq: 'E2', minDepth: 5000,  bonus: { megaCritChance: 0.10, megaCritMultiplier: 2.5 } },
         'F3': { name: 'Scrap Refinery',        cost: 60000,    effect: 'Scrap is worth 80 instead of 1',        prereq: 'E3', minDepth: 5000,  bonus: { ScrapValue: 80 } },
         // Tier G — Foundations of Magic
-        'G1': { name: 'Portal to the Unknown', cost: 900000,   effect: 'You are taken to 10000m',               prereq: 'F1', minDepth: 8000,  specialEffect: { depthSet: 10000 } },
-        'G2': { name: 'Magical Enhancements',  cost: 900000,   effect: "Ores are double the price",             prereq: 'F2', minDepth: 8000,  bonus: { oreValueMultiplier: 2.0 } },
-        'G3': { name: 'Protective Barrier',    cost: 900000,   effect: 'More failure reduction',                prereq: 'F3', minDepth: 8000,  bonus: { failureReduction: 0.3, eventResist: 0.25 } },
+        'G1': { name: 'Portal to the Unknown', cost: 400000,   effect: 'You are taken to 10000m',               prereq: 'F1', minDepth: 8000,  specialEffect: { depthSet: 10000 } },
+        'G2': { name: 'Magical Enhancements',  cost: 400000,   effect: "Ores are double the price",             prereq: 'F2', minDepth: 8000,  bonus: { oreValueMultiplier: 2.0 } },
+        'G3': { name: 'Protective Barrier',    cost: 400000,   effect: 'More failure reduction',                prereq: 'F3', minDepth: 8000,  bonus: { failureReduction: 0.3, eventResist: 0.25 } },
         // Tier H — Deep Core Engineering
-        'H1': { name: 'Pressure Hull',         cost: 8000000,  effect: 'Halves depth pressure on life support', prereq: 'G1', minDepth: 13000, bonus: { pressureResist: 0.5 } },
-        'H2': { name: 'Phase Drill',           cost: 8000000,  effect: 'x2.5 Drill Speed (beats hard rock)',    prereq: 'G2', minDepth: 13000, bonus: { drillSpeedMultiplier: 1.5 } },
-        'H3': { name: 'Autonomous Operations', cost: 8000000,  effect: 'automate any 2 systems at once',        prereq: 'G3', minDepth: 13000, bonus: { autoOps: true } },
+        'H1': { name: 'Pressure Hull',         cost: 1000000,  effect: 'Halves depth pressure on life support', prereq: 'G1', minDepth: 13000, bonus: { pressureResist: 0.5 } },
+        'H2': { name: 'Phase Drill',           cost: 1000000,  effect: 'x2.5 Drill Speed (beats hard rock)',    prereq: 'G2', minDepth: 13000, bonus: { drillSpeedMultiplier: 1.5 } },
+        'H3': { name: 'Autonomous Operations', cost: 1000000,  effect: 'automate any 2 systems at once',        prereq: 'G3', minDepth: 13000, bonus: { autoOps: true } },
         // Tier I — Singularity
-        'I1': { name: 'Singularity Compressor',cost: 80000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'H1', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
-        'I2': { name: 'Chrono Drill',          cost: 80000000, effect: 'x2 more Drill Speed',                   prereq: 'H2', minDepth: 21000, bonus: { drillSpeedMultiplier: 2.0 } },
-        'I3': { name: 'Adamantine Chassis',    cost: 80000000, effect: '-65% bit wear, -50% event damage',      prereq: 'H3', minDepth: 21000, bonus: { integrityWearFactor: 0.35, eventResist: 0.5, failureReduction: 0.2 } },
+        'I1': { name: 'Singularity Compressor',cost: 5000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'H1', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
+        'I2': { name: 'Chrono Drill',          cost: 5000000, effect: 'x2 more Drill Speed',                   prereq: 'H2', minDepth: 21000, bonus: { drillSpeedMultiplier: 2.0 } },
+        'I3': { name: 'Adamantine Chassis',    cost: 5000000, effect: '-65% bit wear, -50% event damage',      prereq: 'H3', minDepth: 21000, bonus: { integrityWearFactor: 0.35, eventResist: 0.5, failureReduction: 0.2 } },
     };
 
     const SKILL_TIERS = {
