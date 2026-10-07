@@ -32,13 +32,18 @@ Events are HTML code that activates Javascript code. Here are some examples:
 
 <input type="text" value="Dont you change this..." onChange="{
     document.getElementById('myPressW').innerHTML = 'hey you just changed the text I told you not to! >:('
-    }">
+    }"><br>
 
-//onBlur - not sure yet
+<div id="myFourthDiv">...</div><br>
+
+<input type="text" value="Click in then out of this box" onFocus="{
+    document.getElementById('myFourthDiv').innerHTML = 'you focused in the box'
+    }"
+    onBlur="{
+     document.getElementById('myFourthDiv').innerHTML = 'you exited the box'
+    }"
 
 //onTouch - not sure yet
-
-//onFocus - not sure yet
 
 <body onKeyPress="{
     if (event.key == 'w') {
