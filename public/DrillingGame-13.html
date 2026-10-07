@@ -287,7 +287,7 @@
             <h2 class="text-2xl font-bold text-yellow-400">🔨 Workshop</h2>
             <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
         </div>
-        <p class="text-sm text-gray-400 mb-2">Your stackable upgrades. They can only be bought from shops you come across while drilling, and they reset when you ascend.</p>
+        <p class="text-sm text-gray-400 mb-2">Your stackable upgrades. They can only be bought from shops you come across while drilling, and they reset when you ascend. Tap a ☆ to favorite one upgrade so shops offer it more often.</p>
         <p id="workshop-ore" class="text-lg font-bold text-yellow-500 mb-4">0.0 Ore</p>
         <div id="workshop-container" class="flex flex-col gap-4"></div>
     </div>
@@ -377,14 +377,13 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.3', date: '2026-10-06',
+			version: 'v1.3', date: '2026-10-07',
 			changes: [
 				'Update is WIP',
 				'Shops now appear every so often while drilling and sell a random mix of workshop upgrades and modules.',
-				'Power, oxygen, heat and all timers are frozen while you are in a shop.',
-				'Workshop upgrades and new modules can only be bought in shops. The Module Bay still lets you swap between modules you own.',
 				'Removed Anomoly system',
 				'Removed ability to buy modules and workshop upgrades whenever',
+				'You can now favorite one workshop upgrade and one module slot (the star button). Favorited upgrades and modules for the favorited slot appear in shops more often, but it is not guaranteed.',
 				]
 				},
         {
@@ -469,6 +468,7 @@
     const SHOP_BASE_INTERVAL = 200;   // metres between shops at the surface
     const SHOP_DEPTH_SCALE   = 0.12;  // extra gap per metre of depth
     const SHOP_ITEM_COUNT    = 4;     // how many items each shop sells
+    const FAVORITE_WEIGHT    = 3;     // a favorited item is this many times more likely to be picked (1 = no boost)
 
 
     // ============================================================
@@ -700,6 +700,8 @@
         permanentResearchPoints: 0,
         ascensionOwned: [],
         totalAscensions: 0,
+        favoriteWorkshop: null,   // id of the starred workshop upgrade (or null)
+        favoriteSlot: null,       // id of the starred module slot (or null)
     };
 
     // Cached DOM element references
@@ -1226,6 +1228,24 @@
         updateUI();
     }
 
+    // Favorites: only one workshop upgrade and one module slot can be starred at a time.
+    // Because each is a single variable, starring a new one automatically replaces the old one.
+    function toggleFavoriteWorkshop(id) {
+        gameState.favoriteWorkshop = (gameState.favoriteWorkshop === id) ? null : id;
+        gameState.message = gameState.favoriteWorkshop
+            ? `${WORKSHOP_UPGRADES[id].name} is now your favorite upgrade. It will show up in shops more often.`
+            : 'Favorite workshop upgrade cleared.';
+        updateUI();
+    }
+
+    function toggleFavoriteSlot(slotId) {
+        gameState.favoriteSlot = (gameState.favoriteSlot === slotId) ? null : slotId;
+        gameState.message = gameState.favoriteSlot
+            ? `${MODULE_SLOTS[slotId].name} is now your favorite slot. Its modules will show up in shops more often.`
+            : 'Favorite module slot cleared.';
+        updateUI();
+    }
+
     function setModule(slotId, optionId) {
         if (gameState.modules[slotId] === optionId) return;
         const slot   = MODULE_SLOTS[slotId];
@@ -1260,6 +1280,33 @@
             [arr[i], arr[j]] = [arr[j], arr[i]];
         }
         return arr;
+    }
+
+    // How likely is this item to be picked? Normal items have weight 1.
+    // Items matching your favorite workshop upgrade or favorite module slot get FAVORITE_WEIGHT.
+    function isFavoriteItem(item) {
+        if (item.type === 'workshop') return item.id === gameState.favoriteWorkshop;
+        return item.slotId === gameState.favoriteSlot;   // 'slot' and 'module' items both have a slotId
+    }
+    function getShopItemWeight(item) { return isFavoriteItem(item) ? FAVORITE_WEIGHT : 1; }
+
+    // Picks `count` different items from the pool, where heavier items are more likely.
+    // Think of it as a raffle: every item gets tickets equal to its weight, we draw one
+    // ticket, remove that item (so it cannot win twice), then draw again.
+    function pickWeighted(pool, count) {
+        const remaining = [...pool];   // copy, so we do not wreck the original list
+        const picked = [];
+        while (picked.length < count && remaining.length) {
+            const totalWeight = remaining.reduce((sum, item) => sum + getShopItemWeight(item), 0);
+            let roll = Math.random() * totalWeight;   // a random point along the "ticket line"
+            let chosenIndex = remaining.length - 1;   // fallback, in case of rounding errors
+            for (let i = 0; i < remaining.length; i++) {
+                roll -= getShopItemWeight(remaining[i]);
+                if (roll < 0) { chosenIndex = i; break; }
+            }
+            picked.push(remaining.splice(chosenIndex, 1)[0]);   // move it from remaining to picked
+        }
+        return picked;
     }
 
     // Everything the shop is allowed to sell right now:
@@ -1309,8 +1356,8 @@
         if (!pool.length) return false;
 
         // Pick the stock and remember each item's card info at this moment
-        gameState.shopStock = shuffleArray(pool).slice(0, SHOP_ITEM_COUNT)
-            .map(item => ({ ...item, info: getShopItemInfo(item), sold: false }));
+        gameState.shopStock = pickWeighted(pool, SHOP_ITEM_COUNT)
+            .map(item => ({ ...item, info: getShopItemInfo(item), sold: false, favorite: isFavoriteItem(item) }));
 
         gameState.shopWasDrilling = gameState.drilling;   // so we can carry on drilling afterwards
         gameState.drilling = false;
@@ -1344,7 +1391,7 @@
                 : '';
             return `<div class="bg-gray-800 p-4 rounded-xl border ${SHOP_CARD_COLORS[info.color]} flex flex-col justify-between">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide opacity-80">${info.tag}</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide opacity-80">${info.tag}${item.favorite ? ' <span class="text-amber-300">⭐ Favorite</span>' : ''}</p>
                     <h3 class="text-lg font-bold mt-1">${info.name}</h3>
                     <p class="text-sm text-gray-300 mt-1">${info.desc}</p>
                     ${note}
@@ -1678,7 +1725,7 @@
 
         const bayKey = JSON.stringify({
             slots: gameState.unlockedModuleSlots, options: gameState.unlockedModuleOptions,
-            modules: gameState.modules, swapCost, canAffordSwap,
+            modules: gameState.modules, swapCost, canAffordSwap, fav: gameState.favoriteSlot,
         });
         if (bayKey === _lastModuleBayKey) return;
         _lastModuleBayKey = bayKey;
@@ -1687,12 +1734,17 @@
         for (const slotId in MODULE_SLOTS) {
             const slot = MODULE_SLOTS[slotId];
             const card = document.createElement('div');
+            const isFav   = gameState.favoriteSlot === slotId;
+            const starBtn = `<button onclick="toggleFavoriteSlot('${slotId}')" class="text-2xl leading-none ${isFav ? 'text-amber-300' : 'text-gray-500 hover:text-amber-200'}"
+                title="${isFav ? 'Remove favorite' : 'Favorite this slot: its modules appear in shops more often'}">${isFav ? '★' : '☆'}</button>`;
 
             // Slot not installed yet
             if (!gameState.unlockedModuleSlots[slotId]) {
                 card.className = 'bg-gray-900 p-4 rounded-xl border-2 border-dashed border-gray-600 opacity-80';
                 card.innerHTML = `
-                    <h3 class="text-lg font-bold text-gray-400">🔒 ${slot.name} Slot</h3>
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-gray-400">🔒 ${slot.name} Slot</h3>${starBtn}
+                    </div>
                     <p class="text-xs text-gray-500 mt-1">Not installed. This slot can turn up in a shop once you reach ${slot.slotUnlockDepth}m.</p>`;
                 container.appendChild(card);
                 continue;
@@ -1727,7 +1779,7 @@
             card.innerHTML = `
                 <div class="flex items-center justify-between border-b border-gray-700 pb-2">
                     <h3 class="text-lg font-bold text-cyan-300">${slot.name} Slot</h3>
-                    <span class="text-xs text-gray-500">Swap cost: ${swapCost} Ore</span>
+                    <span class="flex items-center gap-3"><span class="text-xs text-gray-500">Swap cost: ${swapCost} Ore</span>${starBtn}</span>
                 </div>
                 <div class="flex flex-col gap-2">${optionsHTML}</div>
                 ${missing > 0 ? `<p class="text-xs text-gray-500">${missing} more module${missing === 1 ? '' : 's'} can be found in shops.</p>` : ''}`;
@@ -1745,12 +1797,15 @@
             const card    = document.createElement('div');
             card.className = 'bg-gray-800 p-4 rounded-xl shadow-inner border border-gray-700';
             card.innerHTML = `
-                <h4 class="text-lg font-bold text-yellow-300">${upgrade.name}</h4>
+                <div class="flex items-center justify-between">
+                    <h4 class="text-lg font-bold text-yellow-300">${upgrade.name}</h4>
+                    <button class="fav-btn text-2xl leading-none" onclick="toggleFavoriteWorkshop('${id}')"></button>
+                </div>
                 <p class="prp-tier    text-sm text-gray-300 mt-1"></p>
                 <p class="prp-current text-sm text-gray-400"></p>
                 <p class="text-xs text-gray-500 mt-1">${upgrade.effect} per tier</p>`;
             shopContainer.appendChild(card);
-            workshopNodes[id] = { tier: card.querySelector('.prp-tier'), current: card.querySelector('.prp-current') };
+            workshopNodes[id] = { tier: card.querySelector('.prp-tier'), current: card.querySelector('.prp-current'), fav: card.querySelector('.fav-btn') };
         }
     }
 
@@ -1762,6 +1817,10 @@
             const currentTier = gameState.workshopTiers[id] || 0;
             nodes.tier.textContent    = currentTier >= upgrade.maxTier ? `Tier ${currentTier} of ${upgrade.maxTier} (maxed)` : `Tier ${currentTier} of ${upgrade.maxTier}`;
             nodes.current.textContent = `Current: ${typeof gameState[upgrade.stat] === 'number' ? gameState[upgrade.stat].toFixed(2) : 'N/A'}`;
+            const isFav = gameState.favoriteWorkshop === id;
+            nodes.fav.textContent = isFav ? '★' : '☆';
+            nodes.fav.className   = `fav-btn text-2xl leading-none ${isFav ? 'text-amber-300' : 'text-gray-500 hover:text-amber-200'}`;
+            nodes.fav.title       = isFav ? 'Remove favorite' : 'Favorite this upgrade: it appears in shops more often';
         }
     }
 
