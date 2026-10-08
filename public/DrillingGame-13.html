@@ -325,7 +325,7 @@
                 <p id="shop-ore" class="text-lg font-bold text-yellow-500"></p>
             </div>
             <p class="text-sm text-gray-400 mb-1">You have come across a shop deep in the rock. Power, oxygen, heat and every timer are frozen while you are here.</p>
-            <p class="text-sm text-gray-400 mb-3">Each item can be bought once, and the shop is gone for good when you leave. Choose carefully!</p>
+            <p class="text-sm text-gray-400 mb-3">Each item can be bought once. When you leave, the shop stays behind you, so choose carefully! (If a Surface Sample ever pulls you back above it, you can return.)</p>
             <p id="shop-message" class="text-sm font-semibold text-amber-300 mb-3 min-h-[1.25rem]"></p>
             <div id="shop-items" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5"></div>
             <button onclick="leaveShop()" class="w-full px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-500 text-white font-bold shadow-md transition duration-150">Leave shop and keep drilling</button>
@@ -380,14 +380,15 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.3', date: '2026-10-07',
+			version: 'v1.3', date: '2026-10-08',
 			changes: [
 				'Update is WIP',
 				'Shops now appear every so often while drilling and sell a random mix of workshop upgrades and modules.',
+				'Shops you pass are remembered. If Surface Sample pulls you above one, it reopens when you drill back down to it: items you bought stay sold, and each unsold item has a 25% chance to be replaced.',
+				'Workshop upgrade prices now also scale with your current depth, so cheap upgrades no longer show up late in a run.',
 				'Removed Anomoly system',
 				'Removed ability to buy modules and workshop upgrades whenever',
 				'You can now favorite one workshop upgrade and one module slot (the star button). Favorited upgrades and modules for the favorited slot appear in shops more often, but it is not guaranteed.',
-				'Heavily reduced prices of tier 7, 8, and 9 upgrades',
 				]
 				},
         {
@@ -473,6 +474,17 @@
     const SHOP_DEPTH_SCALE   = 0.12;  // extra gap per metre of depth
     const SHOP_ITEM_COUNT    = 4;     // how many items each shop sells
     const FAVORITE_WEIGHT    = 3;     // a favorited item is this many times more likely to be picked (1 = no boost)
+
+    // When you drill back down to a shop that Surface Sample pulled you above, it reopens.
+    // Items you already bought stay sold. Each item you did NOT buy has this chance (0 to 1)
+    // of being swapped for something new. 0 = shop stays exactly the same, 1 = all unsold items reroll.
+    const SHOP_REVISIT_REROLL_CHANCE = 0.25;
+
+    // Workshop price = base x growth^tier x (1 + depth / DIVISOR)^EXPONENT
+    // Smaller DIVISOR or bigger EXPONENT = prices climb faster as you go deeper.
+    // With the defaults the depth multiplier is about x2.8 at 500m, x5 at 1000m, x15 at 2500m, x36 at 5000m, x140 at 13000m.
+    const WORKSHOP_DEPTH_DIVISOR  = 500;
+    const WORKSHOP_DEPTH_EXPONENT = 1.5;
 
 
     // ============================================================
@@ -746,7 +758,13 @@
     function getResourceValue(resource){ return (resource.name === 'Scraps' && gameState.mods.ScrapValue > 0) ? gameState.mods.ScrapValue : resource.value; }
 
     // Cost helpers
-    function getWorkshopCost(id)   { const u = WORKSHOP_UPGRADES[id]; return Math.ceil(u.cost * Math.pow(u.growth, gameState.workshopTiers[id] || 0)); }
+    // Workshop prices rise with the tier you already own AND with how deep you are right now.
+    // The depth part is what stops a "Tier 1" upgrade from being pocket change late in a run.
+    // At depth 0 the multiplier is exactly 1, so early prices are unchanged.
+    function getWorkshopDepthMult(depth = gameState.depth) {
+        return Math.pow(1 + Math.max(0, depth) / WORKSHOP_DEPTH_DIVISOR, WORKSHOP_DEPTH_EXPONENT);
+    }
+    function getWorkshopCost(id)   { const u = WORKSHOP_UPGRADES[id]; return Math.ceil(u.cost * Math.pow(u.growth, gameState.workshopTiers[id] || 0) * getWorkshopDepthMult()); }
     function getModuleSwapCost()   { return Math.ceil(15 * (1 + getKm() * 1.2)); }
     function getPowerRefillCost()  { return Math.ceil(3 * (1 + getKm() * 0.95)); }
     function getOxygenRefillCost() { return Math.ceil(6 * (1 + getKm() * 0.95)); }
@@ -826,7 +844,7 @@
             unlockedModuleOptions: { drillHead: { balanced: true }, reactorCore: { stable: true }, hullPlating: { standard: true } },
             mods: {}, unlockedSkills: [], timeSinceLastUIUpdate: 0,
             surfaceSamplesUsed: 0, autoActive: [], autoResumeDrill: false,
-            inShop: false, shopStock: [], shopWasDrilling: false, nextShopDepth: 0,
+            inShop: false, shopStock: [], shopWasDrilling: false, nextShopDepth: 0, shopLog: [],
             permanentResearchPoints: previousPrp, maxDepth: globalMaxDepth, workshopTiers: {}, secondWindUsed: false,
         };
 
@@ -946,6 +964,7 @@
         }
 
         // Reached the next shop? openShop() freezes the game, so we stop the loop here.
+        if (tryRevisitShop()) return;
         if (gameState.depth >= gameState.nextShopDepth && openShop()) return;
 
         if (gameState.timeSinceLastUIUpdate >= UI_UPDATE_INTERVAL) {
@@ -1167,6 +1186,12 @@
         gameState.drilling = false;
         gameState.depth   -= cost;
         gameState.surfaceSamplesUsed++;   // next sample will cost more
+        // Only shops inside the stretch you just gave up (between where you landed and where you
+        // sampled from) become revisitable. Shops above your landing spot were never passed, and
+        // shops flagged by an earlier sample stay flagged until you actually reach them.
+        for (const shop of gameState.shopLog) {
+            if (shop.depth > gameState.depth && shop.depth <= prevDepth) shop.pending = true;
+        }
         gameState.currentLevelResource = getCurrentResource(gameState.depth).name;
         const gain = 1 + gameState.mods.sampleBonusPrp;
         gameState.permanentResearchPoints += gain;
@@ -1353,22 +1378,89 @@
         return { tag: `⚙ ${slot.name} module`, color: 'cyan', name: opt.name, desc: opt.desc, price: opt.unlockCost };
     }
 
-    // Returns true if a shop opened, false if there was nothing to sell
-    function openShop() {
-        gameState.nextShopDepth = rollNextShopDepth(gameState.depth);   // always schedule the next one
-        const pool = buildShopPool();
-        if (!pool.length) return false;
+    // A short text "name tag" for an item, so we can tell whether two items are the same one
+    function shopItemKey(item) { return `${item.type}|${item.id || ''}|${item.slotId || ''}|${item.optId || ''}`; }
 
-        // Pick the stock and remember each item's card info at this moment
-        gameState.shopStock = pickWeighted(pool, SHOP_ITEM_COUNT)
-            .map(item => ({ ...item, info: getShopItemInfo(item), sold: false, favorite: isFavoriteItem(item) }));
+    // Revisiting: gets an old shop's stock ready to be shown again.
+    //  - items already SOLD stay sold
+    //  - items that are no longer valid (you got that module elsewhere, upgrade maxed...) are replaced
+    //  - every other unsold item has a SHOP_REVISIT_REROLL_CHANCE chance of being swapped for something new
+    // Returns the new stock list.
+    function refreshShopStock(oldStock) {
+        const pool    = buildShopPool();
+        const validKeys = new Set(pool.map(shopItemKey));
+        const keep = [];       // items that stay exactly as they are
+        let swapsNeeded = 0;   // how many items we have to replace
+
+        for (const item of oldStock) {
+            if (item.sold) { keep.push(item); continue; }
+            const stillValid = validKeys.has(shopItemKey(item));
+            if (!stillValid || Math.random() < SHOP_REVISIT_REROLL_CHANCE) swapsNeeded++;
+            else keep.push(item);
+        }
+
+        // New items may not duplicate anything the shop already has (sold items included)
+        const takenKeys = new Set(keep.map(shopItemKey));
+        const candidates = pool.filter(item => !takenKeys.has(shopItemKey(item)));
+        const fresh = pickWeighted(candidates, swapsNeeded)
+            .map(item => ({ ...item, sold: false }));
+
+        // Rebuild the card info (prices and tiers may have changed since the first visit)
+        const result = [...keep, ...fresh];
+        for (const item of result) {
+            item.info     = getShopItemInfo(item);
+            item.favorite = isFavoriteItem(item);
+        }
+        return result;
+    }
+
+    // Called every frame by the game loop. If you have drilled back down to a shop that
+    // Surface Sample pulled you above, this opens it again. Returns true if a shop opened.
+    function tryRevisitShop() {
+        // pending = "you were pulled above this shop and have not got back to it yet"
+        const due = gameState.shopLog
+            .filter(s => s.pending && gameState.depth >= s.depth)
+            .sort((a, b) => a.depth - b.depth)[0];   // if several are due, take the shallowest first
+        if (!due) return false;
+
+        due.pending = false;   // so it does not reopen every single frame
+        if (due.stock.every(item => item.sold)) return false;   // nothing left to sell, skip it
+
+        due.stock = refreshShopStock(due.stock);
+        if (due.stock.every(item => item.sold)) return false;
+        return openShop(due);
+    }
+
+    // Returns true if a shop opened, false if there was nothing to sell.
+    // Pass in an old shop (from gameState.shopLog) to reopen it instead of making a new one.
+    function openShop(revisitShop = null) {
+        if (revisitShop) {
+            gameState.shopStock = revisitShop.stock;
+        } else {
+            gameState.nextShopDepth = rollNextShopDepth(gameState.depth);   // always schedule the next one
+            const pool = buildShopPool();
+            if (!pool.length) return false;
+
+            // Pick the stock and remember each item's card info at this moment
+            gameState.shopStock = pickWeighted(pool, SHOP_ITEM_COUNT)
+                .map(item => ({ ...item, info: getShopItemInfo(item), sold: false, favorite: isFavoriteItem(item) }));
+
+            // Write this shop in the log. The log and gameState.shopStock share the SAME list,
+            // so when you buy something (item.sold = true) the log remembers it automatically.
+            gameState.shopLog.push({ depth: gameState.depth, stock: gameState.shopStock, pending: false });
+        }
 
         gameState.shopWasDrilling = gameState.drilling;   // so we can carry on drilling afterwards
         gameState.drilling = false;
         gameState.inShop   = true;
         closeSidebar();
-        logEvent(`${gameState.depth.toFixed(0)}m — Found a wandering shop.`);
-        setShopMessage('');
+        if (revisitShop) {
+            logEvent(`${gameState.depth.toFixed(0)}m — Returned to a shop you passed earlier.`);
+            setShopMessage('You are back at a shop you passed earlier. Anything you already bought is gone, and some of the rest may have changed.');
+        } else {
+            logEvent(`${gameState.depth.toFixed(0)}m — Found a wandering shop.`);
+            setShopMessage('');
+        }
         renderShop();
         document.getElementById('shop-overlay').classList.add('open');
         updateUI();
