@@ -17,6 +17,10 @@
 function myReset() {
   document.getElementById('myText01').value = "3"
 }
+
+function myCurrent() {
+  document.getElementById('myText01').value = myReply
+}
   
 </script>
 
@@ -47,3 +51,5 @@ You can call functions from multiple different places like the first button and 
 More example functions: <br>
 
 <input type=button value="Reset Value" onClick="{ myReset() }">
+
+<input type=button value="Make the Value Current Answer" onClick="{ myCurrent }">
