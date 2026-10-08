@@ -14,9 +14,9 @@
     return myReply
   }
 
-  function myReset() {
-    let myText01 = "3"
-  }
+function myReset() {
+  document.getElementById('myText01').value = "3"
+}
   
 </script>
 
@@ -46,6 +46,4 @@ You can call functions from multiple different places like the first button and 
 
 More example functions: <br>
 
-<input type=button value="Reset Value" onClick="{
-  document.getElementById('myText01').value = myReset()
-  }">
+<input type=button value="Reset Value" onClick="{ myReset() }">
