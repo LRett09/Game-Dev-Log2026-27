@@ -1,0 +1,117 @@
+from pathlib import Path
+
+html = r'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mandelbrot Explorer</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05020d;color:#fff;font:14px system-ui,sans-serif}canvas{display:block;width:100vw;height:100vh;cursor:crosshair}#hud{position:fixed;left:16px;top:14px;padding:10px 13px;background:#080516b8;border:1px solid #ffffff26;border-radius:10px;backdrop-filter:blur(8px);pointer-events:none;line-height:1.5;text-shadow:0 1px 4px #000}#hud strong{color:#8dfcff;letter-spacing:.12em}#help{color:#c8bfdc;font-size:12px}#previewWrap{position:fixed;right:16px;bottom:16px;width:min(30vw,260px);aspect-ratio:4/3;background:#090515;border:1px dashed #b8faff;border-radius:8px;overflow:hidden;box-shadow:0 0 20px #5ceaff30}#preview{width:100%;height:100%}#previewLabel{position:fixed;right:25px;bottom:calc(16px + min(22.5vw,195px) + 8px);font-size:10px;letter-spacing:.16em;color:#b9faff;text-shadow:0 0 8px #00eaff}#reset{position:fixed;right:16px;top:16px;background:#100a27cc;color:#e7e1ff;border:1px solid #ffffff38;border-radius:8px;padding:8px 12px;cursor:pointer}#reset:hover{border-color:#8dfcff;color:#8dfcff}
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="hud"><strong>MANDELBROT / DEEP SPACE</strong><div id="coords">Move to explore · scroll to zoom</div><div id="help">Wheel: zoom · Drag: pan · Double-click: zoom in</div></div>
+<div id="previewLabel">CURSOR PREVIEW · PROGRESSIVE</div><div id="previewWrap"><canvas id="preview"></canvas></div>
+<button id="reset">Reset view</button>
+<script>
+(()=>{
+const canvas=document.getElementById('view'),ctx=canvas.getContext('2d',{alpha:false});
+const mini=document.getElementById('preview'),mctx=mini.getContext('2d',{alpha:false});
+const coords=document.getElementById('coords');
+let W=0,H=0,centerX=-0.5,centerY=0,scale=3.2,mouse={x:innerWidth/2,y:innerHeight/2},drag=null,renderToken=0,previewToken=0;
+const MAX_ITER=420;
+function palette(t,iter,max){
+ if(iter>=max)return [3,1,13];
+ // Smooth, saturated cyclic palette. The smooth iteration keeps colors flowing at high zoom.
+ const a=t*0.075;
+ return [Math.round(128+127*Math.sin(a+0.1)),Math.round(128+127*Math.sin(a+2.15)),Math.round(128+127*Math.sin(a+4.25))];
+}
+function escape(cx,cy,max){
+ let x=0,y=0,xx=0,yy=0,i=0;
+ while(xx+yy<=256&&i<max){y=2*x*y+cy;x=xx-yy+cx;xx=x*x;yy=y*y;i++;}
+ if(i>=max)return max;
+ const mag=Math.sqrt(xx+yy);
+ return i+1-Math.log(Math.max(1e-12,Math.log(Math.max(mag,1.000001))))/Math.LN2;
+}
+function mapPoint(px,py,w,h,cx=centerX,cy=centerY,s=scale){
+ const unit=s/Math.min(w,h);
+ return [cx+(px-w/2)*unit,cy+(py-h/2)*unit];
+}
+function drawFractal(target,context,w,h,cx,cy,s,maxIter,token,isPreview=false){
+ const image=context.createImageData(w,h),data=image.data;
+ // Progressive coarse-to-fine passes give an immediate image, then sharpen it.
+ const passes=isPreview?[8,4,2,1]:[8,4,2,1];
+ let passIndex=0;
+ function pass(){
+  if(token!==(isPreview?previewToken:renderToken))return;
+  const step=passes[passIndex],unit=s/Math.min(w,h);
+  for(let py=0;py<h;py+=step){
+   for(let px=0;px<w;px+=step){
+    const cr=cx+(px-w/2)*unit,ci=cy+(py-h/2)*unit;
+    const t=escape(cr,ci,maxIter),rgb=palette(t,maxIter);
+    for(let yy=py;yy<Math.min(h,py+step);yy++)for(let xx=px;xx<Math.min(w,px+step);xx++){
+     const k=(yy*w+xx)*4;data[k]=rgb[0];data[k+1]=rgb[1];data[k+2]=rgb[2];data[k+3]=255;
+    }
+   }
+  }
+  context.putImageData(image,0,0);
+  passIndex++;
+  if(passIndex<passes.length)requestAnimationFrame(pass);
+ }
+ requestAnimationFrame(pass);
+}
+function resize(){
+ const dpr=Math.min(devicePixelRatio||1,1.5);W=Math.floor(innerWidth*dpr);H=Math.floor(innerHeight*dpr);
+ canvas.width=W;canvas.height=H;drawMain();
+}
+function drawMain(){
+ const token=++renderToken;
+ const max=Math.min(1600,Math.floor(MAX_ITER+Math.max(0,Math.log2(3.2/scale))*35));
+ drawFractal(canvas,ctx,W,H,centerX,centerY,scale,max,token,false);
+}
+function updatePreview(){
+ const rect=mini.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);
+ const w=Math.max(1,Math.floor(rect.width*dpr)),h=Math.max(1,Math.floor(rect.height*dpr));
+ if(mini.width!==w||mini.height!==h){mini.width=w;mini.height=h;}
+ const [cx,cy]=mapPoint(mouse.x*(W/innerWidth),mouse.y*(H/innerHeight),W,H);
+ // Preview shows a tighter view centered on the pointer, at a zoom level beyond the main canvas.
+ const s=scale*0.38,token=++previewToken;
+ drawFractal(mini,mctx,w,h,cx,cy,s,Math.min(1200,Math.floor(MAX_ITER+Math.max(0,Math.log2(3.2/scale))*35)),token,true);
+}
+function zoomAt(px,py,factor){
+ const [beforeX,beforeY]=mapPoint(px,py,W,H);
+ scale=Math.max(1e-14,Math.min(5,scale*factor));
+ const [afterX,afterY]=mapPoint(px,py,W,H);
+ centerX+=beforeX-afterX;centerY+=beforeY-afterY;
+ drawMain();updatePreview();updateHud();
+}
+function updateHud(){
+ const [x,y]=mapPoint(mouse.x*(W/innerWidth),mouse.y*(H/innerHeight),W,H);
+ coords.textContent=`x ${x.toPrecision(7)} · y ${y.toPrecision(7)} · zoom ${(3.2/scale).toExponential(2)}×`;
+}
+canvas.addEventListener('pointermove',e=>{
+ mouse={x:e.clientX,y:e.clientY};
+ if(drag){
+  const dx=(e.clientX-drag.x)*(W/innerWidth),dy=(e.clientY-drag.y)*(H/innerHeight),unit=scale/Math.min(W,H);
+  centerX-=dx*unit;centerY-=dy*unit;drag.x=e.clientX;drag.y=e.clientY;drawMain();
+ }
+ updateHud();updatePreview();
+});
+canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener('pointerup',()=>{drag=null;});
+canvas.addEventListener('pointercancel',()=>{drag=null;});
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoomAt(e.clientX*(W/innerWidth),e.clientY*(H/innerHeight),Math.exp(Math.sign(e.deltaY)*0.22));},{passive:false});
+canvas.addEventListener('dblclick',e=>zoomAt(e.clientX*(W/innerWidth),e.clientY*(H/innerHeight),0.35));
+document.getElementById('reset').addEventListener('click',()=>{centerX=-0.5;centerY=0;scale=3.2;drawMain();updatePreview();updateHud();});
+addEventListener('resize',()=>{resize();updatePreview();});
+resize();updatePreview();updateHud();
+})();
+</script>
+</body>
+</html>
+'''
+path = Path("/mnt/data/mandelbrot_explorer.html")
+path.write_text(html, encoding="utf-8")
+print(f"Created {path} ({path.stat().st_size:,} bytes)")
