@@ -216,6 +216,26 @@
             overflow-y: auto; padding: 1.5rem;
             box-shadow: 0 25px 60px rgba(0,0,0,0.6);
         }
+
+        /* --- TITLE SCREEN ---
+           A full-screen layer that sits on top of the game. z-index 1900 puts it above the side panels and
+           shops (1000-1300) but BELOW the Patch Notes window (2000), so Patch Notes can open on top of it. */
+        #title-screen {
+            display: none; position: fixed; inset: 0; z-index: 1900;
+            flex-direction: column; align-items: center; justify-content: center;
+            padding: 1.5rem; text-align: center;
+            background: radial-gradient(ellipse at 50% 20%, #1f2937 0%, #0d1117 60%, #000 100%);
+        }
+        #title-screen.open { display: flex; }
+        .title-btn {
+            width: 260px; max-width: 80vw; padding: 0.9rem 1rem;
+            border-radius: 12px; font-weight: 700; font-size: 1.1rem; color: white;
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: transform 0.15s, background-color 0.15s, box-shadow 0.15s;
+        }
+        .title-btn:hover { transform: scale(1.05); box-shadow: 0 0 18px rgba(250,204,21,0.35); }
+        #title-logo { animation: title-bob 3s ease-in-out infinite alternate; }
+        @keyframes title-bob { from { transform: translateY(-6px); } to { transform: translateY(6px); } }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen">
@@ -232,12 +252,13 @@
                 <p class="text-xs text-gray-500">Version 1.3: Merchants of the Mine</p>
             </div>
             <div id="permanent-stats-display" class="px-4 py-1.5 rounded-full bg-purple-950 border border-purple-600 text-purple-300 font-bold text-sm">🔮 0 PRP</div>
+            <div id="alloy-display" class="hidden px-4 py-1.5 rounded-full bg-slate-800 border border-slate-500 text-slate-200 font-bold text-sm">🔩 0 Alloys</div>
             <div class="flex flex-wrap gap-2">
                 <button onclick="openGoals('achievements')" id="achievements-btn" class="px-3 py-1.5 rounded-lg bg-yellow-700 hover:bg-yellow-600 text-white text-sm font-semibold transition duration-150 border border-yellow-500">
                     🏆 Achievements
                 </button>
-                <button onclick="openPatchNotes()" class="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm font-semibold transition duration-150 border border-gray-600">
-                    📋 About &amp; Patch Notes
+                <button onclick="openTitleScreen()" class="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm font-semibold transition duration-150 border border-gray-600" title="Pause and go back to the title screen">
+                    🏠 Main Menu
                 </button>
                 <button onclick="toggleDevPanel()" id="dev-toggle-btn" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-purple-900 text-gray-500 hover:text-purple-300 text-sm font-semibold transition duration-150 border border-gray-700" title="Dev Mode">
                     🛠 Dev
@@ -354,6 +375,21 @@
 
             <!-- Automation routines (shown once Autonomous Operations is unlocked), below the main buttons -->
             <div id="auto-ops-panel" class="hidden mt-4 p-4 rounded-lg bg-gray-900 border border-sky-700"></div>
+
+            <!-- Refinery (shown once you reach 5,500m and find it). The upgrade cards are added by buildRefinery() in the script. -->
+            <div id="refinery-panel" class="hidden mt-4 p-4 rounded-lg bg-gray-900 border border-slate-500">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <h3 class="text-lg font-bold text-slate-200">🏭 Refinery</h3>
+                    <span id="refinery-alloys" class="text-sm font-bold text-slate-300">🔩 0 Alloys</span>
+                </div>
+                <p id="refinery-info" class="text-xs text-gray-400 mb-3"></p>
+                <div class="w-full bg-gray-700 rounded-full h-3 mb-1">
+                    <div id="refinery-bar" class="progress-bar h-3 rounded-full bg-slate-400" style="width:0%"></div>
+                </div>
+                <p id="refinery-status" class="text-sm font-semibold text-gray-200 mb-3"></p>
+                <button id="refinery-toggle-btn" onclick="toggleRefinery()" class="px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold shadow-md transition duration-150">Start refinery</button>
+                <div id="refinery-upgrades" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4"></div>
+            </div>
         </div>
 
         <!-- Event Log -->
@@ -460,6 +496,35 @@
          ACHIEVEMENT / CHALLENGE TOAST AREA
          ============================ -->
     <div id="achievement-toasts"></div>
+
+
+    <!-- ============================
+         TITLE SCREEN
+         Shown when the page loads. The game does not start until "Start Game" is pressed.
+         The "Main Menu" button at the top of the game brings it back.
+         ============================ -->
+    <div id="title-screen" class="open">
+        <!-- The normal menu -->
+        <div id="title-menu" class="flex flex-col items-center">
+            <div id="title-logo" class="text-7xl mb-4">⛏️</div>
+            <h1 class="text-5xl md:text-6xl font-bold text-yellow-500 mb-2">The Deep Mine</h1>
+            <p class="text-sm text-gray-500 mb-1">Version 1.4: Drilling with Company</p>
+            <p class="text-gray-400 max-w-md mb-8">Drill deep, but be warned: the lower you go the more dangerous the caves get. Can you reach the bottom?</p>
+            <div class="flex flex-col gap-3 items-center">
+                <button id="title-start-btn" onclick="startGameFromTitle()" class="title-btn bg-green-600 hover:bg-green-500">▶ Start Game</button>
+                <button onclick="openPatchNotes()" class="title-btn bg-gray-700 hover:bg-gray-600">📋 Patch Notes</button>
+                <button onclick="exitGame()" class="title-btn bg-red-800 hover:bg-red-700">✖ Exit Game</button>
+            </div>
+        </div>
+
+        <!-- Shown after Exit Game (browsers often refuse to close a tab from a script, so we show this instead) -->
+        <div id="title-goodbye" class="hidden flex-col items-center">
+            <div class="text-6xl mb-4">👋</div>
+            <h2 class="text-3xl font-bold text-yellow-500 mb-2">Thanks for playing!</h2>
+            <p class="text-gray-400 max-w-md mb-6">You can now close this tab. Your game was not saved, since the game does not have saving yet.</p>
+            <button onclick="backToTitleMenu()" class="title-btn bg-gray-700 hover:bg-gray-600">← Back to title</button>
+        </div>
+    </div>
 
 
     <!-- ============================
@@ -581,6 +646,13 @@
             <button class="dev-mini-btn" onclick="devMaxModuleMk()">Mk III every owned module</button>
         </div>
 
+        <p class="dev-section-label">Refinery</p>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn purple" onclick="devUnlockRefinery()">Unlock refinery</button>
+            <button class="dev-mini-btn" onclick="devGiveAlloys()">+1000 alloys</button>
+            <button class="dev-mini-btn" onclick="devMaxRefinery()">Max upgrades</button>
+        </div>
+
         <p class="dev-section-label">Deep Events</p>
         <div class="dev-row"><select id="dev-deep-select"></select></div>
         <div class="dev-mini-row">
@@ -636,6 +708,15 @@
     //  Fields: version (string), date (string), changes (string[])
     // ============================================================
     const PATCH_NOTES = [
+		{
+			version: 'v1.4', date: '2026-10-09',
+			changes: [
+				'Added in a main menu',
+					'Added the Refinery! You find an abandoned one for free at 5,500m. It turns ore into alloys used to make drones (not added yet).',
+					'Refinery upgrades (bought with Ore, reset when you ascend): Efficient Furnace uses less Power, Rapid Smelting makes batches faster, and Alloy Yield makes more Alloys per batch.',
+					'Alloys do not have a use yet. They will be used to build drones in a future update.',
+				]
+			},
         {
             version: 'v1.3', date: '2026-10-08',
             changes: [
@@ -775,6 +856,24 @@
     // With the defaults the depth multiplier is about x2.8 at 500m, x5 at 1000m, x15 at 2500m, x36 at 5000m, x140 at 13000m.
     const WORKSHOP_DEPTH_DIVISOR  = 500;
     const WORKSHOP_DEPTH_EXPONENT = 1.5;
+
+    // Refinery (found abandoned at REFINERY_UNLOCK_DEPTH, turns Ore into Alloys)
+    // One "batch" = pay REFINERY_ORE_COST Ore, then wait REFINERY_BASE_CYCLE seconds (using power the whole time) to get alloys.
+    // These numbers are first guesses: change them to balance the refinery.
+    const REFINERY_UNLOCK_DEPTH   = 5500;    // you get the refinery for free when you reach this depth (each run)
+    const REFINERY_BASE_CYCLE     = 20;      // seconds per batch before any upgrades
+    const REFINERY_MIN_CYCLE      = 6;       // upgrades can never make a batch faster than this
+    const REFINERY_BASE_POWER     = 2;       // Power per second the refinery uses while smelting (before upgrades)
+    const REFINERY_MIN_POWER_PCT  = 0.15;    // the refinery stalls when Power is below this share of Max Power, so it can't drain you to zero
+    const REFINERY_ORE_COST       = 5000;    // Ore per batch at REFINERY_UNLOCK_DEPTH (it rises with depth, see getRefineryDepthMult)
+    const REFINERY_DEPTH_EXPONENT = 1.5;     // how fast Ore costs (batches and upgrades) climb with depth
+    // Refinery upgrades, bought with Ore from the refinery panel. They reset when you ascend.
+    // cost = price of tier 1 at the unlock depth, growth = how much the price multiplies per tier.
+    const REFINERY_UPGRADES = {
+        eff:   { name: 'Efficient Furnace', icon: '🔥', cost: 20000, growth: 1.8, maxTier: 6, effect: '-12% refinery Power use' },
+        speed: { name: 'Rapid Smelting',    icon: '⏩', cost: 30000, growth: 2.0, maxTier: 5, effect: '-2s per batch' },
+        yield: { name: 'Alloy Yield',       icon: '🔩', cost: 40000, growth: 2.2, maxTier: 4, effect: '+1 Alloy per batch' },
+    };
 
 
     // ============================================================
@@ -1019,14 +1118,6 @@
 
     // ============================================================
     //  CROSSROADS
-    //  Every so often (see CROSSROADS_BASE_INTERVAL) the game freezes and you pick one option.
-    //  TO ADD A NEW CROSSROADS: copy one entry below and change it.
-    //    minKm   - shallowest depth (in km) it can appear at
-    //    weight  - how likely it is compared to the others (bigger = more common)
-    //    options - each one: { label, desc: () => text, cost: () => Ore (optional), apply: () => result text }
-    //  Handy helpers: oreWorth(m) = the Ore you'd earn drilling m metres right now,
-    //  addTimedEffect(id, name, bad, seconds, effect), keepDrillStopped().
-    //  Timed effects can use: speedMult, oreMult, wearMult, heatMult, powerDrainMult, oxygenDrain.
     // ============================================================
     const CROSSROADS = [
         { id: 'fork', icon: '🔀', name: 'Fork in the Tunnel', minKm: 0, weight: 3,
@@ -1111,21 +1202,6 @@
 
     // ============================================================
     //  DEEP EVENTS
-    //  Long events (about a minute) that you have to manage while drilling. They start with a
-    //  pop-up explaining the rules, then show a panel above the control buttons.
-    //  TO ADD A NEW DEEP EVENT: copy one entry below and change it. "ev" is the running event:
-    //  ev.timeLeft and ev.def are set for you, and you can store your own values on it too.
-    //    minKm, weight      - shallowest depth (km) it can appear at, and how common it is
-    //    duration           - seconds it lasts if you survive it
-    //    avoidable          - true = the pop-up also offers a free "avoid it" option
-    //    intro()            - the rules, shown in the pop-up
-    //    start(ev)          - runs once when it begins
-    //    tick(ev, dt)       - runs every frame. Call endDeepEvent(false, 'why') to make it fail early.
-    //    status(ev)         - what the panel shows: { text, bar (0 to 1), alert (true = flashing), button (label or null) }
-    //    action(ev)         - what the panel's button does (optional)
-    //    finish(ev)         - runs when the timer runs out (you survived). Give rewards here and return a result text.
-    //  Effects added with an id starting 'deep_' are removed automatically when the event ends.
-    //  Give Ore rewards with deepEventOre(metres) instead of oreWorth(), so the Prospector's Eye perk can double them.
     // ============================================================
     const DEEP_EVENTS = [
         { id: 'seismic', icon: '🌋', name: 'Seismic Storm', minKm: 2, weight: 3, duration: 60, avoidable: true,
@@ -1255,21 +1331,6 @@
 
     // ============================================================
     //  CHALLENGES
-    //  Starting a challenge restarts your run from 0m (Deep Drop is skipped, other
-    //  Ascension perks still apply). Each challenge can be completed once, and its
-    //  reward lasts forever.
-    //  TO ADD A NEW CHALLENGE: copy one entry below and change it.
-    //    id         - a unique name (never reuse one)
-    //    icon, name - shown to the player
-    //    desc       - what the player has to do
-    //    goal       - function (gs, run) that returns true once the challenge is beaten
-    //    fail       - function (gs, run) that returns true once it can no longer be beaten
-    //    failReason - shown when fail() turns true
-    //    progress   - function (gs, run) that returns a short progress text
-    //    reward     - { type: 'module', slotId, optId }  unlocks a special module (mark it special: true in MODULE_SLOTS)
-    //                 { type: 'workshop', id }          +1 free tier of that workshop upgrade now and at the start of every run
-    //  "run" holds this run's counters (see initializeGame): modulesBought, workshopBought,
-    //  shopPurchases, skillsBought, powerRefills, oxygenRefills, repairs, maxHeat.
     // ============================================================
     const reachDepth = m => gs => gs.depth >= m;
     const depthText  = m => gs => `Depth: ${Math.floor(gs.depth).toLocaleString()} / ${m.toLocaleString()}m`;
@@ -1332,15 +1393,6 @@
 
     // ============================================================
     //  ACHIEVEMENTS
-    //  TO ADD A NEW ACHIEVEMENT: copy one line in the list below and change it.
-    //    id     - a unique name (never reuse one, it is how the game remembers it was earned)
-    //    icon   - any emoji
-    //    name   - the title shown to the player
-    //    desc   - what the player has to do
-    //    check  - a function that gets the game state (gs) and returns true once it is earned
-    //    hidden - optional. true = the name and description show as ??? until it is earned
-    //  The game tests every unearned achievement a few times a second, so you never have to
-    //  "trigger" one by hand. Just describe the condition in check.
     // ============================================================
     const ACHIEVEMENTS = [
         // --- Progress ---
@@ -1354,6 +1406,8 @@
         { id: 'automation',    icon: '🤖', name: 'Hands Free',         desc: 'Install Autonomous Operations.',              check: gs => gs.unlockedSkills.includes('H3') },
         { id: 'speed_demon',   icon: '🏎️', name: 'Speed Demon',        desc: 'Drill at 25 m/s or faster (after rock hardness).', check: gs => getEffectiveDrillSpeed() >= 25 },
         { id: 'scan_boost',    icon: '📡', name: 'Ping!',              desc: 'Use Scan Boost.',                             check: gs => gs.boostTimeRemaining > 0 },
+		{ id: 'first_alloy',   icon: '🔧', name: 'Refining!',          desc: 'Get your first alloy',						check: gs => gs.totalAlloysMade >= 1 },
+		{ id: 'many_alloys',   icon: '🔧', name: 'Forge Master',          desc: 'Hold 150 alloys at once',						check: gs => gs.alloys >= 150 },
 
         // --- Shops & modules ---
         { id: 'regular',       icon: '🗺️', name: 'Regular Customer',   desc: 'Find 5 shops in one run.',                    check: gs => gs.shopLog.length >= 5 },
@@ -1432,6 +1486,7 @@
         freeWorkshopTiers: {},    // challenge reward tiers every run starts with, as { upgradeId: tiers }
         totalChoicesMade: 0,      // crossroads + event choices picked, across all runs
         deepEventsSurvived: 0,    // Deep Events finished successfully, across all runs
+        totalAlloysMade: 0,       // Alloys the refinery has ever produced, across all runs
     };
 
     // Cached DOM element references
@@ -1519,6 +1574,7 @@
         const powerDrain     = baseConsumption * depthFactor * getShallowFactor() * mods.powerConsumptionFactor * getTemperatureFactor() * getEffectMods().powerDrainMult;
         let netDelta = -powerDrain + mods.powerRate;
         if (drilling) netDelta += mods.powerGainOnDrill;
+        if (isRefineryDraining()) netDelta -= getRefineryPowerRate();   // the refinery's power use shows up in the Power bar too
         return netDelta;
     }
     function getEffectiveOxygenRate() {
@@ -1588,6 +1644,7 @@
             inChoice: false, currentChoice: null, choiceWasDrilling: false, nextCrossroadsDepth: 0,
             moduleMk: {},                            // Mk level of each module, as { 'slotId.optId': 2 } (missing = Mk I)
             deepEvent: null, nextDeepEventDepth: 0,  // the Deep Event running right now (or null)
+            alloys: 0, refinery: newRefineryState(), // Alloys and the refinery both reset every run
         };
 
         // Free tiers earned from challenges are installed at the start of every run
@@ -1727,6 +1784,7 @@
         handleEvents(dt);
         if (gameState.inChoice) return;   // an event asked for a choice: everything freezes until you pick
         tickDeepEvent(dt);
+        tickRefinery(dt);
         if (gameState.mods.autoOps) handleAutoOps();
         gameState.run.maxHeat = Math.max(gameState.run.maxHeat, gameState.temperature);
         checkChallenges();   // every frame, so "before you pass Xm" goals are judged exactly
@@ -2654,6 +2712,179 @@
 
 
     // ============================================================
+    //  REFINERY
+    //  An abandoned refinery you get for free at REFINERY_UNLOCK_DEPTH. It turns Ore into Alloys.
+    //  gameState.refinery holds everything about it:
+    //    unlocked - found yet this run?        on       - switched on by the player?
+    //    working  - is a batch in progress?    progress - seconds into the current batch
+    //    state    - what it is doing right now: 'off' | 'working' | 'needOre' | 'lowPower'
+    //    tiers    - upgrade levels, as { eff, speed, yield }
+    //  How a batch works (see tickRefinery):
+    //    1) When it is on and no batch is running, it pays the Ore cost and starts a batch.
+    //    2) While a batch runs it uses Power every second (that draw is added in getEffectivePowerConsumptionRate).
+    //    3) When the batch timer is full you get the alloys and the next batch can start.
+    //  Switching it off mid-batch just pauses the batch, nothing is lost.
+    // ============================================================
+
+    function newRefineryState() {
+        return { unlocked: false, on: false, working: false, progress: 0, state: 'off', tiers: { eff: 0, speed: 0, yield: 0 } };
+    }
+
+    function getRefineryTier(id)    { return gameState.refinery.tiers[id] || 0; }
+    function getRefineryCycleTime() { return Math.max(REFINERY_MIN_CYCLE, REFINERY_BASE_CYCLE - 2 * getRefineryTier('speed')); }
+    function getRefineryYield()     { return 1 + getRefineryTier('yield'); }
+    function getRefineryPowerRate() { return REFINERY_BASE_POWER * Math.pow(0.88, getRefineryTier('eff')); }
+    // Ore prices grow with depth, starting at x1 on the unlock depth, so the refinery stays worth using late in a run
+    function getRefineryDepthMult() { return Math.pow(1 + Math.max(0, gameState.depth - REFINERY_UNLOCK_DEPTH) / REFINERY_UNLOCK_DEPTH, REFINERY_DEPTH_EXPONENT); }
+    function getRefineryOreCost()   { return roundPrice(REFINERY_ORE_COST * getRefineryDepthMult()); }
+    function getRefineryUpgradeCost(id) {
+        const u = REFINERY_UPGRADES[id];
+        return roundPrice(u.cost * Math.pow(u.growth, getRefineryTier(id)) * getRefineryDepthMult());
+    }
+    // True only while a batch is actually being smelted (this is when Power is used)
+    function isRefineryDraining() {
+        const r = gameState.refinery;
+        return !!(r && r.unlocked && r.on && r.working && r.state === 'working');
+    }
+
+    // quiet = true skips the pop-up and log line (used by Dev Mode)
+    function unlockRefinery(quiet = false) {
+        const r = gameState.refinery;
+        if (r.unlocked) return;
+        r.unlocked = true;
+        if (quiet) return;
+        gameState.message = `You found an abandoned refinery at ${REFINERY_UNLOCK_DEPTH}m! It is yours. Switch it on to turn Ore into Alloys.`;
+        logEvent(`${gameState.depth.toFixed(0)}m — Found an abandoned refinery.`);
+        showToast('🏭', 'Refinery found', 'Abandoned Refinery', 'It turns Ore into Alloys. Find it below the drill controls.');
+    }
+
+    // Runs every frame from the game loop
+    function tickRefinery(dt) {
+        const r = gameState.refinery;
+        if (!r.unlocked) {
+            if (gameState.depth >= REFINERY_UNLOCK_DEPTH) unlockRefinery();
+            return;
+        }
+        if (!r.on) { r.state = 'off'; return; }
+
+        const lowPower = gameState.power < gameState.maxPower * REFINERY_MIN_POWER_PCT;
+        if (!r.working) {
+            // Try to start a new batch: it needs the Ore up front and enough Power
+            const cost = getRefineryOreCost();
+            if (gameState.ore < cost) { r.state = 'needOre';  return; }
+            if (lowPower)             { r.state = 'lowPower'; return; }
+            gameState.ore -= cost;
+            r.working  = true;
+            r.progress = 0;
+        }
+        if (lowPower) { r.state = 'lowPower'; return; }
+
+        r.state     = 'working';   // while 'working', getEffectivePowerConsumptionRate takes the Power for us
+        r.progress += dt;
+        if (r.progress >= getRefineryCycleTime()) {
+            const made = getRefineryYield();
+            gameState.alloys += made;
+            gameState.totalAlloysMade += made;
+            r.working  = false;
+            r.progress = 0;
+        }
+    }
+
+    function toggleRefinery() {
+        if (gameState.gameOver || gameState.isPaused || !gameState.refinery.unlocked) return;
+        const r = gameState.refinery;
+        r.on = !r.on;
+        gameState.message = r.on ? 'Refinery switched on.' : 'Refinery switched off. Any batch in progress is paused.';
+        updateUI();
+    }
+
+    function buyRefineryUpgrade(id) {
+        if (gameState.gameOver || gameState.isPaused || !gameState.refinery.unlocked) return;
+        const u    = REFINERY_UPGRADES[id];
+        const tier = getRefineryTier(id);
+        const cost = getRefineryUpgradeCost(id);
+        if (tier >= u.maxTier)           gameState.message = `${u.name} is already maxed.`;
+        else if (gameState.ore < cost)   gameState.message = `Need ${fmtPrice(cost)} Ore to upgrade ${u.name}.`;
+        else {
+            gameState.ore -= cost;
+            gameState.refinery.tiers[id] = tier + 1;
+            gameState.message = `${u.name} upgraded to Tier ${tier + 1}: ${u.effect}.`;
+        }
+        updateUI();
+    }
+
+    // --- Refinery panel: the HTML is written once in the page, buildRefinery() adds the upgrade cards once,
+    //     and updateRefineryPanel() only changes text. Buttons are never rebuilt, so clicks are never lost. ---
+    const refineryNodes = {};
+    function buildRefinery() {
+        const container = document.getElementById('refinery-upgrades');
+        if (!container || container.childElementCount) return;
+        for (const id in REFINERY_UPGRADES) {
+            const u    = REFINERY_UPGRADES[id];
+            const card = document.createElement('div');
+            card.className = 'bg-gray-800 p-3 rounded-lg border border-gray-700 flex flex-col justify-between';
+            card.innerHTML = `
+                <div>
+                    <p class="font-bold text-slate-200">${u.icon} ${u.name}</p>
+                    <p class="r-tier text-xs text-gray-400 mt-1"></p>
+                    <p class="text-xs text-gray-500">${u.effect} per tier</p>
+                </div>
+                <button class="r-btn mt-3 w-full p-2 rounded-lg text-white text-sm font-bold transition duration-150"></button>`;
+            const button = card.querySelector('.r-btn');
+            button.dataset.baseClass = button.className;
+            button.addEventListener('click', () => buyRefineryUpgrade(id));
+            container.appendChild(card);
+            refineryNodes[id] = { tier: card.querySelector('.r-tier'), button };
+        }
+    }
+
+    function updateRefineryPanel() {
+        const panel = document.getElementById('refinery-panel');
+        const pill  = document.getElementById('alloy-display');
+        const r     = gameState.refinery;
+        if (!r.unlocked) { panel.classList.add('hidden'); pill.classList.add('hidden'); return; }
+        panel.classList.remove('hidden');
+        pill.classList.remove('hidden');
+
+        const alloyText = `🔩 ${Math.floor(gameState.alloys).toLocaleString()} Alloys`;
+        pill.innerText = alloyText;
+        document.getElementById('refinery-alloys').innerText = alloyText;
+
+        const cycle = getRefineryCycleTime(), made = getRefineryYield();
+        document.getElementById('refinery-info').innerText =
+            `Each batch costs ${fmtPrice(getRefineryOreCost())} Ore up front, uses ${getRefineryPowerRate().toFixed(2)} Power/sec while smelting, takes ${cycle}s and makes ${made} Alloy${made === 1 ? '' : 's'}. ` +
+            `It stalls if Power drops below ${Math.round(REFINERY_MIN_POWER_PCT * 100)}%.`;
+
+        document.getElementById('refinery-bar').style.width = `${r.working ? Math.min(100, r.progress / cycle * 100) : 0}%`;
+        let status;
+        if (!r.on)                      status = r.working ? `Switched off. Batch paused at ${Math.floor(r.progress / cycle * 100)}%.` : 'Switched off.';
+        else if (r.state === 'needOre') status = `Waiting for ${fmtPrice(getRefineryOreCost())} Ore to start the next batch.`;
+        else if (r.state === 'lowPower')status = `Stalled: Power is below ${Math.round(REFINERY_MIN_POWER_PCT * 100)}%. Refill Power to carry on.`;
+        else                            status = `Smelting: ${r.progress.toFixed(1)} / ${cycle}s`;
+        document.getElementById('refinery-status').innerText = status;
+
+        const btn = document.getElementById('refinery-toggle-btn');
+        btn.innerText = r.on ? 'Stop refinery' : 'Start refinery';
+        btn.classList.toggle('bg-red-600',   r.on);
+        btn.classList.toggle('bg-green-600', !r.on);
+
+        const canAct = !gameState.gameOver && !gameState.isPaused;
+        for (const id in REFINERY_UPGRADES) {
+            const u = REFINERY_UPGRADES[id], nodes = refineryNodes[id];
+            if (!nodes) continue;
+            const tier = getRefineryTier(id), cost = getRefineryUpgradeCost(id);
+            nodes.tier.textContent = tier >= u.maxTier ? `Tier ${tier} of ${u.maxTier} (maxed)` : `Tier ${tier} of ${u.maxTier}`;
+            let label, state, blocked = true;
+            if (tier >= u.maxTier)              { label = 'Maxed';                       state = 'bg-slate-700 cursor-default'; }
+            else if (!canAct || gameState.ore < cost) { label = `Needs ${fmtPrice(cost)} Ore`; state = 'bg-red-900 opacity-70 cursor-not-allowed'; }
+            else                                { label = `Upgrade (${fmtPrice(cost)} Ore)`; state = 'bg-green-700 hover:bg-green-500 cursor-pointer'; blocked = false; }
+            nodes.button.textContent = label;
+            setButtonState(nodes.button, state, blocked);
+        }
+    }
+
+
+    // ============================================================
     //  UI RENDERING
     // ============================================================
 
@@ -2674,6 +2905,7 @@
         updateMessageBox();
         updateAscendButton();
         updateSurfaceSampleButton();
+        updateRefineryPanel();
 
         refreshWorkshop();
         refreshAscension();
@@ -3659,6 +3891,21 @@
         }
         openDeepEvent(DEEP_EVENTS.find(d => d.id === devSelected('dev-deep-select')));
     }
+    // --- Refinery ---
+    function devUnlockRefinery() {
+        unlockRefinery(true);
+        devDone('unlocked the refinery.');
+    }
+    function devGiveAlloys() {
+        unlockRefinery(true);
+        gameState.alloys += 1000;
+        devDone('gave 1000 alloys.');
+    }
+    function devMaxRefinery() {
+        unlockRefinery(true);
+        for (const id in REFINERY_UPGRADES) gameState.refinery.tiers[id] = REFINERY_UPGRADES[id].maxTier;
+        devDone('maxed every refinery upgrade.');
+    }
     function devFinishDeepEvent() {
         if (!gameState.deepEvent) { gameState.message = '🛠 Dev: no Deep Event is running.'; return updateUI(); }
         endDeepEvent(true);
@@ -3754,15 +4001,76 @@
     //  STARTUP
     // ============================================================
 
+    // ============================================================
+    //  TITLE SCREEN
+    //  The title screen is just a full-screen <div> (id "title-screen") covering the game.
+    //  Showing it = adding the CSS class "open". Hiding it = removing that class.
+    //  gameStarted is false until the player presses Start Game for the first time.
+    //  menuPausedGame remembers whether OPENING the menu is what paused the game, so we only
+    //  un-pause it if we were the ones who paused it (same idea as devPausedGame in Dev Mode).
+    // ============================================================
+
+    let gameStarted    = false;
+    let menuPausedGame = false;
+
+    // Called by the "Main Menu" button at the top of the game
+    function openTitleScreen() {
+        // Pause the game while the menu is open (unless it is already paused, over, or frozen by a shop/choice)
+        if (gameStarted && !gameState.isPaused && !gameState.gameOver && !gameState.inShop && !gameState.inChoice) {
+            gameState.isPaused = true;
+            menuPausedGame = true;
+        }
+        closeSidebar();
+        backToTitleMenu();
+        // Once a game is running, "Start Game" becomes "Resume Game"
+        document.getElementById('title-start-btn').innerText = gameStarted ? '▶ Resume Game' : '▶ Start Game';
+        document.getElementById('title-screen').classList.add('open');
+        updateUI();
+    }
+
+    function startGameFromTitle() {
+        document.getElementById('title-screen').classList.remove('open');
+        if (!gameStarted) {
+            gameStarted = true;
+            startGameLoop();    // first time only: the loop has not been running yet
+        } else if (menuPausedGame) {
+            menuPausedGame = false;
+            gameState.isPaused = false;
+            gameState.message = 'Game resumed.';
+            startGameLoop();    // the loop stopped when we paused, so start it again
+        }
+        updateUI();
+    }
+
+    // Browsers only let a script close a tab that the script itself opened, so window.close()
+    // usually does nothing here. If the tab is still open a moment later, show a goodbye message.
+    function exitGame() {
+        window.close();
+        setTimeout(() => {
+            document.getElementById('title-menu').classList.add('hidden');
+            const bye = document.getElementById('title-goodbye');
+            bye.classList.remove('hidden');
+            bye.classList.add('flex');
+        }, 150);
+    }
+
+    function backToTitleMenu() {
+        document.getElementById('title-menu').classList.remove('hidden');
+        const bye = document.getElementById('title-goodbye');
+        bye.classList.add('hidden');
+        bye.classList.remove('flex');
+    }
+
     window.onload = function () {
         cacheUIElements();
         buildWorkshop();
         buildAscension();
         buildSkillTree();
+        buildRefinery();
         buildPatchNotesModal();
         buildDevPanel();
         initializeGame();
-        startGameLoop();
+        // The game loop is NOT started here any more. Pressing "Start Game" on the title screen starts it.
     };
 
     </script>
