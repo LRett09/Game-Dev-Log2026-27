@@ -15,7 +15,7 @@
         }
         .progress-bar { transition: width 0.3s linear; }
 
-        /* --- MODULE BAY SIDEBAR --- */
+        /* --- SIDE PANELS (slide-out menus) and their tabs --- */
         .side-panel {
             position: fixed; top: 0; right: -420px;
             width: 420px; max-width: 95vw; height: 100vh;
@@ -46,14 +46,35 @@
             transition: background-color 0.2s, right 0.3s;
             letter-spacing: 0.05em;
         }
-        #module-toggle-btn   { top: calc(50% - 80px); background-color: #0e7490; }
+        #module-toggle-btn   { top: calc(50% - 165px); background-color: #0e7490; }
         #module-toggle-btn:hover   { background-color: #0891b2; }
-        #workshop-toggle-btn { top: calc(50% + 80px); background-color: #a16207; }
+        #workshop-toggle-btn { top: 50%; background-color: #a16207; }
         #workshop-toggle-btn:hover { background-color: #ca8a04; }
-        /* When any panel is open, both tabs slide left so they stay attached to its edge */
-        body.sidebar-open .side-tab { right: 420px; }
+        #goals-toggle-btn    { top: calc(50% + 165px); background-color: #6d28d9; }
+        #goals-toggle-btn:hover    { background-color: #7c3aed; }
+        /* When a right-side panel is open, the right tabs slide left so they stay attached to its edge */
+        body.sidebar-open-right .side-tab:not(.left) { right: 420px; }
         @media (max-width: 440px) {
-            body.sidebar-open .side-tab { right: 95vw; }
+            body.sidebar-open-right .side-tab:not(.left) { right: 95vw; }
+        }
+
+        /* --- LEFT-SIDE PANELS (Skill tree, Ascension tree): wider, and slide in from the left --- */
+        .side-panel.left {
+            right: auto; left: -820px; width: 800px;
+            border-left: none; border-right: 2px solid #374151;
+            transition: left 0.3s ease;
+        }
+        .side-panel.left.open { left: 0; }
+        .side-tab.left { right: auto; left: 0; border-radius: 0 8px 8px 0; transition: background-color 0.2s, left 0.3s; }
+        #skills-toggle-btn    { top: calc(50% - 90px); background-color: #15803d; }
+        #skills-toggle-btn:hover    { background-color: #16a34a; }
+        #ascension-toggle-btn { top: calc(50% + 90px); background-color: #7e22ce; }
+        #ascension-toggle-btn:hover { background-color: #9333ea; }
+        /* a tab glows when something in its panel can be bought */
+        .side-tab.has-buyable { box-shadow: 0 0 14px rgba(250, 204, 21, 0.75); }
+        body.sidebar-open-left .side-tab.left { left: 800px; }
+        @media (max-width: 842px) {
+            body.sidebar-open-left .side-tab.left { left: 95vw; }
         }
 
         /* --- PATCH NOTES MODAL --- */
@@ -69,11 +90,11 @@
             display: flex; flex-direction: column;
             box-shadow: 0 25px 60px rgba(0,0,0,0.6);
         }
-        #patch-notes-modal .modal-header, #achievements-modal .modal-header {
+        #patch-notes-modal .modal-header {
             display: flex; align-items: center; justify-content: space-between;
             padding: 1.25rem 1.5rem; border-bottom: 1px solid #374151; flex-shrink: 0;
         }
-        #patch-notes-modal .modal-body, #achievements-modal .modal-body { overflow-y: auto; padding: 1.25rem 1.5rem; flex: 1; }
+        #patch-notes-modal .modal-body { overflow-y: auto; padding: 1.25rem 1.5rem; flex: 1; }
         .patch-entry + .patch-entry {
             margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #1f2937;
         }
@@ -83,7 +104,8 @@
             display: none; position: fixed; bottom: 1.5rem; left: 1.5rem;
             z-index: 1500; background-color: #0d1117;
             border: 2px solid #7c3aed; border-radius: 12px;
-            padding: 1rem 1.25rem; width: 280px;
+            padding: 1rem 1.25rem; width: 340px; max-width: calc(100vw - 2rem);
+            max-height: calc(100vh - 3rem); overflow-y: auto;   /* scrolls if it is taller than the screen */
             box-sizing: border-box;   /* width includes padding + border, so nothing spills out */
             box-shadow: 0 8px 32px rgba(124,58,237,0.4);
         }
@@ -96,14 +118,26 @@
         }
         .dev-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
         .dev-row label { color: #9ca3af; font-size: 0.78rem; width: 70px; flex-shrink: 0; }
-        .dev-row input {
+        .dev-row input, .dev-row select {
             flex: 1; min-width: 0;   /* min-width: 0 lets the input shrink to fit the row instead of overflowing */
             box-sizing: border-box;  /* padding and border count toward the input's width */
             background: #1f2937; border: 1px solid #374151;
             border-radius: 6px; color: #e5e7eb; font-size: 0.82rem;
             padding: 0.3rem 0.5rem; outline: none;
         }
-        .dev-row input:focus { border-color: #7c3aed; }
+        .dev-row input:focus, .dev-row select:focus { border-color: #7c3aed; }
+        .dev-row select { padding: 0.3rem 0.3rem; }
+        .dev-check { display: flex; align-items: center; gap: 0.5rem; color: #c4b5fd; font-size: 0.78rem; margin-bottom: 0.5rem; cursor: pointer; }
+        /* small buttons that sit side by side in one row */
+        .dev-mini-row { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; }
+        .dev-mini-btn {
+            flex: 1; padding: 0.35rem 0.25rem; border-radius: 6px;
+            background: #374151; color: #e5e7eb; font-weight: 700; font-size: 0.75rem;
+            border: none; cursor: pointer; transition: background 0.15s;
+        }
+        .dev-mini-btn:hover { background: #4b5563; }
+        .dev-mini-btn.purple { background: #5b21b6; }
+        .dev-mini-btn.purple:hover { background: #6d28d9; }
         .dev-apply-btn {
             width: 100%; margin-top: 0.5rem; padding: 0.45rem;
             border-radius: 7px; background: #7c3aed;
@@ -112,19 +146,7 @@
         }
         .dev-apply-btn:hover { background: #6d28d9; }
 
-        /* --- ACHIEVEMENTS: viewer window + pop-up toasts --- */
-        #achievements-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 2000; align-items: center; justify-content: center;
-        }
-        #achievements-overlay.open { display: flex; }
-        #achievements-modal {
-            background-color: #111827; border: 2px solid #374151;
-            border-radius: 12px; width: 720px; max-width: 95vw; max-height: 85vh;
-            display: flex; flex-direction: column;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
-        }
+        /* --- ACHIEVEMENT / CHALLENGE pop-up toasts --- */
         #achievement-toasts {
             position: fixed; top: 1rem; left: 50%; transform: translateX(-50%);
             z-index: 3000; display: flex; flex-direction: column; gap: 0.5rem;
@@ -149,7 +171,13 @@
             z-index: 2500; align-items: center; justify-content: center;
         }
         #ascend-confirm-overlay.open { display: flex; }
-        #ascend-confirm-modal {
+        #challenge-confirm-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2500; align-items: center; justify-content: center;
+        }
+        #challenge-confirm-overlay.open { display: flex; }
+        #ascend-confirm-modal, #challenge-confirm-modal {
             background-color: #111827; border: 2px solid #7e22ce;
             border-radius: 12px; width: 420px; max-width: 92vw;
             padding: 1.5rem; text-align: center;
@@ -157,6 +185,25 @@
         }
 
         /* --- SHOP SCREEN --- */
+        /* --- DEEP EVENT PANEL: flashes red when you need to act --- */
+        #deep-event-panel.deep-alert { animation: deep-pulse 0.6s ease-in-out infinite alternate; }
+        #deep-event-panel.deep-alert #deep-event-text { color: #fca5a5; }
+        @keyframes deep-pulse { from { border-color: #ea580c; background-color: #111827; } to { border-color: #ef4444; background-color: #450a0a; } }
+
+        /* --- CHOICE POP-UP (crossroads + event responses) --- */
+        #choice-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 1300; align-items: center; justify-content: center;
+        }
+        #choice-overlay.open { display: flex; }
+        #choice-modal {
+            background-color: #111827; border: 2px solid #d97706;
+            border-radius: 12px; width: 640px; max-width: 95vw; max-height: 92vh;
+            overflow-y: auto; padding: 1.5rem;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        }
+
         #shop-overlay {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,0.8);
@@ -176,17 +223,21 @@
     <!-- ============================
          MAIN CONTENT
          ============================ -->
-    <div class="max-w-6xl mx-auto bg-gray-900 rounded-xl shadow-2xl p-6 md:p-10">
+    <div class="max-w-6xl mx-auto bg-gray-900 rounded-xl shadow-2xl p-4 md:p-6">
 
-        <!-- Header -->
-        <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-2">
-            <h1 class="text-4xl font-bold text-yellow-500">The Deep Mine Version 1.3: Merchants of the Mine </h1>
-            <div class="flex gap-2">
-                <button onclick="openAchievements()" id="achievements-btn" class="px-3 py-1.5 rounded-lg bg-yellow-700 hover:bg-yellow-600 text-white text-sm font-semibold transition duration-150 border border-yellow-500">
+        <!-- Top bar: title, PRP and the small menu buttons in one slim row -->
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-700 pb-3 mb-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-yellow-500 leading-tight">⛏️ The Deep Mine</h1>
+                <p class="text-xs text-gray-500">Version 1.3: Merchants of the Mine</p>
+            </div>
+            <div id="permanent-stats-display" class="px-4 py-1.5 rounded-full bg-purple-950 border border-purple-600 text-purple-300 font-bold text-sm">🔮 0 PRP</div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="openGoals('achievements')" id="achievements-btn" class="px-3 py-1.5 rounded-lg bg-yellow-700 hover:bg-yellow-600 text-white text-sm font-semibold transition duration-150 border border-yellow-500">
                     🏆 Achievements
                 </button>
                 <button onclick="openPatchNotes()" class="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm font-semibold transition duration-150 border border-gray-600">
-                    📋 Patch Notes
+                    📋 About &amp; Patch Notes
                 </button>
                 <button onclick="toggleDevPanel()" id="dev-toggle-btn" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-purple-900 text-gray-500 hover:text-purple-300 text-sm font-semibold transition duration-150 border border-gray-700" title="Dev Mode">
                     🛠 Dev
@@ -194,45 +245,28 @@
             </div>
         </div>
 
-        <div id="permanent-stats-display" class="text-lg font-bold text-purple-400 mb-4 text-center">
-            Permanent Research Points (PRP): 0
-        </div>
-
-        <p class="text-gray-400 mb-6">
-            Drill deep, but be warned: the lower you go the more dangerous the caves get. Upgrade your drill with new skills,
-            modules, and research permanent upgrades. Can you reach the bottom?
-        </p>
-
-        <!-- Permanent Research Shop -->
-        <h2 class="text-3xl font-bold text-purple-400 mb-1 border-b border-gray-700 pb-2">Ascension tree</h2>
-        <p class="text-sm text-gray-400 mb-4">Spend PRP on permanent perks that change how every future run plays. Each path unlocks from top to bottom.</p>
-        <div id="ascension-container" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8"></div>
-
-        <!-- Message Box -->
-        <div id="message-box" class="hidden p-4 mb-4 rounded-lg bg-red-600 font-semibold text-center shadow-inner"></div>
-
         <!-- Stats Panel -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-            <div class="bg-gray-800 p-4 rounded-lg shadow-xl border-t-4 border-yellow-500">
-                <p class="text-sm text-yellow-500 font-bold">Ore reserves</p>
-                <p id="ore-count" class="text-2xl mt-1">0.0 Ore</p>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+            <div class="bg-gray-800 p-3 rounded-lg shadow-xl border-t-4 border-yellow-500">
+                <p class="text-xs text-yellow-500 font-bold uppercase tracking-wide">Ore reserves</p>
+                <p id="ore-count" class="text-xl font-semibold mt-1">0.0 Ore</p>
             </div>
-            <div class="bg-gray-800 p-4 rounded-lg shadow-xl border-t-4 border-cyan-500">
-                <p class="text-sm text-cyan-500 font-bold">Current depth</p>
-                <p id="depth-count" class="text-2xl mt-1">0.0m</p>
+            <div class="bg-gray-800 p-3 rounded-lg shadow-xl border-t-4 border-cyan-500">
+                <p class="text-xs text-cyan-500 font-bold uppercase tracking-wide">Current depth</p>
+                <p id="depth-count" class="text-xl font-semibold mt-1">0.0m</p>
             </div>
-            <div class="bg-gray-800 p-4 rounded-lg shadow-xl border-t-4 border-purple-500">
-                <p class="text-sm text-purple-500 font-bold">Record depth</p>
-                <p id="max-depth-display" class="text-2xl mt-1">0.0m</p>
+            <div class="bg-gray-800 p-3 rounded-lg shadow-xl border-t-4 border-purple-500">
+                <p class="text-xs text-purple-500 font-bold uppercase tracking-wide">Record depth</p>
+                <p id="max-depth-display" class="text-xl font-semibold mt-1">0.0m</p>
             </div>
-            <div class="bg-gray-800 p-4 rounded-lg shadow-xl border-t-4 border-blue-500">
-                <p class="text-sm text-blue-400 font-bold">Drill speed</p>
-                <p id="drill-speed-display" class="text-2xl mt-1">0.00 m/s</p>
+            <div class="bg-gray-800 p-3 rounded-lg shadow-xl border-t-4 border-blue-500">
+                <p class="text-xs text-blue-400 font-bold uppercase tracking-wide">Drill speed</p>
+                <p id="drill-speed-display" class="text-xl font-semibold mt-1">0.00 m/s</p>
                 <p id="hardness-display" class="text-xs mt-1 text-gray-400"></p>
             </div>
-            <div class="bg-gray-800 p-4 rounded-lg shadow-xl border-t-4 border-green-500">
-                <p class="text-sm text-green-500 font-bold">Mining resource</p>
-                <p id="resource-type" class="text-2xl mt-1">Copper</p>
+            <div class="bg-gray-800 p-3 rounded-lg shadow-xl border-t-4 border-green-500 col-span-2 md:col-span-1">
+                <p class="text-xs text-green-500 font-bold uppercase tracking-wide">Mining resource</p>
+                <p id="resource-type" class="text-xl font-semibold mt-1">Copper</p>
                 <p id="resource-value" class="text-xs mt-1 text-gray-400"></p>
                 <p id="next-resource-hint" class="text-sm mt-1 text-green-300 hidden"></p>
                 <button id="scan-boost-button" onclick="activateScanBoost()" class="hidden mt-2 w-full px-3 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-500 text-white text-sm font-bold shadow-md transition duration-150">
@@ -242,9 +276,14 @@
         </div>
 
         <!-- Status Bars & Controls -->
-        <div class="bg-gray-800 p-6 rounded-lg shadow-xl mb-8">
-            <h2 class="text-2xl font-semibold mb-1 border-b border-gray-700 pb-2">Status and controls</h2>
-            <p id="pressure-display" class="text-xs text-gray-400 mb-4 mt-2"></p>
+        <div class="bg-gray-800 p-4 md:p-6 rounded-lg shadow-xl mb-4">
+            <div class="flex flex-wrap items-baseline justify-between gap-x-4 border-b border-gray-700 pb-2 mb-3">
+                <h2 class="text-xl font-semibold">Status and controls</h2>
+                <p id="pressure-display" class="text-xs text-gray-400"></p>
+            </div>
+
+            <!-- Message Box: right where you are looking -->
+            <div id="message-box" class="hidden p-3 mb-4 rounded-lg bg-gray-700 border border-gray-600 font-semibold text-center shadow-inner"></div>
 
             <div class="mb-4">
                 <p id="power-bar-text" class="text-sm font-medium mb-1 text-red-400">Power: 100/100</p>
@@ -273,36 +312,61 @@
 
             <div id="active-effects" class="mb-4 min-h-[2rem]"></div>
 
-            <!-- Automation routines (shown once Autonomous Operations is unlocked) -->
-            <div id="auto-ops-panel" class="hidden mb-6 p-4 rounded-lg bg-gray-900 border border-sky-700"></div>
+            <!-- Active challenge (only shown while a challenge is running) -->
+            <div id="challenge-status" class="hidden mb-4 p-3 rounded-lg text-sm font-semibold border"></div>
 
-            <div class="flex flex-wrap justify-center gap-4">
-                <button id="drill-button"          onclick="toggleDrill()"    class="px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold shadow-md transition duration-150">Start drill</button>
-                <button id="pause-button"          onclick="togglePause()"    class="px-6 py-3 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-gray-900 font-bold shadow-md transition duration-150">Pause game</button>
-                <button id="refill-power-button"   onclick="refillPower()"    class="px-6 py-3 rounded-xl bg-red-500 hover:bg-red-400 text-white font-bold shadow-md transition duration-150">Refill power</button>
-                <button id="refill-oxygen-button"  onclick="refillOxygen()"   class="px-6 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-white font-bold shadow-md transition duration-150">Refill oxygen</button>
-                <button id="repair-button"         onclick="repairDrill()"    class="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold shadow-md transition duration-150">Repair drill</button>
-                <button id="ascend-button"         onclick="requestAscend()"     class="px-6 py-3 rounded-xl bg-purple-700 hover:bg-purple-500 text-white font-bold shadow-md transition duration-150">Ascend</button>
-                <button id="surface-sample-button" onclick="surfaceSample()"  class="hidden px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-500 text-white font-bold shadow-md transition duration-150">Surface Sample</button>
-                <button                            onclick="restartGame()"    class="px-6 py-3 rounded-xl bg-gray-600 hover:bg-gray-500 text-white font-bold shadow-md transition duration-150">Restart game</button>
+            <!-- Deep Event in progress (see DEEP EVENTS in the script) -->
+            <div id="deep-event-panel" class="hidden mb-6 p-4 rounded-lg bg-gray-900 border-2 border-orange-600">
+                <p id="deep-event-title" class="text-lg font-bold text-orange-300"></p>
+                <div class="w-full bg-gray-700 rounded-full h-2 my-2">
+                    <div id="deep-event-bar" class="progress-bar h-2 rounded-full bg-orange-500" style="width:100%"></div>
+                </div>
+                <p id="deep-event-text" class="text-sm font-semibold text-gray-200"></p>
+                <button id="deep-event-btn" onclick="deepEventAction()" class="hidden mt-3 w-full px-4 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg shadow-md transition duration-150"></button>
             </div>
+
+            <!-- Buttons, grouped by what they do. Same size as before, just organised. -->
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div class="bg-gray-900 rounded-lg p-3 border border-gray-700">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 text-center">Drill</p>
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <button id="drill-button"          onclick="toggleDrill()"    class="px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold shadow-md transition duration-150">Start drill</button>
+                        <button id="pause-button"          onclick="togglePause()"    class="px-6 py-3 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-gray-900 font-bold shadow-md transition duration-150">Pause game</button>
+                    </div>
+                </div>
+                <div class="bg-gray-900 rounded-lg p-3 border border-gray-700 lg:col-span-2">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 text-center">Supplies</p>
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <button id="refill-power-button"   onclick="refillPower()"    class="px-6 py-3 rounded-xl bg-red-500 hover:bg-red-400 text-white font-bold shadow-md transition duration-150">Refill power</button>
+                        <button id="refill-oxygen-button"  onclick="refillOxygen()"   class="px-6 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-white font-bold shadow-md transition duration-150">Refill oxygen</button>
+                        <button id="repair-button"         onclick="repairDrill()"    class="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold shadow-md transition duration-150">Repair drill</button>
+                    </div>
+                </div>
+                <div class="bg-gray-900 rounded-lg p-3 border border-gray-700">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 text-center">Run</p>
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <button id="ascend-button"         onclick="requestAscend()"  class="px-6 py-3 rounded-xl bg-purple-700 hover:bg-purple-500 text-white font-bold shadow-md transition duration-150">Ascend</button>
+                        <button id="surface-sample-button" onclick="surfaceSample()"  class="hidden px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-500 text-white font-bold shadow-md transition duration-150">Surface Sample</button>
+                        <button                            onclick="restartGame()"    class="px-6 py-3 rounded-xl bg-gray-600 hover:bg-gray-500 text-white font-bold shadow-md transition duration-150">Restart game</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Automation routines (shown once Autonomous Operations is unlocked), below the main buttons -->
+            <div id="auto-ops-panel" class="hidden mt-4 p-4 rounded-lg bg-gray-900 border border-sky-700"></div>
         </div>
 
         <!-- Event Log -->
-        <div class="bg-gray-800 p-6 rounded-lg shadow-xl mb-8">
-            <h2 class="text-2xl font-semibold mb-3 border-b border-gray-700 pb-2">Shaft report</h2>
+        <div class="bg-gray-800 p-4 rounded-lg shadow-xl">
+            <h2 class="text-lg font-semibold mb-2 border-b border-gray-700 pb-2">Shaft report</h2>
             <ul id="event-log" class="text-sm space-y-1"></ul>
         </div>
-
-        <!-- Skill Tree -->
-        <h2 class="text-3xl font-bold text-white mb-6 border-b border-gray-700 pb-2">Skill tree</h2>
-        <div id="skill-tree-container" class="bg-gray-800 p-6 rounded-xl shadow-inner"></div>
 
     </div><!-- end main content wrapper -->
 
 
     <!-- ============================
-         MODULE BAY SIDEBAR
+         SIDE PANELS (Module Bay, Workshop, Goals, Skills, Ascension)
          ============================ -->
     <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
@@ -311,6 +375,7 @@
             <h2 class="text-2xl font-bold text-cyan-400">⚙ Module Bay</h2>
             <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
         </div>
+        <p class="text-sm text-gray-400 mb-4">Swap between the modules you own. From 1,000m you can also upgrade them to Mk II and Mk III, which makes their good effects stronger (penalties stay the same). Upgrades reset when you ascend.</p>
         <div id="module-bay-container" class="flex flex-col gap-4"></div>
     </div>
 
@@ -320,13 +385,52 @@
             <h2 class="text-2xl font-bold text-yellow-400">🔨 Workshop</h2>
             <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
         </div>
-        <p class="text-sm text-gray-400 mb-2">Your stackable upgrades. They can only be bought from shops you come across while drilling, and they reset when you ascend. Tap a ☆ to favorite one upgrade so shops offer it more often.</p>
+        <p class="text-sm text-gray-400 mb-2">Your stackable upgrades. They can only be bought from shops you come across while drilling, and they reset when you ascend. Tap a ☆ to favorite one upgrade so shops offer it more often, or 🚫 to banish up to two so shops offer them much less.</p>
         <p id="workshop-ore" class="text-lg font-bold text-yellow-500 mb-4">0.0 Ore</p>
         <div id="workshop-container" class="flex flex-col gap-4"></div>
     </div>
 
+    <!-- Challenges & Achievements panel: two tabs that share one slide-out -->
+    <div id="goals-sidebar" class="side-panel">
+        <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-4">
+            <h2 class="text-2xl font-bold text-violet-400">🏆 Goals</h2>
+            <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <button id="goals-tab-challenges"   onclick="setGoalsTab('challenges')"   class="px-3 py-2 rounded-lg text-sm font-bold border transition duration-150"></button>
+            <button id="goals-tab-achievements" onclick="setGoalsTab('achievements')" class="px-3 py-2 rounded-lg text-sm font-bold border transition duration-150"></button>
+        </div>
+        <div id="goals-body" class="flex flex-col gap-3"></div>
+    </div>
+
+    <!-- Skill tree: a wide panel that slides in from the LEFT -->
+    <div id="skills-sidebar" class="side-panel left">
+        <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-2">
+            <h2 class="text-2xl font-bold text-green-400">🌳 Skill Tree</h2>
+            <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
+        </div>
+        <p class="text-sm text-gray-400 mb-1">Spend Ore on skills for this run. Each one needs the skill above it, and deeper tiers need you to be deep enough.</p>
+        <p id="skills-ore" class="text-lg font-bold text-yellow-500 mb-3">0.0 Ore</p>
+        <div id="skill-tree-container" class="bg-gray-800 p-4 rounded-xl shadow-inner"></div>
+    </div>
+
+    <!-- Ascension tree: a wide panel that slides in from the LEFT -->
+    <div id="ascension-sidebar" class="side-panel left">
+        <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-2">
+            <h2 class="text-2xl font-bold text-purple-400">✨ Ascension Tree</h2>
+            <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
+        </div>
+        <p class="text-sm text-gray-400 mb-1">Spend PRP on permanent perks that change how every future run plays. Each path unlocks from top to bottom.</p>
+        <p id="ascension-prp" class="text-lg font-bold text-purple-300 mb-3">0 PRP</p>
+        <div id="ascension-container" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+    </div>
+
+    <button id="skills-toggle-btn"    class="side-tab left" onclick="togglePanel('skills-sidebar')"    title="Open Skill Tree">🌳 Skills</button>
+    <button id="ascension-toggle-btn" class="side-tab left" onclick="togglePanel('ascension-sidebar')" title="Open Ascension Tree">✨ Ascension</button>
+
     <button id="module-toggle-btn"   class="side-tab" onclick="togglePanel('module-sidebar')"   title="Open Module Bay">⚙ Module Bay</button>
     <button id="workshop-toggle-btn" class="side-tab" onclick="togglePanel('workshop-sidebar')" title="Open Workshop">🔨 Workshop</button>
+    <button id="goals-toggle-btn"    class="side-tab" onclick="togglePanel('goals-sidebar')"    title="Open Challenges and Achievements">🏆 Challenges</button>
 
 
     <!-- ============================
@@ -338,24 +442,24 @@
                 <h2 class="text-xl font-bold text-yellow-400">📋 Patch Notes</h2>
                 <button onclick="closePatchNotes()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
             </div>
-            <div id="patch-notes-body" class="modal-body"></div>
+            <div class="modal-body">
+                <!-- About the game (used to sit at the top of the main page) -->
+                <div class="mb-5 p-4 rounded-lg bg-gray-800 border border-gray-700">
+                    <p class="font-bold text-yellow-400 mb-1">⛏️ About The Deep Mine</p>
+                    <p class="text-sm text-gray-300">Drill deep, but be warned: the lower you go the more dangerous the caves get. Upgrade your drill with new skills,
+                        modules, and research permanent upgrades. Can you reach the bottom?</p>
+                    <p class="text-xs text-gray-500 mt-2">Skills and Ascension are on the left edge of the screen. Module Bay, Workshop and Challenges are on the right.</p>
+                </div>
+                <div id="patch-notes-body"></div>
+            </div>
         </div>
     </div>
 
 
     <!-- ============================
-         ACHIEVEMENTS VIEWER + TOAST AREA
+         ACHIEVEMENT / CHALLENGE TOAST AREA
          ============================ -->
     <div id="achievement-toasts"></div>
-    <div id="achievements-overlay" onclick="closeAchievements()">
-        <div id="achievements-modal" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h2 id="achievements-title" class="text-xl font-bold text-yellow-400">🏆 Achievements</h2>
-                <button onclick="closeAchievements()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
-            </div>
-            <div id="achievements-body" class="modal-body grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
-        </div>
-    </div>
 
 
     <!-- ============================
@@ -363,6 +467,20 @@
          Opens by itself every so often while drilling (see openShop in the script).
          The game loop is stopped while it is open, so nothing drains.
          ============================ -->
+    <!-- ============================
+         CHOICE POP-UP
+         Crossroads and "how do you respond?" events. The game is frozen while it is open,
+         and it can only be closed by picking an option.
+         ============================ -->
+    <div id="choice-overlay">
+        <div id="choice-modal">
+            <h2 id="choice-title" class="text-2xl font-bold text-amber-400 mb-2"></h2>
+            <p id="choice-text" class="text-gray-300 mb-1"></p>
+            <p class="text-xs text-gray-500 mb-4">The game is frozen until you choose.</p>
+            <div id="choice-options" class="flex flex-col gap-3"></div>
+        </div>
+    </div>
+
     <div id="shop-overlay">
         <div id="shop-modal">
             <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-3">
@@ -394,10 +512,29 @@
 
 
     <!-- ============================
+         START CHALLENGE CONFIRMATION POPUP
+         ============================ -->
+    <div id="challenge-confirm-overlay">
+        <div id="challenge-confirm-modal">
+            <h2 id="challenge-confirm-title" class="text-xl font-bold text-violet-400 mb-3">Start challenge?</h2>
+            <p id="challenge-confirm-text" class="text-gray-300 mb-6"></p>
+            <div class="flex justify-center gap-4">
+                <button onclick="cancelChallenge()"  class="px-5 py-2 rounded-xl bg-gray-600 hover:bg-gray-500 text-white font-bold">Cancel</button>
+                <button onclick="confirmChallenge()" class="px-5 py-2 rounded-xl bg-violet-700 hover:bg-violet-500 text-white font-bold">Start challenge</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================
          DEV MODE PANEL
          ============================ -->
     <div id="dev-panel">
-        <h3>🛠 Dev Mode</h3>
+        <div class="flex items-center justify-between">
+            <h3>🛠 Dev Mode</h3>
+            <button onclick="toggleDevPanel()" class="text-gray-400 hover:text-white text-xl font-bold leading-none -mt-3" title="Close">✕</button>
+        </div>
+        <label class="dev-check"><input type="checkbox" id="dev-pause" checked onchange="devPauseChanged()"> ⏸ Pause the game while this panel is open</label>
         <p class="dev-section-label">Resources</p>
         <div class="dev-row"><label>Ore</label>      <input type="number" id="dev-ore"       placeholder="e.g. 50000" min="0"></div>
         <div class="dev-row"><label>Depth (m)</label> <input type="number" id="dev-depth"     placeholder="e.g. 2000"  min="0"></div>
@@ -410,6 +547,53 @@
         <button class="dev-apply-btn" onclick="devApply()">✔ Apply Changes</button>
         <button class="dev-apply-btn" style="background:#065f46" onclick="devMaxOut()">⚡ Max Out Resources</button>
         <button class="dev-apply-btn" style="background:#b45309" onclick="devOpenShop()">🏪 Open Shop Now</button>
+        <button class="dev-apply-btn" style="background:#92400e" onclick="devOpenCrossroads()">🔀 Open Crossroads Now</button>
+        <button class="dev-apply-btn" style="background:#6d28d9" onclick="devCompleteChallenge()">🎯 Complete Active Challenge</button>
+
+        <!-- Everything below is free and ignores depth, prerequisite and price rules -->
+        <p class="dev-section-label">Skills (free, prerequisites included)</p>
+        <div class="dev-row"><select id="dev-skill-select"></select></div>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn purple" onclick="devGiveSkill()">Give skill</button>
+            <button class="dev-mini-btn" onclick="devGiveAllSkills()">Give all skills</button>
+            <button class="dev-mini-btn" onclick="devClearSkills()">Remove all</button>
+        </div>
+
+        <p class="dev-section-label">Workshop upgrades (free)</p>
+        <div class="dev-row"><select id="dev-workshop-select"></select></div>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn purple" onclick="devWorkshop(1)">+1 tier</button>
+            <button class="dev-mini-btn" onclick="devWorkshop(-1)">-1 tier</button>
+            <button class="dev-mini-btn" onclick="devWorkshop('max')">Max</button>
+        </div>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn" onclick="devWorkshopAll('max')">Max all upgrades</button>
+            <button class="dev-mini-btn" onclick="devWorkshopAll('reset')">Reset all</button>
+        </div>
+
+        <p class="dev-section-label">Modules (free, installs it and its slot)</p>
+        <div class="dev-row"><select id="dev-module-select"></select></div>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn purple" onclick="devGiveModule()">Give &amp; install</button>
+            <button class="dev-mini-btn" onclick="devGiveAllModules()">Give every module</button>
+        </div>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn" onclick="devMaxModuleMk()">Mk III every owned module</button>
+        </div>
+
+        <p class="dev-section-label">Deep Events</p>
+        <div class="dev-row"><select id="dev-deep-select"></select></div>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn purple" onclick="devStartDeepEvent()">Start it now</button>
+            <button class="dev-mini-btn" onclick="devFinishDeepEvent()">Finish running one</button>
+        </div>
+
+        <p class="dev-section-label">Ascension perks (free)</p>
+        <div class="dev-row"><select id="dev-perk-select"></select></div>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn purple" onclick="devGivePerk()">Give perk</button>
+            <button class="dev-mini-btn" onclick="devGiveAllPerks()">Give all perks</button>
+        </div>
     </div>
 
 
@@ -420,20 +604,30 @@
 
     // ============================================================
     //  TABLE OF CONTENTS  (search for a heading's name to jump to it)
-    //   1. PATCH NOTES            - version history shown in the Patch Notes window
+    //  --- Data: the lists you edit to add content ---
+    //   1. PATCH NOTES            - version history shown in the About & Patch Notes window
     //   2. CONSTANTS              - numbers you can tweak to balance the game
     //   3. GAME DATA              - workshop, ascension, skills, modules, ores, random events
-    //   4. AUTOMATION ROUTINES    - the options for the Autonomous Operations skill
-    //   5. ACHIEVEMENTS           - the list of achievements (add new ones here!)
-    //   6. GLOBAL STATE           - gameState, the one object holding the whole game
-    //   7. CALCULATIONS & HELPERS - formulas for speed, costs, drain rates and so on
-    //   8. STATE MANAGEMENT       - starting a run, applying upgrades to the stats
-    //   9. GAME LOOP              - what happens every frame
-    //  10. PLAYER CONTROLS        - what each button does when clicked
-    //  11. SHOPS                  - the wandering shop
-    //  12. UI RENDERING           - drawing gameState onto the page
-    //  13. ACHIEVEMENT LOGIC      - checking, unlocking and showing achievements
-    //  14. SIDEBARS, PATCH NOTES, DEV MODE, STARTUP
+    //   4. CROSSROADS             - the "pick one" pop-ups (add new ones here!)
+    //   5. DEEP EVENTS            - the long, managed events (add new ones here!)
+    //   6. AUTOMATION ROUTINES    - the options for the Autonomous Operations skill
+    //   7. CHALLENGES             - the list of challenges and their rewards (add new ones here!)
+    //   8. ACHIEVEMENTS           - the list of achievements (add new ones here!)
+    //  --- Logic: how the game works ---
+    //   9. GLOBAL STATE           - gameState, the one object holding the whole game
+    //  10. CALCULATIONS & HELPERS - formulas for speed, costs, drain rates, random picks
+    //  11. STATE MANAGEMENT       - starting a run, applying upgrades to the stats
+    //  12. GAME LOOP              - what happens every frame, random events
+    //  13. CHOICE EVENTS          - opening / answering crossroads and event-response pop-ups
+    //  14. DEEP EVENT LOGIC       - starting, ticking and ending Deep Events
+    //  15. PLAYER CONTROLS        - buttons, skills, favorites/banish, module upgrades
+    //  16. SHOPS                  - the wandering shop
+    //  17. UI RENDERING           - drawing gameState onto the page (incl. Module Bay, trees)
+    //  18. CHALLENGE LOGIC        - starting, tracking, completing and rewarding challenges
+    //  19. ACHIEVEMENT LOGIC      - checking, unlocking and showing achievements
+    //  20. GOALS PANEL            - the Challenges & Achievements side menu
+    //  21. SIDE PANELS            - opening/closing the slide-out panels, tab badges
+    //  22. PATCH NOTES MODAL, DEV MODE, STARTUP
     // ============================================================
 
     // ============================================================
@@ -445,14 +639,21 @@
         {
             version: 'v1.3', date: '2026-10-08',
             changes: [
-                'Update is WIP',
                 'Added achievements! Click the 🏆 button at the top to see them. Earn them for reaching new ores, maxing upgrades, ascending and more.',
                 'Shops now appear every so often while drilling and sell a random mix of workshop upgrades and modules.',
-                'Shops you pass are remembered. If Surface Sample pulls you above one, it reopens when you drill back down to it: items you bought stay sold, and each unsold item has a 25% chance to be replaced.',
                 'Workshop upgrade prices now also scale with your current depth, so cheap upgrades no longer show up late in a run.',
                 'Removed Anomoly system',
-                'Removed ability to buy modules and workshop upgrades whenever',
                 'You can now favorite one workshop upgrade and one module slot (the star button). Favorited upgrades and modules for the favorited slot appear in shops more often, but it is not guaranteed.',
+                'Added Challenges! Start one from the new 🏆 Challenges side menu. It restarts your run from 0m with a special goal, like reaching 1000m without buying a module.',
+                'A worn drill bit now slows you down gradually: full speed above 50% integrity, then sliding down to 25% speed when it breaks. The integrity bar shows the current slowdown.',
+                'You can now banish up to two workshop upgrades and two module slots (the 🚫 button). Banished ones show up in shops much less often. It is the opposite of favoriting.',
+                'Dev Mode overhaul: it pauses the game while open (can be switched off), and can give any skill, workshop tier, module or Ascension perk for free.',
+                'Added Crossroads! Every few hundred metres the game freezes and you choose one of a few options: a faster but hotter route, a crystal cavern to mine or blast, an abandoned camp to raid and more.',
+                'Phase Drill (x2.5) and Chrono Drill (x2) now truly multiply your whole drill speed, as their descriptions say. Before, they were added to your other speed bonuses and were much weaker.',
+                'Module upgrades: from 1,000m you can upgrade the modules you own to Mk II and Mk III in the Module Bay. Each Mk makes the good effects 30% stronger, while penalties stay the same. They reset when you ascend.',
+                'UI rework: the main screen is now just your stats, controls and shaft report, so there is far less scrolling. The Skill tree and Ascension tree moved into panels on the left edge (their tabs show how many things you can buy). Buttons are grouped into Drill / Supplies / Run, and the message bar sits right above them.',
+                'Added Deep Events (from 2,000m): minute-long events you have to manage. Seismic Storm (brace before tremors), Magma Chase (outrun rising magma) and Gas Field (grab ore pockets in thick gas). Shops and crossroads wait until they are over.',
+                'Reworked the Prospector\'s Eye Ascension perk: it did nothing since anomalies were removed. It now doubles all Ore rewards from Deep Events.',
             ]
         },
         {
@@ -514,6 +715,10 @@
     const HARDNESS_DIVISOR  = 2000;
     const HARDNESS_EXPONENT = 1.15;
 
+    // Drill bit wear slowing the drill
+    const WORN_BIT_THRESHOLD = 0.5;   // below this much integrity (0.5 = 50%) the drill starts slowing down
+    const BROKEN_BIT_SPEED   = 0.25;  // speed multiplier at 0 integrity
+
     // Surface Sample (Cave Adapted F1 ability)
     const SURFACE_SAMPLE_BASE_COST     = 750;  // depth cost of your FIRST Surface Sample each run
     const SURFACE_SAMPLE_COST_INCREASE = 250;  // extra depth added to the cost after every use
@@ -531,6 +736,25 @@
     const EVENT_INTERVAL_SCALE  = 0.13;
     const EVENT_MIN_INTERVAL    = 11;
 
+    // Module upgrades (Mk II / Mk III), bought in the Module Bay. They reset when you ascend.
+    const MODULE_MAX_MK          = 3;      // highest Mk level
+    const MODULE_MK_BOOST        = 0.3;    // each Mk above I makes the module's GOOD effects 30% stronger (penalties stay the same)
+    const MODULE_UPGRADE_DEPTH   = 1000;   // upgrading unlocks once you are this deep
+    // Price = the bigger of (module's shop price x base) and (the Ore you'd earn drilling "metres" metres right now)
+    const MODULE_UPGRADE_COST    = { 2: { base: 3, metres: 300 }, 3: { base: 8, metres: 800 } };
+
+    // Deep Events: long events that need managing (Seismic Storm, Magma Chase, Gas Field...)
+    // The gap to the next one = BASE + (current depth x SCALE), randomised between 70% and 130%
+    const DEEP_EVENT_MIN_DEPTH      = 2000;  // no Deep Events above this depth
+    const DEEP_EVENT_BASE_INTERVAL  = 1000;
+    const DEEP_EVENT_DEPTH_SCALE    = 0.1;
+
+    // Choice events
+    const EVENT_CHOICE_CHANCE      = 0.5;   // chance (0 to 1) that an event with "choices" asks you how to respond
+    // Crossroads: the gap to the next one = BASE + (current depth x SCALE), randomised between 70% and 130%
+    const CROSSROADS_BASE_INTERVAL = 350;   // metres between crossroads near the surface
+    const CROSSROADS_DEPTH_SCALE   = 0.08;  // extra gap per metre of depth
+
     // Shops
     // The gap to the next shop = SHOP_BASE_INTERVAL + (current depth x SHOP_DEPTH_SCALE),
     // then randomised between 70% and 130%. So shops are close together early and spread out deeper.
@@ -538,6 +762,8 @@
     const SHOP_DEPTH_SCALE   = 0.12;  // extra gap per metre of depth
     const SHOP_ITEM_COUNT    = 4;     // how many items each shop sells
     const FAVORITE_WEIGHT    = 3;     // a favorited item is this many times more likely to be picked (1 = no boost)
+    const BANISH_WEIGHT      = 0.25;  // a banished item is this likely compared to a normal one (0.25 = 4x rarer, 0 = only if nothing else is left)
+    const BANISH_LIMIT       = 2;     // how many workshop upgrades, and how many module slots, can be banished at once
 
     // When you drill back down to a shop that Surface Sample pulled you above, it reopens.
     // Items you already bought stay sold. Each item you did NOT buy has this chance (0 to 1)
@@ -577,7 +803,7 @@
     };
     const ASCENSION_UPGRADES = {
         FOR1: { branch: 'Fortune',  name: 'Compound Interest',  cost: 1,  prereq: null,   effect: '+2% Ore Value for every time you have ascended (max +100%)', bonus: { compoundInterest: 0.02 } },
-        FOR2: { branch: 'Fortune',  name: "Prospector's Eye",   cost: 10,  prereq: 'FOR1', effect: 'Anomaly ore rewards are doubled',                            bonus: { anomalyBonus: 1 } }, // NOTE: anomalies were removed, so this perk does nothing until the new system uses 'anomalyBonus'
+        FOR2: { branch: 'Fortune',  name: "Prospector's Eye",   cost: 10,  prereq: 'FOR1', effect: 'Ore rewards from Deep Events are doubled',                   bonus: { deepEventBonus: 1 } },
         FOR3: { branch: 'Fortune',  name: 'Golden Age',         cost: 20, prereq: 'FOR2', effect: 'Every 1000m you drill triggers 15s of x3 Ore',               bonus: { goldenAge: true } },
         VOY1: { branch: 'Voyager',  name: 'Deep Drop',          cost: 1,  prereq: null,   effect: 'Each new run starts at 10% of your record depth (max 1500m)', bonus: { deepDrop: 0.10 } },
         VOY2: { branch: 'Voyager',  name: 'Second Wind',        cost: 12, prereq: 'VOY1', effect: 'Once per run, a fatal overheat or suffocation is cancelled', bonus: { secondWind: true } },
@@ -619,11 +845,11 @@
         'G3': { name: 'Protective Barrier',    cost: 400000,   effect: 'More failure reduction',                prereq: 'F3', minDepth: 8000,  bonus: { failureReduction: 0.3, eventResist: 0.25 } },
         // Tier H — Deep Core Engineering
         'H1': { name: 'Pressure Hull',         cost: 1000000,  effect: 'Halves depth pressure on life support', prereq: 'G1', minDepth: 13000, bonus: { pressureResist: 0.5 } },
-        'H2': { name: 'Phase Drill',           cost: 1000000,  effect: 'x2.5 Drill Speed (beats hard rock)',    prereq: 'G2', minDepth: 13000, bonus: { drillSpeedMultiplier: 1.5 } },
+        'H2': { name: 'Phase Drill',           cost: 1000000,  effect: 'x2.5 Drill Speed (multiplies all speed)', prereq: 'G2', minDepth: 13000, bonus: { drillSpeedFinalMult: 2.5 } },
         'H3': { name: 'Autonomous Operations', cost: 1000000,  effect: 'automate any 2 systems at once',        prereq: 'G3', minDepth: 13000, bonus: { autoOps: true } },
         // Tier I — Singularity
         'I1': { name: 'Singularity Compressor',cost: 5000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'H1', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
-        'I2': { name: 'Chrono Drill',          cost: 5000000, effect: 'x2 more Drill Speed',                   prereq: 'H2', minDepth: 21000, bonus: { drillSpeedMultiplier: 2.0 } },
+        'I2': { name: 'Chrono Drill',          cost: 5000000, effect: 'x2 Drill Speed (multiplies again)',    prereq: 'H2', minDepth: 21000, bonus: { drillSpeedFinalMult: 2.0 } },
         'I3': { name: 'Adamantine Chassis',    cost: 5000000, effect: '-65% bit wear, -50% event damage',      prereq: 'H3', minDepth: 21000, bonus: { integrityWearFactor: 0.35, eventResist: 0.5, failureReduction: 0.2 } },
     };
 
@@ -649,6 +875,8 @@
                 resonator: { name: 'Resonator Bit',   desc: '+60% Drill Speed, -30% Ore Value, +1 Heat/sec',     bonus: { drillSpeedMultiplier: 0.60, oreValueMultiplier: -0.30, heatRateBonus: 1 }, unlockCost: 1000,    unlockDepth: 500  },
                 harvester: { name: 'Harvester Bit',   desc: '+60% Ore Value, -25% Drill Speed',                  bonus: { oreValueMultiplier: 0.60, drillSpeedMultiplier: -0.25 },                    unlockCost: 1000,    unlockDepth: 500  },
                 voidborer: { name: 'Voidborer Bit',   desc: '+100% Drill Speed, +30% Ore Value, +1.5 Wear/sec', bonus: { drillSpeedMultiplier: 1.00, oreValueMultiplier: 0.30, integrityWearFactor: 1.5 }, unlockCost: 10000, unlockDepth: 2500 },
+                // special: true = never sold in shops, only earned by completing a challenge
+                pioneer:   { name: 'Pioneer Bit',     desc: '+40% Drill Speed, +25% Ore Value',                  bonus: { drillSpeedMultiplier: 0.40, oreValueMultiplier: 0.25 },                     unlockCost: 0, unlockDepth: 0, special: true },
             },
         },
         reactorCore: {
@@ -659,6 +887,8 @@
                 cryo:      { name: 'Cryo Core',        desc: '-2.0 Heat/sec, -0.8 Power/sec',                   bonus: { heatRateBonus: -2.0, powerRate: -0.8 },                            unlockCost: 650,    unlockDepth: 500  },
                 fusion:    { name: 'Fusion Core',      desc: '+2.5 Power/sec, +4 Heat/sec',                     bonus: { powerRate: 2.5, heatRateBonus: 4 },                                unlockCost: 1200,   unlockDepth: 1000  },
                 darkMatter:{ name: 'Dark Matter Core', desc: '+4 Power/sec, -15% Power Consumption, +2.5 Heat/sec', bonus: { powerRate: 4, powerConsumptionFactor: 0.85, heatRateBonus: 2.5 }, unlockCost: 12500, unlockDepth: 3000 },
+                frugal:    { name: 'Frugal Core',      desc: '+1.5 Power/sec, -1 Heat/sec',                      bonus: { powerRate: 1.5, heatRateBonus: -1 },                               unlockCost: 0, unlockDepth: 0, special: true },
+                glacier:   { name: 'Glacier Core',     desc: '-3 Heat/sec, +0.5 Power/sec',                      bonus: { heatRateBonus: -3, powerRate: 0.5 },                               unlockCost: 0, unlockDepth: 0, special: true },
             },
         },
         hullPlating: {
@@ -669,6 +899,7 @@
                 adaptive:   { name: 'Adaptive Plating',   desc: '+15% Event Resistance',              bonus: { eventResist: 0.15 },                                 unlockCost: 1200,   unlockDepth: 700  },
                 ceramic:    { name: 'Ceramic Plating',    desc: '-30% Heat gain, -10% Drill Speed',   bonus: { heatFactor: 0.7, drillSpeedMultiplier: -0.10 },      unlockCost: 4000,  unlockDepth: 2000 },
                 obsidian:   { name: 'Obsidian Plating',   desc: '-50% Bit Wear, +20% Event Resistance', bonus: { integrityWearFactor: 0.5, eventResist: 0.20 },    unlockCost: 16000, unlockDepth: 4500 },
+                veteran:    { name: 'Veteran Plating',    desc: '-35% Bit Wear, +10% Event Resistance', bonus: { integrityWearFactor: 0.65, eventResist: 0.10 },   unlockCost: 0, unlockDepth: 0, special: true },
             },
         },
         fuelInjector: {
@@ -679,6 +910,7 @@
                 rich:      { name: 'Rich Mix',            desc: '+20% Drill Speed, +35% Power Consumption',      bonus: { drillSpeedMultiplier: 0.20, powerConsumptionFactor: 1.35 },   unlockCost: 5000,  unlockDepth: 2500 },
                 catalytic: { name: 'Catalytic Injector',  desc: '+1 Power/sec, -20% Power Consumption',          bonus: { powerRate: 1, powerConsumptionFactor: 0.80 },                 unlockCost: 12000, unlockDepth: 4000 },
                 plasma:    { name: 'Plasma Injector',     desc: '+3 Power/sec, +50% Drill Speed, +2 Heat/sec',   bonus: { powerRate: 3, drillSpeedMultiplier: 0.50, heatRateBonus: 2 }, unlockCost: 20000, unlockDepth: 6500 },
+                turbo:     { name: 'Turbo Feed',          desc: '+30% Drill Speed, -10% Power Consumption',      bonus: { drillSpeedMultiplier: 0.30, powerConsumptionFactor: 0.90 },   unlockCost: 0, unlockDepth: 0, special: true },
             },
         },
         sensorArray: {
@@ -689,6 +921,7 @@
                 pressure: { name: 'Pressure Gauge', desc: '+20% Pressure Resistance',                     bonus: { pressureResist: 0.20 },                             unlockCost: 4500,   unlockDepth: 4000 },
                 deepScan: { name: 'Deep-Scan Array',desc: '+40% Ore Value, +10% Event Resistance',        bonus: { oreValueMultiplier: 0.40, eventResist: 0.10 },      unlockCost: 13000,  unlockDepth: 5000 },
                 oracle:   { name: 'Oracle Array',   desc: '+80% Ore Value, +25% Pressure Resistance',     bonus: { oreValueMultiplier: 0.80, pressureResist: 0.25 },   unlockCost: 42000, unlockDepth: 7000 },
+                prospector:{ name: "Prospector's Lens", desc: '+60% Ore Value, +15% Pressure Resistance', bonus: { oreValueMultiplier: 0.60, pressureResist: 0.15 },   unlockCost: 0, unlockDepth: 0, special: true },
             },
         },
         exhaustVent: {
@@ -718,19 +951,50 @@
         { depth: 30000, name: 'Atomite',        value: 1500 },
     ];
 
+    // Events with "choices" sometimes (EVENT_CHOICE_CHANCE) ask the player how to respond instead of just
+    // hitting them. Each choice: { label, desc: () => text, cost: () => Ore (optional), apply: () => result text }.
+    // km = depth in km, r = event resistance (0 to 0.75), the same two numbers "apply" gets.
     const EVENTS = [
         { id: 'cavein',   name: 'Cave-In',          bad: true,  minKm: 0.5, weight: 3,
           text: 'CAVE-IN! Falling rock cracked the drill housing.',
-          apply: (km, r) => { gameState.integrity = Math.max(0, gameState.integrity - (18 + 6 * km) * (1 - r)); gameState.drilling = false; } },
+          apply: (km, r) => { gameState.integrity = Math.max(0, gameState.integrity - (18 + 6 * km) * (1 - r)); gameState.drilling = false; },
+          choices: (km, r) => [
+              { label: '🪵 Brace the shaft', desc: () => 'Shore up the rock. No damage, but the drill stops.',
+                cost: () => Math.ceil(10 * (1 + km * 1.5)),
+                apply: () => { keepDrillStopped(); return 'Braced the shaft. No damage taken.'; } },
+              { label: '💥 Ram through', desc: () => `Take ${Math.round((18 + 6 * km) * (1 - r) * 1.5)} integrity damage, but keep drilling.`,
+                apply: () => { gameState.integrity = Math.max(0, gameState.integrity - (18 + 6 * km) * (1 - r) * 1.5); return 'Rammed through the rubble.'; } },
+          ] },
         { id: 'gas',      name: 'Gas Pocket',        bad: true,  minKm: 0,   weight: 3,
           text: 'GAS POCKET! Life support is scrubbing hard.',
-          apply: (km, r) => { gameState.oxygen = Math.max(0, gameState.oxygen - (18 + 9 * km) * (1 - r)); } },
+          apply: (km, r) => { gameState.oxygen = Math.max(0, gameState.oxygen - (18 + 9 * km) * (1 - r)); },
+          choices: (km, r) => [
+              { label: '🧯 Seal it off', desc: () => 'Plug the pocket. No Oxygen lost.',
+                cost: () => getOxygenRefillCost() * 2,
+                apply: () => 'Sealed the gas pocket.' },
+              { label: '😮‍💨 Push through', desc: () => `Lose ${Math.round((18 + 9 * km) * (1 - r))} Oxygen.`,
+                apply: () => { gameState.oxygen = Math.max(0, gameState.oxygen - (18 + 9 * km) * (1 - r)); return 'Pushed through the gas.'; } },
+          ] },
         { id: 'vent',     name: 'Magma Vent',        bad: true,  minKm: 1,   weight: 3,
           text: 'MAGMA VENT! Cabin temperature spiking.',
-          apply: (km, r) => { gameState.temperature = Math.min(99, gameState.temperature + (25 + 3 * km) * (1 - r)); } },
+          apply: (km, r) => { gameState.temperature = Math.min(99, gameState.temperature + (25 + 3 * km) * (1 - r)); },
+          choices: (km, r) => [
+              { label: '🔥 Endure it', desc: () => `+${Math.round((25 + 3 * km) * (1 - r))}% Heat.`,
+                apply: () => { gameState.temperature = Math.min(99, gameState.temperature + (25 + 3 * km) * (1 - r)); return 'Endured the magma vent.'; } },
+              { label: '⚡ Seal it with power', desc: () => `Lose ${Math.round(20 + 5 * km)} Power instead.`,
+                apply: () => { gameState.power = Math.max(0, gameState.power - (20 + 5 * km)); return 'Sealed the vent with a power-hungry shield.'; } },
+              { label: '🛑 Back off', desc: () => 'No heat, but the drill stops.',
+                apply: () => { keepDrillStopped(); return 'Backed away from the vent.'; } },
+          ] },
         { id: 'surge',    name: 'Power Surge',       bad: true,  minKm: 0,   weight: 3,
           text: 'POWER SURGE! Reactor dumped a chunk of its charge.',
-          apply: (km, r) => { gameState.power = Math.max(0, gameState.power - (20 + 9 * km) * (1 - r)); } },
+          apply: (km, r) => { gameState.power = Math.max(0, gameState.power - (20 + 9 * km) * (1 - r)); },
+          choices: (km, r) => [
+              { label: '🔋 Let it drain', desc: () => `Lose ${Math.round((20 + 9 * km) * (1 - r))} Power.`,
+                apply: () => { gameState.power = Math.max(0, gameState.power - (20 + 9 * km) * (1 - r)); return 'Let the surge drain the reactor.'; } },
+              { label: '🌡️ Dump it as heat', desc: () => `Keep your Power, but +${Math.round(25 * (1 - r))}% Heat.`,
+                apply: () => { gameState.temperature = Math.min(99, gameState.temperature + 25 * (1 - r)); return 'Dumped the surge into the heat sinks.'; } },
+          ] },
         { id: 'aquifer',  name: 'Aquifer Breach',    bad: true,  minKm: 2,   weight: 2, duration: 22,
           text: 'AQUIFER BREACH! Water is fouling the oxygen line.',    effect: { oxygenDrain: 3 } },
         { id: 'strata',   name: 'Unstable Strata',   bad: true,  minKm: 1.5, weight: 2, duration: 25,
@@ -754,6 +1018,227 @@
 
 
     // ============================================================
+    //  CROSSROADS
+    //  Every so often (see CROSSROADS_BASE_INTERVAL) the game freezes and you pick one option.
+    //  TO ADD A NEW CROSSROADS: copy one entry below and change it.
+    //    minKm   - shallowest depth (in km) it can appear at
+    //    weight  - how likely it is compared to the others (bigger = more common)
+    //    options - each one: { label, desc: () => text, cost: () => Ore (optional), apply: () => result text }
+    //  Handy helpers: oreWorth(m) = the Ore you'd earn drilling m metres right now,
+    //  addTimedEffect(id, name, bad, seconds, effect), keepDrillStopped().
+    //  Timed effects can use: speedMult, oreMult, wearMult, heatMult, powerDrainMult, oxygenDrain.
+    // ============================================================
+    const CROSSROADS = [
+        { id: 'fork', icon: '🔀', name: 'Fork in the Tunnel', minKm: 0, weight: 3,
+          text: 'The shaft splits three ways. Which passage do you take?',
+          options: [
+              { label: '⬇️ Steep descent', desc: () => '+50% Drill Speed but +50% Heat gain for 40s.',
+                apply: () => { addTimedEffect('steep', 'Steep Descent', false, 40, { speedMult: 1.5, heatMult: 1.5 }); return 'Took the steep descent.'; } },
+              { label: '💎 Mineral-rich passage', desc: () => 'x2 Ore but -30% Drill Speed for 40s.',
+                apply: () => { addTimedEffect('richpass', 'Mineral Passage', false, 40, { oreMult: 2, speedMult: 0.7 }); return 'Took the mineral-rich passage.'; } },
+              { label: '🧱 Well-shored tunnel', desc: () => '-50% bit wear for 60s.',
+                apply: () => { addTimedEffect('shored', 'Shored Tunnel', false, 60, { wearMult: 0.5 }); return 'Took the well-shored tunnel.'; } },
+          ] },
+
+        { id: 'camp', icon: '⛺', name: 'Abandoned Mining Camp', minKm: 0.3, weight: 2,
+          text: 'An old crew left their camp behind. There is only time to search one part of it.',
+          options: [
+              { label: '💨 Supply crates', desc: () => 'Refill your Oxygen to full (does not count as a refill for challenges).',
+                apply: () => { gameState.oxygen = gameState.maxOxygen; return 'Found spare oxygen canisters.'; } },
+              { label: '⚡ Old generator', desc: () => 'Refill your Power to full (does not count as a refill for challenges).',
+                apply: () => { gameState.power = gameState.maxPower; return 'Drained the old generator.'; } },
+              { label: '🔧 Spare parts', desc: () => '+50 drill integrity (does not count as a repair for challenges).',
+                apply: () => { gameState.integrity = Math.min(gameState.maxIntegrity, gameState.integrity + 50); return 'Patched the bit with spare parts.'; } },
+          ] },
+
+        { id: 'crew', icon: '👷', name: 'Lost Crew', minKm: 0.8, weight: 2,
+          text: 'A stranded mining crew flags you down.',
+          options: [
+              { label: '🤝 Share your oxygen', desc: () => `Lose 30% of your Oxygen. They pay you ${fmt(oreWorth(80))} Ore.`,
+                apply: () => { gameState.oxygen *= 0.7; const o = oreWorth(80); gameState.ore += o; return `Shared oxygen and earned ${fmt(o)} Ore.`; } },
+              { label: '🧑‍🔧 Hire them', desc: () => '-40% Power drain for 90s.',
+                cost: () => Math.ceil(oreWorth(50)),
+                apply: () => { addTimedEffect('crew', 'Hired Crew', false, 90, { powerDrainMult: 0.6 }); return 'Hired the crew to run the reactor.'; } },
+              { label: '👋 Point them to the surface', desc: () => 'Nothing happens.',
+                apply: () => 'Wished the crew luck.' },
+          ] },
+
+        { id: 'crystal', icon: '🔮', name: 'Crystal Cavern', minKm: 1, weight: 2,
+          text: 'The drill breaks into a cavern lined with crystal.',
+          options: [
+              { label: '⛏️ Mine it carefully', desc: () => `+${fmt(oreWorth(40))} Ore.`,
+                apply: () => { const o = oreWorth(40); gameState.ore += o; return `Mined ${fmt(o)} Ore of crystal.`; } },
+              { label: '🧨 Blast it open', desc: () => `+${fmt(oreWorth(110))} Ore, but -25 integrity and +30% Heat.`,
+                apply: () => { const o = oreWorth(110); gameState.ore += o; gameState.integrity = Math.max(0, gameState.integrity - 25);
+                               gameState.temperature = Math.min(99, gameState.temperature + 30); return `Blasted the cavern for ${fmt(o)} Ore.`; } },
+              { label: '➡️ Move on', desc: () => 'Nothing happens.', apply: () => 'Left the crystals behind.' },
+          ] },
+
+        { id: 'river', icon: '🌊', name: 'Underground River', minKm: 1.5, weight: 2,
+          text: 'A fast, cold river cuts across the shaft.',
+          options: [
+              { label: '🚣 Ride the current', desc: () => '+35% Drill Speed for 60s, but +1.5 Oxygen drain/sec.',
+                apply: () => { addTimedEffect('current', 'River Current', false, 60, { speedMult: 1.35, oxygenDrain: 1.5 }); return 'Rode the current.'; } },
+              { label: '❄️ Cool the drill', desc: () => 'Heat drops to 0 and -30% Heat gain for 45s.',
+                apply: () => { gameState.temperature = 0; addTimedEffect('rivercool', 'River Cooling', false, 45, { heatMult: 0.7 }); return 'Cooled the drill in the river.'; } },
+              { label: '🫧 Fill the tanks', desc: () => 'Refill Oxygen to full (does not count as a refill for challenges).',
+                apply: () => { gameState.oxygen = gameState.maxOxygen; return 'Filtered fresh oxygen from the river.'; } },
+          ] },
+
+        { id: 'unstable_vein', icon: '🎲', name: 'Unstable Vein', minKm: 2, weight: 1,
+          text: 'A glowing vein runs right through a cracked, unstable wall.',
+          options: [
+              { label: '🎲 Risk it', desc: () => '50% chance: x4 Ore for 20s. 50% chance: a cave-in (-30 integrity, drill stops).',
+                apply: () => {
+                    if (Math.random() < 0.5) { addTimedEffect('jackpot', 'Jackpot Vein', false, 20, { oreMult: 4 }); return 'JACKPOT! The vein held.'; }
+                    gameState.integrity = Math.max(0, gameState.integrity - 30); keepDrillStopped(); return 'The wall collapsed on the drill!';
+                } },
+              { label: '🚶 Play it safe', desc: () => 'Nothing happens.', apply: () => 'Left the unstable vein alone.' },
+          ] },
+
+        { id: 'machine', icon: '🗿', name: 'Ancient Machine', minKm: 3, weight: 1,
+          text: 'A humming machine of unknown origin sits in a hollow in the rock.',
+          options: [
+              { label: '🔮 Feed it ore', desc: () => 'It hums louder... +1 PRP.',
+                cost: () => Math.ceil(oreWorth(200)),
+                apply: () => { gameState.permanentResearchPoints += 1; return 'The machine turned your ore into +1 PRP!'; } },
+              { label: '🔩 Salvage it', desc: () => `+${fmt(oreWorth(60))} Ore and +20 integrity.`,
+                apply: () => { const o = oreWorth(60); gameState.ore += o; gameState.integrity = Math.min(gameState.maxIntegrity, gameState.integrity + 20); return `Salvaged the machine for ${fmt(o)} Ore.`; } },
+              { label: '🚶 Leave it alone', desc: () => 'Nothing happens.', apply: () => 'Left the machine humming.' },
+          ] },
+    ];
+
+
+    // ============================================================
+    //  DEEP EVENTS
+    //  Long events (about a minute) that you have to manage while drilling. They start with a
+    //  pop-up explaining the rules, then show a panel above the control buttons.
+    //  TO ADD A NEW DEEP EVENT: copy one entry below and change it. "ev" is the running event:
+    //  ev.timeLeft and ev.def are set for you, and you can store your own values on it too.
+    //    minKm, weight      - shallowest depth (km) it can appear at, and how common it is
+    //    duration           - seconds it lasts if you survive it
+    //    avoidable          - true = the pop-up also offers a free "avoid it" option
+    //    intro()            - the rules, shown in the pop-up
+    //    start(ev)          - runs once when it begins
+    //    tick(ev, dt)       - runs every frame. Call endDeepEvent(false, 'why') to make it fail early.
+    //    status(ev)         - what the panel shows: { text, bar (0 to 1), alert (true = flashing), button (label or null) }
+    //    action(ev)         - what the panel's button does (optional)
+    //    finish(ev)         - runs when the timer runs out (you survived). Give rewards here and return a result text.
+    //  Effects added with an id starting 'deep_' are removed automatically when the event ends.
+    //  Give Ore rewards with deepEventOre(metres) instead of oreWorth(), so the Prospector's Eye perk can double them.
+    // ============================================================
+    const DEEP_EVENTS = [
+        { id: 'seismic', icon: '🌋', name: 'Seismic Storm', minKm: 2, weight: 3, duration: 60, avoidable: true,
+          intro: () => `For 60 seconds, tremors will shake the shaft. A warning appears 2 seconds before each one.\n\n` +
+                       `• STOP the drill before a tremor hits to brace, or the bit takes ${Math.round(10 + 2 * getKm())} damage.\n` +
+                       `• You only earn credit for a braced tremor if you drilled for at least 3 seconds since the last one.\n\n` +
+                       `Reward: Ore for every braced tremor. Brace them all for 60s of +40% Drill Speed.`,
+          start: ev => { ev.nextTremor = 5; ev.drillTime = 0; ev.braced = 0; ev.hits = 0; ev.wasted = 0; },
+          tick: (ev, dt) => {
+              if (gameState.drilling) ev.drillTime += dt;
+              ev.nextTremor -= dt;
+              if (ev.nextTremor > 0) return;
+              if (gameState.drilling) {
+                  ev.hits++;
+                  gameState.integrity = Math.max(0, gameState.integrity - (10 + 2 * getKm()));
+                  gameState.message = 'TREMOR! The drill was running and took damage.';
+              } else if (ev.drillTime >= 3) {
+                  ev.braced++;
+                  gameState.message = 'Tremor braced!';
+              } else {
+                  ev.wasted++;
+                  gameState.message = 'Tremor passed, but you had not drilled since the last one, so it does not count.';
+              }
+              ev.drillTime = 0;
+              ev.nextTremor = 6 + Math.random() * 4;
+          },
+          status: ev => {
+              const warning = ev.nextTremor <= 2;
+              return {
+                  text: warning ? `⚠️ TREMOR IN ${ev.nextTremor.toFixed(1)}s! STOP THE DRILL TO BRACE!`
+                                : `Drill between tremors (${Math.min(3, ev.drillTime).toFixed(1)} / 3.0s drilled). Braced: ${ev.braced} · Hits taken: ${ev.hits}`,
+                  bar: ev.timeLeft / ev.def.duration, alert: warning,
+                  button: gameState.drilling ? '🛑 Brace! (stop drill)' : '⛏️ Resume drilling',
+              };
+          },
+          action: () => toggleDrill(),
+          finish: ev => {
+              const ore = deepEventOre(40 * ev.braced);
+              gameState.ore += ore;
+              const perfect = ev.hits === 0 && ev.braced >= 3;
+              if (perfect) addTimedEffect('steady', 'Steady Hands', false, 60, { speedMult: 1.4 });
+              return `Storm over. Braced ${ev.braced}, took ${ev.hits} hit${ev.hits === 1 ? '' : 's'}. +${fmt(ore)} Ore${perfect ? ' and Steady Hands (+40% speed for 60s)!' : '.'}`;
+          } },
+
+        { id: 'magma', icon: '🔥', name: 'Magma Chase', minKm: 3, weight: 2, duration: 60, avoidable: false,
+          intro: () => `A magma flow has broken into the shaft 150m behind you, and it's rising!\n\n` +
+                       `• Keep drilling to stay ahead of it for 60 seconds. It rises at about half your top speed.\n` +
+                       `• Heat builds 15% faster while it chases you. Manage your cooldowns!\n` +
+                       `• If it catches you: +35% Heat and -20 integrity.\n\n` +
+                       `Reward: a big Ore haul and 60s of -30% Heat gain.`,
+          start: ev => {
+              const boost = gameState.boostTimeRemaining > 0 ? SCAN_BOOST_SPEED_MULTIPLIER : 1;   // don't punish a Scan Boost
+              ev.magmaSpeed = Math.max(1.5, 0.45 * getEffectiveDrillSpeed() / boost);
+              ev.magmaDepth = gameState.depth - 150;
+              addTimedEffect('deep_magma', 'Magma Heat', true, ev.def.duration, { heatMult: 1.15 });
+          },
+          tick: (ev, dt) => {
+              ev.magmaDepth += ev.magmaSpeed * dt;
+              if (ev.magmaDepth >= gameState.depth) {
+                  gameState.temperature = Math.min(99, gameState.temperature + 35);
+                  gameState.integrity   = Math.max(0, gameState.integrity - 20);
+                  endDeepEvent(false, 'The magma caught you! +35% Heat, -20 integrity.');
+              }
+          },
+          status: ev => {
+              const gap = gameState.depth - ev.magmaDepth;
+              return { text: `Magma is ${gap.toFixed(0)}m behind you (rising ${ev.magmaSpeed.toFixed(1)} m/s). Keep drilling!`,
+                       bar: Math.min(1, gap / 200), alert: gap < 50, button: null };
+          },
+          finish: () => {
+              const ore = deepEventOre(200);
+              gameState.ore += ore;
+              addTimedEffect('forged', 'Forged in Fire', false, 60, { heatMult: 0.7 });
+              return `You outran the magma! +${fmt(ore)} Ore and Forged in Fire (-30% Heat gain for 60s).`;
+          } },
+
+        { id: 'gasfield', icon: '☁️', name: 'Gas Field', minKm: 2.5, weight: 2, duration: 60, avoidable: true,
+          pocketTime: 2,   // seconds you get to grab each ore pocket before it closes
+          intro: () => `You're drilling into a huge field of thick gas for 60 seconds.\n\n` +
+                       `• All Ore is doubled, but you lose an extra ${(1 + 0.15 * getKm()).toFixed(1)} Oxygen per second.\n` +
+                       `• Ore pockets open up every few seconds. Click "Grab pocket" fast, they close after ${DEEP_EVENTS.find(d => d.id === 'gasfield').pocketTime} seconds!\n\n` +
+                       `Reward: everything you grab, plus a bonus if you grab 5 or more pockets.`,
+          start: ev => {
+              ev.nextPocket = 4; ev.pocketLeft = 0; ev.grabbed = 0; ev.missed = 0;
+              addTimedEffect('deep_gas', 'Gas Field', true, ev.def.duration, { oxygenDrain: 1 + 0.15 * getKm(), oreMult: 2 });
+          },
+          tick: (ev, dt) => {
+              if (ev.pocketLeft > 0) {
+                  ev.pocketLeft -= dt;
+                  if (ev.pocketLeft <= 0) ev.missed++;
+              } else {
+                  ev.nextPocket -= dt;
+                  if (ev.nextPocket <= 0) { ev.pocketLeft = ev.def.pocketTime; ev.nextPocket = 5 + Math.random() * 4; }
+              }
+          },
+          status: ev => ev.pocketLeft > 0
+              ? { text: `💎 ORE POCKET! Grab it before it closes (${ev.pocketLeft.toFixed(1)}s)`, bar: ev.timeLeft / ev.def.duration, alert: true, button: '💎 Grab pocket' }
+              : { text: `Thick gas: x2 Ore, extra Oxygen drain. Pockets grabbed: ${ev.grabbed} · missed: ${ev.missed}`, bar: ev.timeLeft / ev.def.duration, alert: false, button: null },
+          action: ev => {
+              if (ev.pocketLeft <= 0) return;
+              const ore = deepEventOre(50);
+              gameState.ore += ore; ev.grabbed++; ev.pocketLeft = 0;
+              gameState.message = `Grabbed an ore pocket: +${fmt(ore)} Ore!`;
+          },
+          finish: ev => {
+              const bonus = ev.grabbed >= 5 ? deepEventOre(150) : 0;
+              gameState.ore += bonus;
+              return `Out of the gas field. Grabbed ${ev.grabbed} pocket${ev.grabbed === 1 ? '' : 's'}${bonus ? `, plus a ${fmt(bonus)} Ore bonus!` : '.'}`;
+          } },
+    ];
+
+
+    // ============================================================
     //  AUTOMATION ROUTINES (unlocked by the H3 skill)
     //  AUTO_SLOTS = how many routines can run at the same time.
     //  AUTO_COST_MULT = automation charges this much extra ore
@@ -767,6 +1252,83 @@
         repair: { name: 'Auto-Repair', icon: '🔧', desc: 'Repairs the bit below 25%' },
         cool:   { name: 'Auto-Cool',   icon: '❄️', desc: 'Pauses drill at 88% heat, resumes at 30%' },
     };
+
+    // ============================================================
+    //  CHALLENGES
+    //  Starting a challenge restarts your run from 0m (Deep Drop is skipped, other
+    //  Ascension perks still apply). Each challenge can be completed once, and its
+    //  reward lasts forever.
+    //  TO ADD A NEW CHALLENGE: copy one entry below and change it.
+    //    id         - a unique name (never reuse one)
+    //    icon, name - shown to the player
+    //    desc       - what the player has to do
+    //    goal       - function (gs, run) that returns true once the challenge is beaten
+    //    fail       - function (gs, run) that returns true once it can no longer be beaten
+    //    failReason - shown when fail() turns true
+    //    progress   - function (gs, run) that returns a short progress text
+    //    reward     - { type: 'module', slotId, optId }  unlocks a special module (mark it special: true in MODULE_SLOTS)
+    //                 { type: 'workshop', id }          +1 free tier of that workshop upgrade now and at the start of every run
+    //  "run" holds this run's counters (see initializeGame): modulesBought, workshopBought,
+    //  shopPurchases, skillsBought, powerRefills, oxygenRefills, repairs, maxHeat.
+    // ============================================================
+    const reachDepth = m => gs => gs.depth >= m;
+    const depthText  = m => gs => `Depth: ${Math.floor(gs.depth).toLocaleString()} / ${m.toLocaleString()}m`;
+    const bestWorkshopTier = gs => Math.max(0, ...Object.values(gs.workshopTiers));
+
+    const CHALLENGES = [
+        { id: 'lone_driller', icon: '🚫', name: 'Lone Driller',
+          desc: 'Reach 1,000m without buying any module or module slot.',
+          goal: reachDepth(1000), fail: (gs, run) => run.modulesBought > 0, failReason: 'You bought a module.',
+          progress: depthText(1000), reward: { type: 'module', slotId: 'drillHead', optId: 'pioneer' } },
+
+        { id: 'rush_job', icon: '⏱️', name: 'Rush Job',
+          desc: 'Get any workshop upgrade to Tier 3 before you pass 1,500m.',
+          goal: gs => bestWorkshopTier(gs) >= 3, fail: gs => gs.depth > 1500, failReason: 'You passed 1,500m first.',
+          progress: gs => `Best tier: ${bestWorkshopTier(gs)} / 3 · Depth: ${Math.floor(gs.depth).toLocaleString()} / 1,500m`,
+          reward: { type: 'workshop', id: 'W_DS' } },
+
+        { id: 'fumes', icon: '🔋', name: 'Running on Fumes',
+          desc: 'Reach 750m refilling Power no more than 3 times (Auto-Power counts as a refill).',
+          goal: reachDepth(750), fail: (gs, run) => run.powerRefills > 3, failReason: 'You refilled Power a 4th time.',
+          progress: (gs, run) => `${depthText(750)(gs)} · Power refills: ${run.powerRefills} / 3`,
+          reward: { type: 'module', slotId: 'reactorCore', optId: 'frugal' } },
+
+        { id: 'bare_bones', icon: '🦴', name: 'Bare Bones',
+          desc: 'Reach 600m without buying a single skill.',
+          goal: reachDepth(600), fail: (gs, run) => run.skillsBought > 0, failReason: 'You bought a skill.',
+          progress: depthText(600), reward: { type: 'workshop', id: 'W_OV' } },
+
+        { id: 'fast_learner', icon: '📚', name: 'Fast Learner',
+          desc: 'Own a Tier 4 skill before you pass 800m.',
+          goal: gs => gs.unlockedSkills.some(s => s[0] === 'D'), fail: gs => gs.depth > 800, failReason: 'You passed 800m first.',
+          progress: depthText(800), reward: { type: 'workshop', id: 'W_CC' } },
+
+        { id: 'cool_head', icon: '❄️', name: 'Cool Head',
+          desc: 'Reach 1,000m without the heat ever going above 60%.',
+          goal: reachDepth(1000), fail: (gs, run) => run.maxHeat > 60, failReason: 'The heat went above 60%.',
+          progress: (gs, run) => `${depthText(1000)(gs)} · Hottest: ${Math.floor(run.maxHeat)}%`,
+          reward: { type: 'module', slotId: 'reactorCore', optId: 'glacier' } },
+
+        { id: 'held_together', icon: '🩹', name: 'Held Together',
+          desc: 'Reach 1,200m without repairing the drill bit (Auto-Repair counts).',
+          goal: reachDepth(1200), fail: (gs, run) => run.repairs > 0, failReason: 'You repaired the drill.',
+          progress: depthText(1200), reward: { type: 'module', slotId: 'hullPlating', optId: 'veteran' } },
+
+        { id: 'tight_wallet', icon: '👛', name: 'Tight Wallet',
+          desc: 'Reach 1,500m without buying anything from a shop.',
+          goal: reachDepth(1500), fail: (gs, run) => run.shopPurchases > 0, failReason: 'You bought something from a shop.',
+          progress: depthText(1500), reward: { type: 'workshop', id: 'W_MP' } },
+
+        { id: 'hold_breath', icon: '🫧', name: 'Hold Your Breath',
+          desc: 'Reach 2,000m without refilling Oxygen (Auto-Oxygen counts as a refill).',
+          goal: reachDepth(2000), fail: (gs, run) => run.oxygenRefills > 0, failReason: 'You refilled Oxygen.',
+          progress: depthText(2000), reward: { type: 'module', slotId: 'fuelInjector', optId: 'turbo' } },
+
+        { id: 'stock_drill', icon: '🔩', name: 'Stock Drill',
+          desc: 'Reach 2,500m without buying any workshop upgrade.',
+          goal: reachDepth(2500), fail: (gs, run) => run.workshopBought > 0, failReason: 'You bought a workshop upgrade.',
+          progress: depthText(2500), reward: { type: 'module', slotId: 'sensorArray', optId: 'prospector' } },
+    ];
 
     // ============================================================
     //  ACHIEVEMENTS
@@ -786,21 +1348,54 @@
         { id: 'first_shop',    icon: '🏪', name: 'Window Shopper',     desc: 'Find your first wandering shop.',             check: gs => gs.shopLog.length >= 1 },
         { id: 'new_slot',      icon: '⚙️', name: 'Expansion Pack',     desc: 'Install a new module slot.',                  check: gs => Object.keys(gs.unlockedModuleSlots).length > 3 },
         { id: 'rich',          icon: '💰', name: 'Pocket Full of Ore', desc: 'Hold 10,000 Ore at once.',                    check: gs => gs.ore >= 10000 },
+        { id: 'ore_baron',     icon: '🏦', name: 'Ore Baron',          desc: 'Hold 1,000,000 Ore at once.',                 check: gs => gs.ore >= 1e6 },
+        { id: 'tier5_skill',   icon: '🎓', name: 'Mastery',            desc: 'Own a Tier 5 skill.',                         check: gs => gs.unlockedSkills.some(s => s[0] === 'E') },
+        { id: 'all_skills',    icon: '🌳', name: 'Full Canopy',        desc: 'Own every skill in the skill tree in one run.', check: gs => Object.keys(SKILLS).every(id => gs.unlockedSkills.includes(id)) },
+        { id: 'automation',    icon: '🤖', name: 'Hands Free',         desc: 'Install Autonomous Operations.',              check: gs => gs.unlockedSkills.includes('H3') },
+        { id: 'speed_demon',   icon: '🏎️', name: 'Speed Demon',        desc: 'Drill at 25 m/s or faster (after rock hardness).', check: gs => getEffectiveDrillSpeed() >= 25 },
+        { id: 'scan_boost',    icon: '📡', name: 'Ping!',              desc: 'Use Scan Boost.',                             check: gs => gs.boostTimeRemaining > 0 },
+
+        // --- Shops & modules ---
+        { id: 'regular',       icon: '🗺️', name: 'Regular Customer',   desc: 'Find 5 shops in one run.',                    check: gs => gs.shopLog.length >= 5 },
+        { id: 'shopaholic',    icon: '🛍️', name: 'Shopaholic',         desc: 'Buy 10 shop items in one run.',               check: gs => gs.run.shopPurchases >= 10 },
+        { id: 'favorites',     icon: '⭐', name: 'Picky Buyer',        desc: 'Favorite a workshop upgrade and a module slot.', check: gs => !!(gs.favoriteWorkshop && gs.favoriteSlot) },
+        { id: 'full_bay',      icon: '🧩', name: 'Fully Loaded',       desc: 'Install all six module slots in one run.',    check: gs => Object.keys(MODULE_SLOTS).every(s => gs.unlockedModuleSlots[s]) },
+        { id: 'mk2',           icon: '⬆️', name: 'Tuned Up',           desc: 'Upgrade a module to Mk II.',                  check: gs => Object.values(gs.moduleMk).some(m => m >= 2) },
+        { id: 'mk3',           icon: '🔧', name: 'Overengineered',     desc: 'Upgrade a module to Mk III.',                 check: gs => Object.values(gs.moduleMk).some(m => m >= 3) },
+        { id: 'collector',     icon: '📦', name: 'Collector',         desc: 'Own every shop module for one slot.',         check: gs => Object.keys(MODULE_SLOTS).some(s => gs.unlockedModuleSlots[s] && Object.entries(MODULE_SLOTS[s].options).every(([o, opt]) => opt.special || gs.unlockedModuleOptions[s]?.[o])) },
 
         // --- Workshop ---
         { id: 'max_workshop',  icon: '🔨', name: 'Fully Tooled',       desc: 'Max out your first workshop upgrade.',        check: gs => Object.keys(WORKSHOP_UPGRADES).some(id => (gs.workshopTiers[id] || 0) >= WORKSHOP_UPGRADES[id].maxTier) },
         { id: 'max_all_ws',    icon: '🛠️', name: 'Master Mechanic',    desc: 'Max out every workshop upgrade in one run.',  check: gs => Object.keys(WORKSHOP_UPGRADES).every(id => (gs.workshopTiers[id] || 0) >= WORKSHOP_UPGRADES[id].maxTier) },
+        { id: 'big_lungs',     icon: '🫁', name: 'Big Lungs',          desc: 'Have 200 or more Max Oxygen.',                check: gs => gs.maxOxygen >= 200 },
+
+        // --- Challenges ---
+        { id: 'first_challenge', icon: '🎯', name: 'Challenger',        desc: 'Complete a challenge.',                       check: gs => gs.challengesCompleted.length >= 1 },
+        { id: 'five_challenges', icon: '🥈', name: 'Up For Anything',   desc: 'Complete 5 challenges.',                      check: gs => gs.challengesCompleted.length >= 5 },
+        { id: 'all_challenges',  icon: '🏅', name: 'Challenge Champion', desc: 'Complete every challenge.',                  check: gs => gs.challengesCompleted.length >= CHALLENGES.length },
+        { id: 'special_gear',    icon: '🎖️', name: 'Earned, Not Bought', desc: 'Install a challenge-exclusive module.',      check: gs => Object.keys(gs.modules).some(s => MODULE_SLOTS[s].options[gs.modules[s]]?.special) },
 
         // --- Ascension ---
         { id: 'first_surface', icon: '🧪', name: 'Core Sample',        desc: 'Use Surface Sample for the first time.',      check: gs => gs.surfaceSamplesUsed >= 1 },
+        { id: 'triple_sample', icon: '🧫', name: 'Lab Rat',            desc: 'Use Surface Sample 3 times in one run.',      check: gs => gs.surfaceSamplesUsed >= 3 },
         { id: 'first_ascend',  icon: '🕊️', name: 'Going Up',           desc: 'Ascend for the first time.',                  check: gs => gs.totalAscensions >= 1 },
         { id: 'first_perk',    icon: '🌟', name: 'Enlightened',        desc: 'Buy an Ascension perk.',                      check: gs => gs.ascensionOwned.length >= 1 },
         { id: 'ten_ascend',    icon: '♾️', name: 'Frequent Flyer',     desc: 'Ascend 10 times.',                            check: gs => gs.totalAscensions >= 10 },
+        { id: 'prp_hoard',     icon: '🔮', name: 'Research Hoard',     desc: 'Hold 25 PRP at once.',                        check: gs => gs.permanentResearchPoints >= 25 },
+        { id: 'all_perks',     icon: '👑', name: 'Ascended Master',    desc: 'Own every Ascension perk.',                   check: gs => Object.keys(ASCENSION_UPGRADES).every(id => gs.ascensionOwned.includes(id)) },
 
-        // --- Danger ---
+        // --- Danger & luck ---
         { id: 'hot',           icon: '🔥', name: 'Playing With Fire',  desc: 'Let the heat reach 95%.',                     check: gs => gs.temperature >= 95 },
         { id: 'broken_bit',    icon: '💥', name: 'Snapped It',         desc: 'Wear your drill bit down to 0 integrity.',    check: gs => gs.integrity <= 0 },
+        { id: 'game_over',     icon: '🪦', name: 'Rock Bottom',        desc: 'Lose a run.',                                 check: gs => gs.gameOver },
+        { id: 'first_choice',  icon: '🔀', name: 'Decisions, Decisions', desc: 'Make your first crossroads or event choice.', check: gs => gs.totalChoicesMade >= 1 },
+        { id: 'many_choices',  icon: '🧭', name: 'Pathfinder',         desc: 'Make 25 choices in total.',                   check: gs => gs.totalChoicesMade >= 25 },
+        { id: 'first_deep',    icon: '🌋', name: 'Weathered the Storm', desc: 'Survive a Deep Event.',                      check: gs => gs.deepEventsSurvived >= 1 },
+        { id: 'ten_deep',      icon: '🛡️', name: 'Deep Veteran',        desc: 'Survive 10 Deep Events.',                    check: gs => gs.deepEventsSurvived >= 10 },
+        { id: 'rich_vein',     icon: '💎', name: 'Mother Lode',        desc: 'Strike a Rich Vein.',                         check: gs => gs.activeEffects.some(e => e.id === 'vein') },
+        { id: 'perfect_storm', icon: '🌩️', name: 'Perfect Storm',      desc: 'Suffer 3 bad conditions at the same time.', hidden: true, check: gs => gs.activeEffects.filter(e => e.bad).length >= 3 },
         { id: 'second_wind',   icon: '💨', name: 'Not Today',          desc: 'Be saved by Second Wind.',  hidden: true,    check: gs => gs.secondWindUsed },
+        { id: 'golden_age',    icon: '🌅', name: 'Golden Age',         desc: 'Trigger a Golden Age.',     hidden: true,    check: gs => gs.activeEffects.some(e => e.id === 'golden') },
 
         // --- Late game ---
         { id: 'singularity',   icon: '🕳️', name: 'Singularity',        desc: 'Install Singularity Compressor.', hidden: true, check: gs => gs.unlockedSkills.includes('I1') },
@@ -829,7 +1424,14 @@
         totalAscensions: 0,
         favoriteWorkshop: null,   // id of the starred workshop upgrade (or null)
         favoriteSlot: null,       // id of the starred module slot (or null)
+        banishedWorkshop: [],     // ids of banished workshop upgrades (up to BANISH_LIMIT)
+        banishedSlots: [],        // ids of banished module slots (up to BANISH_LIMIT)
         achievementsUnlocked: [], // ids of earned achievements (survives ascension, like PRP)
+        challengesCompleted: [],  // ids of beaten challenges
+        specialModules: [],       // challenge reward modules, as 'slotId.optId'
+        freeWorkshopTiers: {},    // challenge reward tiers every run starts with, as { upgradeId: tiers }
+        totalChoicesMade: 0,      // crossroads + event choices picked, across all runs
+        deepEventsSurvived: 0,    // Deep Events finished successfully, across all runs
     };
 
     // Cached DOM element references
@@ -843,7 +1445,8 @@
             'active-effects', 'event-log', 'drill-button', 'refill-power-button',
             'refill-oxygen-button', 'repair-button', 'pause-button', 'message-box', 'ascend-button',
             'workshop-container', 'module-bay-container', 'skill-tree-container', 'surface-sample-button',
-            'auto-ops-panel', 'ascension-container', 'workshop-ore',
+            'auto-ops-panel', 'ascension-container', 'workshop-ore', 'challenge-status', 'deep-event-panel',
+            'skills-ore', 'ascension-prp', 'skills-toggle-btn', 'ascension-toggle-btn',
         ];
         ids.forEach(id => ui[id] = document.getElementById(id));
     }
@@ -865,6 +1468,16 @@
     function getShallowFactor(startFactor = GRACE_FACTOR, depth = gameState.depth) {
         return startFactor + (1 - startFactor) * Math.min(1, Math.max(0, depth) / GRACE_DEPTH);
     }
+    // Random helpers shared by events, crossroads, Deep Events and shops.
+    // pickOneWeighted: a raffle where weightOf(item) is how many tickets each item gets (bigger = more likely).
+    function pickOneWeighted(list, weightOf) {
+        let roll = Math.random() * list.reduce((sum, item) => sum + weightOf(item), 0);
+        for (const item of list) { roll -= weightOf(item); if (roll < 0) return item; }
+        return list[list.length - 1];   // fallback for rounding errors (or when every weight is 0)
+    }
+    // How far away the next shop / crossroads / Deep Event is: base + (depth x scale), randomised between 70% and 130%
+    function rollNextGap(fromDepth, base, scale) { return (base + fromDepth * scale) * (0.7 + Math.random() * 0.6); }
+
     function getCurrentResource(depth) { return RESOURCES.reduce((p, c) => depth >= c.depth ? c : p, RESOURCES[0]); }
     function getNextResource(depth)    { return RESOURCES.find(r => r.depth > depth) || null; }
     function getResourceValue(resource){ return (resource.name === 'Scraps' && gameState.mods.ScrapValue > 0) ? gameState.mods.ScrapValue : resource.value; }
@@ -886,9 +1499,10 @@
 
     // Rate helpers
     function getEffectMods() {
-        const agg = { speedMult: 1, oreMult: 1, wearMult: 1, powerDrainMult: 1, oxygenDrain: 0 };
+        const agg = { speedMult: 1, oreMult: 1, wearMult: 1, powerDrainMult: 1, oxygenDrain: 0, heatMult: 1 };
         for (const e of gameState.activeEffects) {
             const fx = e.effect || {};
+            if (fx.heatMult)       agg.heatMult       *= fx.heatMult;
             if (fx.speedMult)      agg.speedMult      *= fx.speedMult;
             if (fx.oreMult)        agg.oreMult        *= fx.oreMult;
             if (fx.wearMult)       agg.wearMult       *= fx.wearMult;
@@ -912,14 +1526,22 @@
         return -(gameState.baseOxygenConsumption * depthFactor * getShallowFactor()) + gameState.mods.oxygenRate - getEffectMods().oxygenDrain;
     }
     function getWearRate()     { return (WEAR_BASE + WEAR_DEPTH_SCALE * getKm()) * gameState.mods.integrityWearFactor * getEffectMods().wearMult; }
-    function getHeatGainRate() { return Math.max(0, HEAT_BASE * gameState.mods.heatFactor * (1 + HEAT_DEPTH_SCALE * getKm()) + gameState.mods.heatRateBonus); }
+    function getHeatGainRate() { return Math.max(0, (HEAT_BASE * gameState.mods.heatFactor * (1 + HEAT_DEPTH_SCALE * getKm()) + gameState.mods.heatRateBonus) * getEffectMods().heatMult); }
     function getCoolingRate()  { return 5 * gameState.mods.coolingFactor + gameState.baseCoolingBonus; }
     function getRawDrillSpeed() {
         let speed = (gameState.baseDrillSpeed + gameState.mods.drillSpeed) * Math.max(0.2, gameState.mods.drillSpeedMultiplier);
+        speed *= gameState.mods.drillSpeedFinalMult;   // Phase Drill / Chrono Drill: true multipliers on top of everything
         if (gameState.boostTimeRemaining > 0) speed *= SCAN_BOOST_SPEED_MULTIPLIER;
         speed *= getEffectMods().speedMult;
-        if (gameState.integrity <= 0) speed *= 0.25;
+        speed *= getIntegritySpeedFactor();
         return speed;
+    }
+    // A worn bit drills slower: full speed above WORN_BIT_THRESHOLD, then a straight slide
+    // down to BROKEN_BIT_SPEED (x0.25) at 0 integrity.
+    function getIntegritySpeedFactor() {
+        const pct = Math.max(0, gameState.integrity / gameState.maxIntegrity);
+        if (pct >= WORN_BIT_THRESHOLD) return 1;
+        return BROKEN_BIT_SPEED + (1 - BROKEN_BIT_SPEED) * (pct / WORN_BIT_THRESHOLD);
     }
     function getEffectiveDrillSpeed() { return getRawDrillSpeed() / getHardness(); }
     function getOreMultiplier() {
@@ -938,7 +1560,8 @@
         return Math.max(100, SURFACE_SAMPLE_BASE_COST + gameState.surfaceSamplesUsed * SURFACE_SAMPLE_COST_INCREASE - gameState.mods.sampleDiscount);
     }
 
-    function initializeGame() {
+    // challengeId = start this run as that challenge (see confirmChallenge). Leave it out for a normal run.
+    function initializeGame(challengeId = null) {
         const previousPrp    = gameState.permanentResearchPoints || 0;
         const globalMaxDepth = gameState.maxDepth || 0;
 
@@ -958,9 +1581,18 @@
             surfaceSamplesUsed: 0, autoActive: [], autoResumeDrill: false,
             inShop: false, shopStock: [], shopWasDrilling: false, nextShopDepth: 0, shopLog: [],
             permanentResearchPoints: previousPrp, maxDepth: globalMaxDepth, workshopTiers: {}, secondWindUsed: false,
+            // Challenge tracking for this run
+            activeChallenge: challengeId ? { id: challengeId, status: 'active', failReason: '' } : null,
+            run: { modulesBought: 0, workshopBought: 0, shopPurchases: 0, skillsBought: 0, powerRefills: 0, oxygenRefills: 0, repairs: 0, maxHeat: 0 },
+            // Choice pop-up (crossroads and event responses)
+            inChoice: false, currentChoice: null, choiceWasDrilling: false, nextCrossroadsDepth: 0,
+            moduleMk: {},                            // Mk level of each module, as { 'slotId.optId': 2 } (missing = Mk I)
+            deepEvent: null, nextDeepEventDepth: 0,  // the Deep Event running right now (or null)
         };
 
-        for (const id in WORKSHOP_UPGRADES) gameState.workshopTiers[id] = gameState.workshopTiers[id] || 0;
+        // Free tiers earned from challenges are installed at the start of every run
+        for (const id in WORKSHOP_UPGRADES) gameState.workshopTiers[id] = Math.min(WORKSHOP_UPGRADES[id].maxTier, gameState.freeWorkshopTiers[id] || 0);
+        grantOwnedSpecialModules();
         applyPermanentBonuses();
         recalculateMods();
 
@@ -970,8 +1602,11 @@
             gameState.unlockedSkills = Object.keys(SKILLS).filter(id => tiers.indexOf(id[0]) < gameState.mods.startTier);
             recalculateMods();
         }
-        const startDepth = Math.min(1500, Math.floor(gameState.maxDepth * gameState.mods.deepDrop));   // Deep Drop
-        if (startDepth > 0) {
+        // Deep Drop (challenges always start from 0m, so it is skipped for them)
+        const startDepth = challengeId ? 0 : Math.min(1500, Math.floor(gameState.maxDepth * gameState.mods.deepDrop));
+        if (challengeId) {
+            gameState.message = `Challenge started: ${getChallenge(challengeId).name}. ${getChallenge(challengeId).desc}`;
+        } else if (startDepth > 0) {
             gameState.depth = startDepth;
             gameState.message = `Deep Drop: this run begins at ${startDepth}m.`;
         }
@@ -979,7 +1614,10 @@
         gameState.oxygen    = gameState.maxOxygen;
         gameState.integrity = gameState.maxIntegrity;
         gameState.nextShopDepth = rollNextShopDepth(gameState.depth);   // schedule the first shop of the run
+        gameState.nextCrossroadsDepth = rollNextCrossroadsDepth(gameState.depth);
+        gameState.nextDeepEventDepth  = rollNextDeepEventDepth(gameState.depth);
         document.getElementById('shop-overlay').classList.remove('open');
+        document.getElementById('choice-overlay').classList.remove('open');
         updateUI();
     }
 
@@ -1001,7 +1639,7 @@
         for (const key in bonus) {
             const v = bonus[key];
             if (key === 'powerConsumptionFactor' || key === 'heatFactor')    gameState.mods[key] = Math.min(gameState.mods[key], v);
-            else if (key === 'integrityWearFactor')                          gameState.mods[key] *= v;
+            else if (key === 'integrityWearFactor' || key === 'drillSpeedFinalMult') gameState.mods[key] *= v;   // these multiply together
             else if (key === 'coolingFactor' || key === 'ScrapValue')        gameState.mods[key] = Math.max(gameState.mods[key], v);
             else if (typeof v === 'number')                                  gameState.mods[key] += v;
             else if (typeof v === 'boolean')                                 gameState.mods[key] = v;
@@ -1015,9 +1653,9 @@
             powerGainOnDrill: 0, megaCritChance: 0, pressureResist: gameState.basePressureResist,
             oxygenPressureResist: 0, eventResist: 0, ScrapValue: 0, autoOps: false,
             heatRateBonus: 0, powerConsumptionFactor: 1, critMultiplier: 1, heatFactor: 1,
-            coolingFactor: 1, megaCritMultiplier: 1, drillSpeedMultiplier: 1,
+            coolingFactor: 1, megaCritMultiplier: 1, drillSpeedMultiplier: 1, drillSpeedFinalMult: 1,
             integrityWearFactor: 1, caveAdapted: false,
-            compoundInterest: 0, anomalyBonus: 0, goldenAge: false, deepDrop: 0, secondWind: false,
+            compoundInterest: 0, deepEventBonus: 0, goldenAge: false, deepDrop: 0, secondWind: false,
             recordDepthBonus: 0, startTier: 0, sampleBonusPrp: 0, sampleDiscount: 0,
         };
         for (const skillId of gameState.unlockedSkills) {
@@ -1026,8 +1664,9 @@
         for (const ascId of gameState.ascensionOwned) applyBonusToMods(ASCENSION_UPGRADES[ascId].bonus);
         for (const slotId in MODULE_SLOTS) {
             if (!gameState.unlockedModuleSlots[slotId]) continue;
-            const option = MODULE_SLOTS[slotId].options[gameState.modules[slotId]];
-            if (option?.bonus) applyBonusToMods(option.bonus);
+            const optId  = gameState.modules[slotId];
+            const option = MODULE_SLOTS[slotId].options[optId];
+            if (option?.bonus) applyBonusToMods(scaleModuleBonus(option.bonus, getModuleMk(slotId, optId)));
         }
         gameState.mods.pressureResist       = Math.min(0.8,  gameState.mods.pressureResist);
         gameState.mods.oxygenPressureResist = Math.min(0.6,  gameState.mods.oxygenPressureResist);
@@ -1043,11 +1682,30 @@
         if (!gameState.gameOver && !gameState.isPaused) { lastTime = 0; requestAnimationFrame(gameLoop); }
     }
 
+    // Safety net: if anything inside the loop ever throws an error, the game keeps running
+    // (instead of freezing for good) and the error is shown in the message bar so it can be fixed.
+    let _lastLoopError = null;
     function gameLoop(currentTime) {
-        if (gameState.gameOver || gameState.isPaused || gameState.inShop) { lastTime = 0; return; }
+        try {
+            runGameFrame(currentTime);
+        } catch (e) {
+            console.error(e);
+            if (e.message !== _lastLoopError) {   // only report each different error once
+                _lastLoopError = e.message;
+                const box = document.getElementById('message-box');
+                box.classList.remove('hidden');
+                box.innerText = `⚠️ Game error: ${e.message}. The game kept running, but please report this message!`;
+            }
+            lastTime = 0;
+            if (!gameState.gameOver && !gameState.isPaused && !gameState.inShop && !gameState.inChoice) requestAnimationFrame(gameLoop);
+        }
+    }
+
+    function runGameFrame(currentTime) {
+        if (gameState.gameOver || gameState.isPaused || gameState.inShop || gameState.inChoice) { lastTime = 0; return; }
         if (lastTime === 0) { lastTime = currentTime; requestAnimationFrame(gameLoop); return; }
 
-        const dt = Math.min((currentTime - lastTime) / 1000, 0.5);
+        const dt = Math.max(0, Math.min((currentTime - lastTime) / 1000, 0.5));   // never negative, never more than half a second
         lastTime = currentTime;
         gameState.timeSinceLastUIUpdate += dt;
 
@@ -1067,7 +1725,11 @@
 
         handleFailureChecks(dt);
         handleEvents(dt);
+        if (gameState.inChoice) return;   // an event asked for a choice: everything freezes until you pick
+        tickDeepEvent(dt);
         if (gameState.mods.autoOps) handleAutoOps();
+        gameState.run.maxHeat = Math.max(gameState.run.maxHeat, gameState.temperature);
+        checkChallenges();   // every frame, so "before you pass Xm" goals are judged exactly
 
         if (gameState.temperature >= 100 || gameState.oxygen <= 0) {
             if (gameState.mods.secondWind && !gameState.secondWindUsed) triggerSecondWind();
@@ -1075,8 +1737,13 @@
         }
 
         // Reached the next shop? openShop() freezes the game, so we stop the loop here.
-        if (tryRevisitShop()) return;
-        if (gameState.depth >= gameState.nextShopDepth && openShop()) return;
+        // Shops and crossroads wait until any Deep Event is over (they trigger as soon as it ends)
+        if (!gameState.deepEvent) {
+            if (tryRevisitShop()) return;
+            if (gameState.depth >= gameState.nextShopDepth && openShop()) return;
+            if (gameState.depth >= gameState.nextCrossroadsDepth && openCrossroads()) return;
+            if (gameState.depth >= DEEP_EVENT_MIN_DEPTH && gameState.depth >= gameState.nextDeepEventDepth && openDeepEvent()) return;
+        }
 
         if (gameState.timeSinceLastUIUpdate >= UI_UPDATE_INTERVAL) {
             updateUI();
@@ -1151,10 +1818,10 @@
         const pool = EVENTS.filter(e => km >= e.minKm);
         if (!pool.length) return;
 
-        const weighted = pool.map(e => ({ e, w: e.bad ? e.weight * (0.6 + 0.30 * km) * (1 - gameState.mods.eventResist * 0.4) : e.weight / (1 + 0.16 * km) }));
-        let roll   = Math.random() * weighted.reduce((s, x) => s + x.w, 0);
-        let chosen = weighted[0].e;
-        for (const x of weighted) { roll -= x.w; if (roll <= 0) { chosen = x.e; break; } }
+        // Bad events get more common the deeper you go (event resistance pushes back), good ones get rarer
+        const chosen = pickOneWeighted(pool, e => e.bad
+            ? e.weight * (0.6 + 0.30 * km) * (1 - gameState.mods.eventResist * 0.4)
+            : e.weight / (1 + 0.16 * km));
         fireEvent(chosen, km, gameState.mods.eventResist);
     }
 
@@ -1165,6 +1832,12 @@
     }
 
     function fireEvent(def, km, resist) {
+        // Some bad events let you choose how to respond (see "choices" in EVENTS)
+        if (def.choices && Math.random() < EVENT_CHOICE_CHANCE) {
+            logEvent(`${gameState.depth.toFixed(0)}m — ${def.text}`, def.bad);
+            openChoice({ icon: '⚠️', title: def.name, text: `${def.text} How do you respond?`, options: def.choices(km, resist), bad: true });
+            return;
+        }
         if (def.apply) def.apply(km, resist);
         if (def.duration) {
             const dur = def.bad ? def.duration * (1 - resist * 0.5) : def.duration;
@@ -1173,6 +1846,180 @@
         }
         gameState.message = def.text;
         logEvent(`${gameState.depth.toFixed(0)}m — ${def.text}`, def.bad);
+    }
+
+
+    // ============================================================
+    //  CHOICE EVENTS (crossroads + event responses)
+    //  openChoice() freezes the game exactly like a shop does (gameState.inChoice stops the loop)
+    //  and shows the options. pickChoice() pays any cost, runs the option and resumes.
+    // ============================================================
+
+    // How much Ore drilling `metres` metres would earn right now (used to scale rewards and costs with depth)
+    function oreWorth(metres) {
+        return metres * getResourceValue(getCurrentResource(gameState.depth)) * getOreMultiplier();
+    }
+
+    // Ore rewards from Deep Events go through this, so the Prospector's Eye perk (deepEventBonus) can double them
+    function deepEventOre(metres) {
+        return oreWorth(metres) * (1 + gameState.mods.deepEventBonus);
+    }
+
+    // Adds (or refreshes) a timed effect, shown in the "active conditions" row
+    function addTimedEffect(id, name, bad, seconds, effect) {
+        gameState.activeEffects = gameState.activeEffects.filter(e => e.id !== id);
+        gameState.activeEffects.push({ id, name, bad, remaining: seconds, effect });
+    }
+
+    // Use inside an option's apply() to leave the drill stopped after the choice
+    function keepDrillStopped() { gameState.choiceWasDrilling = false; }
+
+    function rollNextCrossroadsDepth(fromDepth) {
+        return fromDepth + rollNextGap(fromDepth, CROSSROADS_BASE_INTERVAL, CROSSROADS_DEPTH_SCALE);
+    }
+
+    // Picks a random crossroads you are deep enough for (weighted) and shows it
+    function openCrossroads() {
+        gameState.nextCrossroadsDepth = rollNextCrossroadsDepth(gameState.depth);   // always schedule the next one
+        const km   = getKm();
+        const pool = CROSSROADS.filter(c => km >= c.minKm);
+        if (!pool.length) return false;
+        const chosen = pickOneWeighted(pool, c => c.weight);
+        logEvent(`${gameState.depth.toFixed(0)}m — Crossroads: ${chosen.name}.`);
+        openChoice({ icon: chosen.icon, title: chosen.name, text: chosen.text, options: chosen.options, bad: false });
+        return true;
+    }
+
+    function openChoice(choice) {
+        gameState.currentChoice     = choice;
+        gameState.choiceWasDrilling = gameState.drilling;   // so we can carry on drilling afterwards
+        gameState.drilling = false;
+        gameState.inChoice = true;
+        closeSidebar();
+        renderChoice();
+        document.getElementById('choice-overlay').classList.add('open');
+        updateUI();
+    }
+
+    function renderChoice() {
+        const c = gameState.currentChoice;
+        const modal = document.getElementById('choice-modal');
+        modal.style.borderColor = c.bad ? '#dc2626' : '#d97706';
+        document.getElementById('choice-title').innerText = `${c.icon} ${c.title}`;
+        document.getElementById('choice-text').innerText  = c.text;
+        document.getElementById('choice-options').innerHTML = c.options.map((opt, i) => {
+            const cost   = opt.cost ? opt.cost() : 0;
+            const afford = gameState.ore >= cost;
+            const costLine = cost > 0
+                ? `<p class="text-xs font-bold mt-2 ${afford ? 'text-yellow-400' : 'text-red-400'}">${afford ? 'Costs' : 'Needs'} ${fmt(cost)} Ore</p>` : '';
+            return `<button onclick="pickChoice(${i})" ${afford ? '' : 'disabled'}
+                class="text-left p-4 rounded-xl border transition duration-150 ${afford ? 'bg-gray-800 border-gray-600 hover:bg-gray-700 hover:border-amber-400 cursor-pointer' : 'bg-gray-900 border-gray-800 opacity-60 cursor-not-allowed'}">
+                <p class="font-bold text-white">${opt.label}</p>
+                <p class="text-sm text-gray-300 mt-1">${opt.desc()}</p>${costLine}</button>`;
+        }).join('');
+    }
+
+    function pickChoice(index) {
+        if (!gameState.inChoice) return;
+        const c   = gameState.currentChoice;
+        const opt = c.options[index];
+        const cost = opt.cost ? opt.cost() : 0;
+        if (gameState.ore < cost) return;
+        gameState.ore -= cost;
+        const result = opt.apply();
+        gameState.totalChoicesMade++;
+
+        gameState.inChoice = false;
+        gameState.currentChoice = null;
+        document.getElementById('choice-overlay').classList.remove('open');
+        if (gameState.choiceWasDrilling && gameState.power > 0) gameState.drilling = true;
+        gameState.choiceWasDrilling = false;
+        gameState.message = `${c.title}: ${result}`;
+        logEvent(`${gameState.depth.toFixed(0)}m — ${result}`, c.bad);
+        startGameLoop();   // the loop stopped when the choice opened, so start it again
+        updateUI();
+    }
+
+
+    // ============================================================
+    //  DEEP EVENT LOGIC
+    //  openDeepEvent()  - shows the rules in the choice pop-up ("Face it" / "Avoid it")
+    //  startDeepEvent() - sets gameState.deepEvent, which the game loop ticks every frame
+    //  endDeepEvent()   - pays out (or not), cleans up and schedules the next one
+    //  Shops and crossroads wait until a Deep Event is over.
+    // ============================================================
+
+    function rollNextDeepEventDepth(fromDepth) {
+        return Math.max(fromDepth, DEEP_EVENT_MIN_DEPTH) + rollNextGap(fromDepth, DEEP_EVENT_BASE_INTERVAL, DEEP_EVENT_DEPTH_SCALE);
+    }
+
+    // Pass a definition to force that one (dev mode), or nothing to pick a random one you are deep enough for
+    function openDeepEvent(def = null) {
+        gameState.nextDeepEventDepth = rollNextDeepEventDepth(gameState.depth);   // always schedule the next one
+        if (!def) {
+            const km   = getKm();
+            const pool = DEEP_EVENTS.filter(d => km >= d.minKm);
+            if (!pool.length) return false;
+            def = pickOneWeighted(pool, d => d.weight);
+        }
+        const options = [{ label: def.avoidable ? '⚔️ Face it' : '🏃 Go!', desc: () => 'Start the event.',
+                           apply: () => { startDeepEvent(def); return `${def.name} has begun!`; } }];
+        if (def.avoidable) options.push({ label: '🛑 Avoid it', desc: () => 'Stop the drill and let it pass. No risk, no reward.',
+                                          apply: () => { keepDrillStopped(); return `You waited for the ${def.name} to pass.`; } });
+        logEvent(`${gameState.depth.toFixed(0)}m — DEEP EVENT: ${def.name}!`, true);
+        openChoice({ icon: def.icon, title: `Deep Event: ${def.name}`, text: def.intro(), options, bad: true });
+        return true;
+    }
+
+    function startDeepEvent(def) {
+        const ev = { def, timeLeft: def.duration };
+        def.start(ev);
+        gameState.deepEvent = ev;
+    }
+
+    function tickDeepEvent(dt) {
+        const ev = gameState.deepEvent;
+        if (!ev) return;
+        ev.timeLeft -= dt;
+        ev.def.tick(ev, dt);
+        if (gameState.deepEvent === ev && ev.timeLeft <= 0) endDeepEvent(true);   // tick() may already have ended it
+    }
+
+    function endDeepEvent(success, failText = '') {
+        const ev = gameState.deepEvent;
+        if (!ev) return;
+        const result = success ? ev.def.finish(ev) : failText;
+        gameState.deepEvent = null;
+        gameState.activeEffects = gameState.activeEffects.filter(e => !e.id.startsWith('deep_'));
+        if (success) gameState.deepEventsSurvived++;
+        gameState.nextDeepEventDepth = rollNextDeepEventDepth(gameState.depth);
+        gameState.message = `${ev.def.name}: ${result}`;
+        logEvent(`${gameState.depth.toFixed(0)}m — ${ev.def.name}: ${result}`, !success);
+        showToast(ev.def.icon, success ? 'Deep Event survived' : 'Deep Event failed', ev.def.name, result);
+    }
+
+    function deepEventAction() {
+        const ev = gameState.deepEvent;
+        if (!ev || !ev.def.action || gameState.gameOver || gameState.isPaused) return;
+        ev.def.action(ev);
+        updateUI();
+    }
+
+    // The panel above the control buttons. Its elements are fixed, only their text changes,
+    // so the button never gets swapped out from under your mouse.
+    function updateDeepEventPanel() {
+        const panel = ui['deep-event-panel'];
+        const ev = gameState.deepEvent;
+        if (!ev) { panel.classList.add('hidden'); return; }
+        const s = ev.def.status(ev);
+        panel.classList.remove('hidden');
+        panel.classList.toggle('deep-alert', !!s.alert);
+        document.getElementById('deep-event-title').innerText = `${ev.def.icon} ${ev.def.name} · ${Math.max(0, ev.timeLeft).toFixed(0)}s left`;
+        document.getElementById('deep-event-text').innerText  = s.text;
+        document.getElementById('deep-event-bar').style.width = `${Math.max(0, Math.min(1, s.bar)) * 100}%`;
+        const btn = document.getElementById('deep-event-btn');
+        btn.classList.toggle('hidden', !s.button);
+        if (s.button) btn.innerText = s.button;
     }
 
     function handleAutoOps() {
@@ -1187,17 +2034,19 @@
             }
         }
         // Same recipe for all three: if the stat is below 25%, pay the (marked-up) price and refill it.
-        const autoRestore = (stat, maxStat, baseCost, message) => {
+        // runCounter = which gameState.run counter to bump (challenges watch these)
+        const autoRestore = (stat, maxStat, baseCost, runCounter, message) => {
             if (gameState[stat] >= gameState[maxStat] * 0.25) return;
             const c = Math.ceil(baseCost * AUTO_COST_MULT);
             if (gameState.ore < c) return;
             gameState.ore -= c;
             gameState[stat] = gameState[maxStat];
+            gameState.run[runCounter]++;
             gameState.message = message(c);
         };
-        if (active.includes('oxygen')) autoRestore('oxygen',    'maxOxygen',    getOxygenRefillCost(), c => `Auto-Oxygen refilled for ${c} Ore.`);
-        if (active.includes('power'))  autoRestore('power',     'maxPower',     getPowerRefillCost(),  c => `Auto-Power refilled for ${c} Ore.`);
-        if (active.includes('repair')) autoRestore('integrity', 'maxIntegrity', getRepairCost(),       c => `Auto-Repair fixed the bit for ${c} Ore.`);
+        if (active.includes('oxygen')) autoRestore('oxygen',    'maxOxygen',    getOxygenRefillCost(), 'oxygenRefills', c => `Auto-Oxygen refilled for ${c} Ore.`);
+        if (active.includes('power'))  autoRestore('power',     'maxPower',     getPowerRefillCost(),  'powerRefills',  c => `Auto-Power refilled for ${c} Ore.`);
+        if (active.includes('repair')) autoRestore('integrity', 'maxIntegrity', getRepairCost(),       'repairs',       c => `Auto-Repair fixed the bit for ${c} Ore.`);
     }
 
     // Called when the player clicks one of the routine buttons.
@@ -1220,6 +2069,7 @@
 
     function handleGameOver(reason) {
         gameState.gameOver = true; gameState.drilling = false;
+        gameState.deepEvent = null;   // a Deep Event in progress just ends
         gameState.message  = `GAME OVER: ${reason}. You reached a depth of ${gameState.depth.toFixed(1)}m.`;
         updateUI();
     }
@@ -1230,7 +2080,18 @@
     // ============================================================
 
     function toggleDrill() {
-        if (gameState.gameOver || gameState.isPaused) return;
+        if (gameState.gameOver) return;
+        // Say WHY the drill won't start instead of silently doing nothing
+        if (gameState.isPaused) {
+            gameState.message = devPausedGame
+                ? 'The game is paused while Dev Mode is open. Close the dev panel (or untick its pause box) to drill.'
+                : 'The game is paused. Press "Resume game" to drill.';
+            return updateUI();
+        }
+        if (!gameState.drilling && gameState.power <= 0) {
+            gameState.message = 'No power! Refill Power before starting the drill.';
+            return updateUI();
+        }
         gameState.drilling        = !gameState.drilling;
         gameState.autoResumeDrill = false;
         gameState.message         = gameState.drilling ? 'Drill engaged.' : 'Drill stopped. Cooling down.';
@@ -1256,14 +2117,14 @@
     function refillPower() {
         if (gameState.gameOver || gameState.isPaused) return;
         const cost = getPowerRefillCost();
-        payToRestore(cost, () => gameState.power = gameState.maxPower,
+        payToRestore(cost, () => { gameState.power = gameState.maxPower; gameState.run.powerRefills++; },
             `Power refilled for ${cost} Ore.`, `Need ${cost} Ore to refill Power at this depth.`);
     }
 
     function refillOxygen() {
         if (gameState.gameOver || gameState.isPaused) return;
         const cost = getOxygenRefillCost();
-        payToRestore(cost, () => gameState.oxygen = gameState.maxOxygen,
+        payToRestore(cost, () => { gameState.oxygen = gameState.maxOxygen; gameState.run.oxygenRefills++; },
             `Oxygen replenished for ${cost} Ore.`, `Need ${cost} Ore to replenish Oxygen at this depth.`);
     }
 
@@ -1271,7 +2132,7 @@
         if (gameState.gameOver || gameState.isPaused) return;
         if (gameState.integrity >= gameState.maxIntegrity) { gameState.message = 'Drill bit is already in perfect condition.'; return updateUI(); }
         const cost = getRepairCost();
-        payToRestore(cost, () => gameState.integrity = gameState.maxIntegrity,
+        payToRestore(cost, () => { gameState.integrity = gameState.maxIntegrity; gameState.run.repairs++; },
             `Drill bit repaired for ${cost} Ore.`, `Need ${cost} Ore to repair the drill bit.`);
     }
 
@@ -1359,6 +2220,7 @@
         else {
             gameState.ore -= skill.cost;
             gameState.unlockedSkills.push(skillId);
+            gameState.run.skillsBought++;
             recalculateMods();
             gameState.message = `Unlocked ${skill.name}.`;
         }
@@ -1367,8 +2229,10 @@
 
     // Favorites: only one workshop upgrade and one module slot can be starred at a time.
     // Because each is a single variable, starring a new one automatically replaces the old one.
+    // Something can't be favorited and banished at once, so each one clears the other.
     function toggleFavoriteWorkshop(id) {
         gameState.favoriteWorkshop = (gameState.favoriteWorkshop === id) ? null : id;
+        if (gameState.favoriteWorkshop) gameState.banishedWorkshop = gameState.banishedWorkshop.filter(b => b !== id);
         gameState.message = gameState.favoriteWorkshop
             ? `${WORKSHOP_UPGRADES[id].name} is now your favorite upgrade. It will show up in shops more often.`
             : 'Favorite workshop upgrade cleared.';
@@ -1377,9 +2241,111 @@
 
     function toggleFavoriteSlot(slotId) {
         gameState.favoriteSlot = (gameState.favoriteSlot === slotId) ? null : slotId;
+        if (gameState.favoriteSlot) gameState.banishedSlots = gameState.banishedSlots.filter(b => b !== slotId);
         gameState.message = gameState.favoriteSlot
             ? `${MODULE_SLOTS[slotId].name} is now your favorite slot. Its modules will show up in shops more often.`
             : 'Favorite module slot cleared.';
+        updateUI();
+    }
+
+    // Banishing: the opposite of favoriting. Up to BANISH_LIMIT workshop upgrades and BANISH_LIMIT
+    // module slots can be banished, and they show up in shops much less often (see BANISH_WEIGHT).
+    // listKey = 'banishedWorkshop' or 'banishedSlots', favKey = the matching favorite variable.
+    function toggleBanish(listKey, favKey, id, name) {
+        const list = gameState[listKey];
+        if (list.includes(id)) {
+            gameState[listKey] = list.filter(b => b !== id);
+            gameState.message = `${name} is no longer banished.`;
+        } else if (list.length >= BANISH_LIMIT) {
+            gameState.message = `You can only banish ${BANISH_LIMIT} at a time. Un-banish one first (click its 🚫 again).`;
+        } else {
+            list.push(id);
+            if (gameState[favKey] === id) gameState[favKey] = null;
+            gameState.message = `${name} is banished. It will show up in shops much less often.`;
+        }
+        updateUI();
+    }
+    function toggleBanishWorkshop(id)  { toggleBanish('banishedWorkshop', 'favoriteWorkshop', id, WORKSHOP_UPGRADES[id].name); }
+    function toggleBanishSlot(slotId)  { toggleBanish('banishedSlots', 'favoriteSlot', slotId, `The ${MODULE_SLOTS[slotId].name} slot`);
+    }
+
+    // --- Module upgrades (Mk II / Mk III) ---
+    // Bonus keys that work as "multiply by this" (below 1 = good, e.g. 0.6 = -40%). Every other number key is "add this".
+    const FACTOR_KEYS = ['powerConsumptionFactor', 'heatFactor', 'integrityWearFactor'];
+    const MK_NAMES    = { 1: 'Mk I', 2: 'Mk II', 3: 'Mk III' };
+
+    function getModuleMk(slotId, optId) { return gameState.moduleMk[`${slotId}.${optId}`] || 1; }
+
+    // The "no bonus" starter modules have nothing to upgrade
+    function isUpgradeableModule(slotId, optId) { return Object.keys(MODULE_SLOTS[slotId].options[optId].bonus).length > 0; }
+
+    // Returns a copy of a module's bonus with its GOOD parts made stronger for its Mk level.
+    // Penalties (e.g. -20% Ore Value on Precision Bit) are left exactly as they are.
+    function scaleModuleBonus(bonus, mk) {
+        if (mk <= 1) return bonus;
+        const m = 1 + (mk - 1) * MODULE_MK_BOOST;
+        const out = {};
+        for (const key in bonus) {
+            const v = bonus[key];
+            if (FACTOR_KEYS.includes(key))   out[key] = v < 1 ? Math.max(0.1, 1 - (1 - v) * m) : v;   // a bigger reduction
+            else if (typeof v === 'number') {
+                const good = key === 'heatRateBonus' ? v < 0 : v > 0;   // for heat, negative (cooling) is the good direction
+                out[key] = good ? v * m : v;
+            } else                           out[key] = v;
+        }
+        return out;
+    }
+
+    // Turns a bonus object into readable text, e.g. "+130% Drill Speed, +39% Ore Value, +50% Bit Wear"
+    const BONUS_LABELS = {
+        drillSpeedMultiplier: ['pct', 'Drill Speed'], oreValueMultiplier: ['pct', 'Ore Value'],
+        eventResist: ['pct', 'Event Resistance'],     pressureResist: ['pct', 'Pressure Resistance'],
+        powerRate: ['flat', 'Power/sec'],             heatRateBonus: ['flat', 'Heat/sec'],
+        powerConsumptionFactor: ['factor', 'Power Consumption'], heatFactor: ['factor', 'Heat gain'], integrityWearFactor: ['factor', 'Bit Wear'],
+    };
+    function bonusText(bonus) {
+        const sign = n => (n >= 0 ? '+' : '');   // negative numbers already carry their own "-"
+        return Object.keys(bonus).filter(k => BONUS_LABELS[k]).map(k => {
+            const [kind, label] = BONUS_LABELS[k];
+            const v = bonus[k];
+            if (kind === 'pct')  return `${sign(v)}${Math.round(v * 100)}% ${label}`;
+            if (kind === 'flat') return `${sign(v)}${+v.toFixed(1)} ${label}`;
+            const change = Math.round((v - 1) * 100);
+            return `${sign(change)}${change}% ${label}`;
+        }).join(', ');
+    }
+
+    // Rounds a price up to 2 significant figures (12,345 -> 13,000) so it doesn't flicker as you drill
+    function fmtPrice(n) { return n >= 1e6 ? fmt(n) : Math.round(n).toLocaleString(); }   // 8,900 instead of 8900.0
+    function roundPrice(n) {
+        if (n < 100) return Math.ceil(n);
+        const step = Math.pow(10, Math.floor(Math.log10(n)) - 1);
+        return Math.ceil(n / step) * step;
+    }
+
+    function getModuleUpgradeCost(slotId, optId) {
+        const next = getModuleMk(slotId, optId) + 1;
+        const rule = MODULE_UPGRADE_COST[next];
+        if (!rule) return Infinity;
+        const shopPrice = Math.max(100, MODULE_SLOTS[slotId].options[optId].unlockCost);
+        return roundPrice(Math.max(shopPrice * rule.base, oreWorth(rule.metres)));
+    }
+
+    function upgradeModule(slotId, optId) {
+        if (gameState.gameOver || gameState.isPaused) return;
+        const opt = MODULE_SLOTS[slotId].options[optId];
+        const mk  = getModuleMk(slotId, optId);
+        const cost = getModuleUpgradeCost(slotId, optId);
+        if (!gameState.unlockedModuleOptions[slotId]?.[optId] || !isUpgradeableModule(slotId, optId)) return;
+        if (mk >= MODULE_MAX_MK)                       gameState.message = `${opt.name} is already ${MK_NAMES[MODULE_MAX_MK]}.`;
+        else if (gameState.depth < MODULE_UPGRADE_DEPTH) gameState.message = `Module upgrades unlock at ${MODULE_UPGRADE_DEPTH.toLocaleString()}m.`;
+        else if (gameState.ore < cost)                 gameState.message = `Need ${fmtPrice(cost)} Ore to upgrade ${opt.name}.`;
+        else {
+            gameState.ore -= cost;
+            gameState.moduleMk[`${slotId}.${optId}`] = mk + 1;
+            recalculateMods();
+            gameState.message = `${opt.name} upgraded to ${MK_NAMES[mk + 1]}: ${bonusText(scaleModuleBonus(opt.bonus, mk + 1))}.`;
+        }
         updateUI();
     }
 
@@ -1406,8 +2372,7 @@
     // ============================================================
 
     function rollNextShopDepth(fromDepth) {
-        const gap = SHOP_BASE_INTERVAL + fromDepth * SHOP_DEPTH_SCALE;
-        return fromDepth + gap * (0.7 + Math.random() * 0.6);
+        return fromDepth + rollNextGap(fromDepth, SHOP_BASE_INTERVAL, SHOP_DEPTH_SCALE);
     }
 
     // How likely is this item to be picked? Normal items have weight 1.
@@ -1416,23 +2381,25 @@
         if (item.type === 'workshop') return item.id === gameState.favoriteWorkshop;
         return item.slotId === gameState.favoriteSlot;   // 'slot' and 'module' items both have a slotId
     }
-    function getShopItemWeight(item) { return isFavoriteItem(item) ? FAVORITE_WEIGHT : 1; }
+    function isBanishedItem(item) {
+        if (item.type === 'workshop') return gameState.banishedWorkshop.includes(item.id);
+        return gameState.banishedSlots.includes(item.slotId);
+    }
+    function getShopItemWeight(item) {
+        if (isFavoriteItem(item)) return FAVORITE_WEIGHT;
+        if (isBanishedItem(item)) return BANISH_WEIGHT;
+        return 1;
+    }
 
-    // Picks `count` different items from the pool, where heavier items are more likely.
-    // Think of it as a raffle: every item gets tickets equal to its weight, we draw one
-    // ticket, remove that item (so it cannot win twice), then draw again.
+    // Picks `count` different shop items, where heavier items (favorites) are more likely.
+    // It runs the raffle once per item and removes each winner, so nothing can be picked twice.
     function pickWeighted(pool, count) {
         const remaining = [...pool];   // copy, so we do not wreck the original list
         const picked = [];
         while (picked.length < count && remaining.length) {
-            const totalWeight = remaining.reduce((sum, item) => sum + getShopItemWeight(item), 0);
-            let roll = Math.random() * totalWeight;   // a random point along the "ticket line"
-            let chosenIndex = remaining.length - 1;   // fallback, in case of rounding errors
-            for (let i = 0; i < remaining.length; i++) {
-                roll -= getShopItemWeight(remaining[i]);
-                if (roll < 0) { chosenIndex = i; break; }
-            }
-            picked.push(remaining.splice(chosenIndex, 1)[0]);   // move it from remaining to picked
+            const item = pickOneWeighted(remaining, getShopItemWeight);
+            picked.push(item);
+            remaining.splice(remaining.indexOf(item), 1);   // move it from remaining to picked
         }
         return picked;
     }
@@ -1454,7 +2421,8 @@
             }
             const owned = gameState.unlockedModuleOptions[slotId] || {};
             for (const optId in slot.options) {
-                if (!owned[optId] && gameState.depth >= slot.options[optId].unlockDepth) pool.push({ type: 'module', slotId, optId });
+                const opt = slot.options[optId];
+                if (!owned[optId] && !opt.special && gameState.depth >= opt.unlockDepth) pool.push({ type: 'module', slotId, optId });
             }
         }
         return pool;
@@ -1469,7 +2437,7 @@
         }
         const slot = MODULE_SLOTS[item.slotId];
         if (item.type === 'slot') {
-            const names = Object.values(slot.options).slice(1).map(o => o.name).join(', ');
+            const names = Object.values(slot.options).slice(1).filter(o => !o.special).map(o => o.name).join(', ');
             return { tag: '⚙ New module slot', color: 'purple', name: `${slot.name} Slot`,
                      desc: `Installs the ${slot.name} slot so future shops can sell you modules for it. Possible modules: ${names}.`, price: slot.slotUnlockCost };
         }
@@ -1509,6 +2477,7 @@
         for (const item of result) {
             item.info     = getShopItemInfo(item);
             item.favorite = isFavoriteItem(item);
+            item.banished = isBanishedItem(item);
         }
         return result;
     }
@@ -1540,7 +2509,7 @@
 
             // Pick the stock and remember each item's card info at this moment
             gameState.shopStock = pickWeighted(pool, SHOP_ITEM_COUNT)
-                .map(item => ({ ...item, info: getShopItemInfo(item), sold: false, favorite: isFavoriteItem(item) }));
+                .map(item => ({ ...item, info: getShopItemInfo(item), sold: false, favorite: isFavoriteItem(item), banished: isBanishedItem(item) }));
 
             // Write this shop in the log. The log and gameState.shopStock share the SAME list,
             // so when you buy something (item.sold = true) the log remembers it automatically.
@@ -1584,7 +2553,7 @@
                 : '';
             return `<div class="bg-gray-800 p-4 rounded-xl border ${SHOP_CARD_COLORS[info.color]} flex flex-col justify-between">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide opacity-80">${info.tag}${item.favorite ? ' <span class="text-amber-300">⭐ Favorite</span>' : ''}</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide opacity-80">${info.tag}${item.favorite ? ' <span class="text-amber-300">⭐ Favorite</span>' : ''}${item.banished ? ' <span class="text-red-400">🚫 Banished</span>' : ''}</p>
                     <h3 class="text-lg font-bold mt-1">${info.name}</h3>
                     <p class="text-sm text-gray-300 mt-1">${info.desc}</p>
                     ${note}
@@ -1605,9 +2574,11 @@
 
         gameState.ore -= info.price;
         item.sold = true;
+        gameState.run.shopPurchases++;
 
         if (item.type === 'workshop') {
             gameState.workshopTiers[item.id]++;
+            gameState.run.workshopBought++;
             applyPermanentBonuses();
         } else if (item.type === 'slot') {
             const slot = MODULE_SLOTS[item.slotId];
@@ -1615,9 +2586,12 @@
             gameState.unlockedModuleSlots[item.slotId] = true;
             gameState.unlockedModuleOptions[item.slotId] = { ...(gameState.unlockedModuleOptions[item.slotId] || {}), [firstOptId]: true };
             gameState.modules[item.slotId] = firstOptId;
+            gameState.run.modulesBought++;
+            grantOwnedSpecialModules();   // challenge modules you have earned for this slot come with it
         } else {
             gameState.unlockedModuleOptions[item.slotId][item.optId] = true;
             gameState.modules[item.slotId] = item.optId;       // install it straight away
+            gameState.run.modulesBought++;
         }
         recalculateMods();
 
@@ -1686,8 +2660,11 @@
     // updateUI() just calls smaller functions, one per part of the screen.
     // To change how something is displayed, find the matching function below.
     function updateUI() {
+        checkChallenges();
         checkAchievements();
         updateStatsPanel();
+        updateChallengeStatus();
+        updateDeepEventPanel();
         updateScannerPanel();
         updateResourceBars();
         renderEffects();
@@ -1702,6 +2679,8 @@
         refreshAscension();
         refreshSkillTree();
         refreshModuleBay();
+        refreshGoalsPanel();
+        updateSideTabBadges();
     }
 
     // The five boxes at the top: ore, depth, record, drill speed, resource
@@ -1712,11 +2691,14 @@
 
         ui['ore-count'].innerText      = `${fmt(gameState.ore)} Ore`;
         ui['workshop-ore'].innerText   = `You have ${fmt(gameState.ore)} Ore`;
+        ui['skills-ore'].innerText     = `You have ${fmt(gameState.ore)} Ore`;
+        ui['ascension-prp'].innerText  = `You have ${gameState.permanentResearchPoints} PRP`;
         ui['depth-count'].innerText    = `${gameState.depth.toFixed(1)}m`;
         ui['resource-type'].innerText  = curRes.name;
         ui['resource-value'].innerText = `${fmt(perMetre)} Ore per metre (base ${getResourceValue(curRes)})`;
         ui['max-depth-display'].innerText       = `${gameState.maxDepth.toFixed(1)}m`;
-        ui['permanent-stats-display'].innerText = `Permanent Research Points (PRP): ${gameState.permanentResearchPoints}`;
+        ui['permanent-stats-display'].innerText = `🔮 ${gameState.permanentResearchPoints} PRP`;
+        ui['permanent-stats-display'].title     = 'Permanent Research Points: spend them in the Ascension tree';
         ui['drill-speed-display'].innerText     = `${getEffectiveDrillSpeed().toFixed(2)} m/s`;
         ui['hardness-display'].innerText        = `Rock hardness x${getHardness().toFixed(2)} (raw ${getRawDrillSpeed().toFixed(1)} m/s)`;
         ui['pressure-display'].innerText        = gameState.depth < GRACE_DEPTH
@@ -1786,7 +2768,8 @@
         ui['integrity-bar'].classList.toggle('bg-amber-500', intPct >= 25);
         ui['integrity-bar-text'].innerText = gameState.integrity <= 0
             ? `Drill Integrity: BROKEN — speed cut to 25%, failures tripled (repair ${getRepairCost()} Ore)`
-            : `Drill Integrity: ${gameState.integrity.toFixed(1)}/${gameState.maxIntegrity.toFixed(0)} (-${getWearRate().toFixed(2)}/s drilling)`;
+            : `Drill Integrity: ${gameState.integrity.toFixed(1)}/${gameState.maxIntegrity.toFixed(0)} (-${getWearRate().toFixed(2)}/s drilling)` +
+              (getIntegritySpeedFactor() < 1 ? ` · Worn bit: ${Math.round(getIntegritySpeedFactor() * 100)}% speed` : '');
 
         const tmpPct = gameState.temperature;
         ui['temp-bar'].style.width = `${tmpPct}%`;
@@ -1817,7 +2800,10 @@
         const box = ui['message-box'];
         box.classList.remove('bg-red-700', 'bg-blue-600');
         if (gameState.gameOver)      { box.classList.remove('hidden'); box.classList.add('bg-red-700');  box.innerText = gameState.message; }
-        else if (gameState.isPaused) { box.classList.remove('hidden'); box.classList.add('bg-blue-600'); box.innerText = 'Game paused. Your progress is safe.'; }
+        else if (gameState.isPaused) {
+            box.classList.remove('hidden'); box.classList.add('bg-blue-600');
+            box.innerText = devPausedGame ? `⏸ Paused for Dev Mode. ${gameState.message}` : 'Game paused. Your progress is safe. Press "Resume game" to keep drilling.';
+        }
         else if (gameState.message)  { box.classList.remove('hidden'); box.innerText = gameState.message; }
         else                         { box.classList.add('hidden'); }
     }
@@ -1915,11 +2901,24 @@
         const container = ui['module-bay-container'];
         if (!container) return;
         const swapCost      = getModuleSwapCost();
-        const canAffordSwap = gameState.ore >= swapCost && !gameState.gameOver && !gameState.isPaused;
+        const canAct        = !gameState.gameOver && !gameState.isPaused;
+        const canAffordSwap = gameState.ore >= swapCost && canAct;
+        const upgradesOpen  = gameState.depth >= MODULE_UPGRADE_DEPTH;
+
+        // Upgrade price + "can I buy it" for every owned module, worked out once and reused below
+        const upgrades = {};
+        for (const slotId in MODULE_SLOTS) {
+            for (const optId in (gameState.unlockedModuleOptions[slotId] || {})) {
+                if (!isUpgradeableModule(slotId, optId)) continue;
+                const cost = getModuleUpgradeCost(slotId, optId);
+                upgrades[`${slotId}.${optId}`] = { cost, ok: upgradesOpen && canAct && gameState.ore >= cost };
+            }
+        }
 
         const bayKey = JSON.stringify({
             slots: gameState.unlockedModuleSlots, options: gameState.unlockedModuleOptions,
-            modules: gameState.modules, swapCost, canAffordSwap, fav: gameState.favoriteSlot,
+            modules: gameState.modules, swapCost, canAffordSwap, fav: gameState.favoriteSlot, ban: gameState.banishedSlots,
+            mk: gameState.moduleMk, upgradesOpen, upgrades,
         });
         if (bayKey === _lastModuleBayKey) return;
         _lastModuleBayKey = bayKey;
@@ -1929,8 +2928,12 @@
             const slot = MODULE_SLOTS[slotId];
             const card = document.createElement('div');
             const isFav   = gameState.favoriteSlot === slotId;
-            const starBtn = `<button onclick="toggleFavoriteSlot('${slotId}')" class="text-2xl leading-none ${isFav ? 'text-amber-300' : 'text-gray-500 hover:text-amber-200'}"
-                title="${isFav ? 'Remove favorite' : 'Favorite this slot: its modules appear in shops more often'}">${isFav ? '★' : '☆'}</button>`;
+            const isBan   = gameState.banishedSlots.includes(slotId);
+            const starBtn = `<span class="flex items-center gap-2">
+                <button onclick="toggleFavoriteSlot('${slotId}')" class="text-2xl leading-none ${isFav ? 'text-amber-300' : 'text-gray-500 hover:text-amber-200'}"
+                    title="${isFav ? 'Remove favorite' : 'Favorite this slot: its modules appear in shops more often'}">${isFav ? '★' : '☆'}</button>
+                <button onclick="toggleBanishSlot('${slotId}')" class="text-lg leading-none ${banBtnClass(isBan)}"
+                    title="${isBan ? 'Un-banish' : 'Banish this slot: it and its modules appear in shops much less often'}">🚫</button></span>`;
 
             // Slot not installed yet
             if (!gameState.unlockedModuleSlots[slotId]) {
@@ -1949,26 +2952,33 @@
             let optionsHTML = '', ownedCount = 0;
             for (const optId in slot.options) {
                 if (!owned[optId]) continue;
-                ownedCount++;
                 const opt = slot.options[optId];
+                if (!opt.special) ownedCount++;
+                const badge = opt.special ? '<span class="text-xs font-bold text-violet-300 ml-1">🎯 Challenge</span>' : '';
+                // Upgraded modules show their real (boosted) numbers instead of the hand-written description
+                const mk     = getModuleMk(slotId, optId);
+                const mkTag  = mk > 1 ? ` <span class="text-xs font-bold text-amber-300">${MK_NAMES[mk]}</span>` : '';
+                const desc   = mk > 1 ? bonusText(scaleModuleBonus(opt.bonus, mk)) : opt.desc;
+                let main;
                 if (gameState.modules[slotId] === optId) {
-                    optionsHTML += `
+                    main = `
                         <div class="p-3 rounded-lg border-2 border-cyan-400 bg-cyan-950 text-cyan-200 text-left">
-                            <span class="block font-bold text-sm">${opt.name} <span class="text-xs font-bold text-cyan-400 ml-1">✔ ACTIVE</span></span>
-                            <span class="block text-xs text-gray-400 mt-1">${opt.desc}</span>
+                            <span class="block font-bold text-sm">${opt.name}${mkTag}${badge} <span class="text-xs font-bold text-cyan-400 ml-1">✔ ACTIVE</span></span>
+                            <span class="block text-xs text-gray-400 mt-1">${desc}</span>
                         </div>`;
                 } else {
                     const cls = canAffordSwap
                         ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-gray-200 cursor-pointer'
                         : 'border-gray-800 bg-gray-900 text-gray-500 cursor-not-allowed opacity-60';
-                    optionsHTML += `
+                    main = `
                         <button onclick="setModule('${slotId}', '${optId}')" class="p-3 rounded-lg border text-left transition duration-150 ${cls}" ${canAffordSwap ? '' : 'disabled'}>
-                            <span class="block font-bold text-sm">${opt.name} <span class="text-xs ${canAffordSwap ? 'text-gray-400' : 'text-red-400'} ml-1">↔ Swap: ${swapCost} Ore</span></span>
-                            <span class="block text-xs text-gray-400 mt-1">${opt.desc}</span>
+                            <span class="block font-bold text-sm">${opt.name}${mkTag}${badge} <span class="text-xs ${canAffordSwap ? 'text-gray-400' : 'text-red-400'} ml-1">↔ Swap: ${swapCost} Ore</span></span>
+                            <span class="block text-xs text-gray-400 mt-1">${desc}</span>
                         </button>`;
                 }
+                optionsHTML += `<div class="flex flex-col gap-1">${main}${moduleUpgradeRow(slotId, optId, mk, upgrades, upgradesOpen)}</div>`;
             }
-            const missing = Object.keys(slot.options).length - ownedCount;
+            const missing = Object.values(slot.options).filter(o => !o.special).length - ownedCount;   // challenge modules are not sold in shops
             card.className = 'bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col gap-3';
             card.innerHTML = `
                 <div class="flex items-center justify-between border-b border-gray-700 pb-2">
@@ -1979,6 +2989,18 @@
                 ${missing > 0 ? `<p class="text-xs text-gray-500">${missing} more module${missing === 1 ? '' : 's'} can be found in shops.</p>` : ''}`;
             container.appendChild(card);
         }
+    }
+
+    // The small "⬆ Upgrade" line under each module in the Module Bay
+    function moduleUpgradeRow(slotId, optId, mk, upgrades, upgradesOpen) {
+        const info = upgrades[`${slotId}.${optId}`];
+        if (!info) return '';   // starter "no bonus" modules can't be upgraded
+        if (mk >= MODULE_MAX_MK) return `<p class="text-xs font-bold text-amber-300 px-1">★ ${MK_NAMES[mk]} (fully upgraded)</p>`;
+        if (!upgradesOpen)       return `<p class="text-xs text-gray-500 px-1">⬆ Module upgrades unlock at ${MODULE_UPGRADE_DEPTH.toLocaleString()}m</p>`;
+        const preview = bonusText(scaleModuleBonus(MODULE_SLOTS[slotId].options[optId].bonus, mk + 1));
+        return `<button onclick="upgradeModule('${slotId}', '${optId}')" ${info.ok ? '' : 'disabled'} title="${MK_NAMES[mk + 1]}: ${preview}"
+            class="text-left text-xs font-bold px-3 py-1.5 rounded-lg transition duration-150 ${info.ok ? 'bg-amber-700 hover:bg-amber-600 text-white' : 'bg-gray-900 text-gray-500 cursor-not-allowed'}">
+            ⬆ ${MK_NAMES[mk + 1]} (${fmtPrice(info.cost)} Ore): <span class="font-normal">${preview}</span></button>`;
     }
 
     // Workshop panel: read-only list of the upgrades you own (they are bought in shops now)
@@ -1993,15 +3015,22 @@
             card.innerHTML = `
                 <div class="flex items-center justify-between">
                     <h4 class="text-lg font-bold text-yellow-300">${upgrade.name}</h4>
-                    <button class="fav-btn text-2xl leading-none" onclick="toggleFavoriteWorkshop('${id}')"></button>
+                    <span class="flex items-center gap-2">
+                        <button class="fav-btn text-2xl leading-none" onclick="toggleFavoriteWorkshop('${id}')"></button>
+                        <button class="ban-btn text-lg leading-none" onclick="toggleBanishWorkshop('${id}')">🚫</button>
+                    </span>
                 </div>
                 <p class="prp-tier    text-sm text-gray-300 mt-1"></p>
                 <p class="prp-current text-sm text-gray-400"></p>
                 <p class="text-xs text-gray-500 mt-1">${upgrade.effect} per tier</p>`;
             shopContainer.appendChild(card);
-            workshopNodes[id] = { tier: card.querySelector('.prp-tier'), current: card.querySelector('.prp-current'), fav: card.querySelector('.fav-btn') };
+            workshopNodes[id] = { tier: card.querySelector('.prp-tier'), current: card.querySelector('.prp-current'),
+                                  fav: card.querySelector('.fav-btn'), ban: card.querySelector('.ban-btn') };
         }
     }
+
+    // The 🚫 button is faded out until it is switched on
+    function banBtnClass(isBan) { return isBan ? 'opacity-100' : 'opacity-25 grayscale hover:opacity-60'; }
 
     function refreshWorkshop() {
         for (const id in WORKSHOP_UPGRADES) {
@@ -2015,6 +3044,9 @@
             nodes.fav.textContent = isFav ? '★' : '☆';
             nodes.fav.className   = `fav-btn text-2xl leading-none ${isFav ? 'text-amber-300' : 'text-gray-500 hover:text-amber-200'}`;
             nodes.fav.title       = isFav ? 'Remove favorite' : 'Favorite this upgrade: it appears in shops more often';
+            const isBan = gameState.banishedWorkshop.includes(id);
+            nodes.ban.className   = `ban-btn text-lg leading-none ${banBtnClass(isBan)}`;
+            nodes.ban.title       = isBan ? 'Un-banish' : 'Banish this upgrade: it appears in shops much less often';
         }
     }
 
@@ -2146,6 +3178,133 @@
 
 
     // ============================================================
+    //  CHALLENGE LOGIC
+    //  gameState.activeChallenge = { id, status: 'active' | 'completed' | 'failed', failReason }
+    //  It is set by initializeGame(challengeId) and cleared by any normal restart or ascension.
+    //  checkChallenges() runs every frame and from updateUI().
+    // ============================================================
+
+    function getChallenge(id) { return CHALLENGES.find(c => c.id === id); }
+
+    // Makes every earned challenge module available in its slot, if that slot is installed this run
+    function grantOwnedSpecialModules() {
+        for (const key of gameState.specialModules) {
+            const [slotId, optId] = key.split('.');
+            if (!gameState.unlockedModuleSlots[slotId]) continue;
+            gameState.unlockedModuleOptions[slotId] = { ...(gameState.unlockedModuleOptions[slotId] || {}), [optId]: true };
+        }
+    }
+
+    // A short sentence describing a reward, used on the challenge cards and in the pop-up
+    function describeReward(r) {
+        if (r.type === 'module') {
+            const slot = MODULE_SLOTS[r.slotId], opt = slot.options[r.optId];
+            return `${opt.name}, a challenge-only ${slot.name} module (${opt.desc}).`;
+        }
+        const u = WORKSHOP_UPGRADES[r.id];
+        return `A free ${u.name} tier (${u.effect}) right away and at the start of every run.`;
+    }
+
+    function grantChallengeReward(r) {
+        if (r.type === 'module') {
+            const key = `${r.slotId}.${r.optId}`;
+            if (!gameState.specialModules.includes(key)) gameState.specialModules.push(key);
+            grantOwnedSpecialModules();
+        } else {
+            gameState.freeWorkshopTiers[r.id] = (gameState.freeWorkshopTiers[r.id] || 0) + 1;
+            if (gameState.workshopTiers[r.id] < WORKSHOP_UPGRADES[r.id].maxTier) gameState.workshopTiers[r.id]++;   // the free tier for THIS run
+            applyPermanentBonuses();
+        }
+        recalculateMods();
+    }
+
+    function checkChallenges() {
+        const ac = gameState.activeChallenge;
+        if (!ac || ac.status !== 'active') return;
+        const c = getChallenge(ac.id);
+        if (c.goal(gameState, gameState.run))      completeChallenge(c);
+        else if (gameState.gameOver)               failChallenge(c, 'The run ended.');
+        else if (c.fail(gameState, gameState.run)) failChallenge(c, c.failReason);
+    }
+
+    function completeChallenge(c) {
+        gameState.activeChallenge.status = 'completed';
+        if (!gameState.challengesCompleted.includes(c.id)) {
+            gameState.challengesCompleted.push(c.id);
+            grantChallengeReward(c.reward);
+        }
+        gameState.message = `CHALLENGE COMPLETE: ${c.name}! Reward: ${describeReward(c.reward)}`;
+        logEvent(`🎯 Challenge complete: ${c.name}`);
+        showToast(c.icon, 'Challenge complete', c.name, `Reward: ${describeReward(c.reward)}`);
+    }
+
+    function failChallenge(c, reason) {
+        gameState.activeChallenge.status = 'failed';
+        gameState.activeChallenge.failReason = reason;
+        gameState.message = `Challenge failed: ${c.name}. ${reason} The run carries on as normal.`;
+        logEvent(`🎯 Challenge failed: ${c.name}. ${reason}`, true);
+    }
+
+    // Step 1: the player clicks Start. Pause the game and ask first, since it restarts the run.
+    let pendingChallengeId = null;
+    function requestChallenge(id) {
+        if (gameState.inShop) return;
+        if (gameState.isPaused) { gameState.message = 'Unpause the game before starting a challenge.'; return updateUI(); }
+        const c = getChallenge(id);
+        pendingChallengeId = id;
+        if (!gameState.gameOver) gameState.isPaused = true;   // the game loop stops while this is true
+        document.getElementById('challenge-confirm-title').innerText = `${c.icon} Start "${c.name}"?`;
+        document.getElementById('challenge-confirm-text').innerText =
+            `Goal: ${c.desc}\n\nThis restarts your current run from 0m (no PRP is gained, Deep Drop is skipped). ` +
+            `Your Ascension perks still apply. If you fail, the run simply carries on as normal.`;
+        document.getElementById('challenge-confirm-overlay').classList.add('open');
+        updateUI();
+    }
+
+    // Step 2a: Cancel. Hide the popup and un-pause.
+    function cancelChallenge() {
+        document.getElementById('challenge-confirm-overlay').classList.remove('open');
+        pendingChallengeId = null;
+        if (!gameState.gameOver) { gameState.isPaused = false; startGameLoop(); }
+        updateUI();
+    }
+
+    // Step 2b: Yes. Start a fresh run with the challenge active.
+    function confirmChallenge() {
+        document.getElementById('challenge-confirm-overlay').classList.remove('open');
+        const id = pendingChallengeId;
+        pendingChallengeId = null;
+        gameState.isPaused = false;
+        initializeGame(id);
+        startGameLoop();
+    }
+
+    function abandonChallenge() {
+        const ac = gameState.activeChallenge;
+        if (!ac) return;
+        gameState.message = ac.status === 'active'
+            ? `Challenge abandoned: ${getChallenge(ac.id).name}. The run carries on as normal.`
+            : 'Challenge cleared.';
+        gameState.activeChallenge = null;
+        updateUI();
+    }
+
+    // The coloured line under "active conditions" on the main screen
+    function updateChallengeStatus() {
+        const box = ui['challenge-status'];
+        const ac  = gameState.activeChallenge;
+        if (!ac) { box.classList.add('hidden'); return; }
+        const c = getChallenge(ac.id);
+        let text, cls;
+        if (ac.status === 'active')         { text = `🎯 Challenge: ${c.name}. ${c.progress(gameState, gameState.run)}`; cls = 'bg-violet-950 border-violet-500 text-violet-200'; }
+        else if (ac.status === 'completed') { text = `✔ Challenge complete: ${c.name}. Reward earned!`;               cls = 'bg-green-950 border-green-500 text-green-200'; }
+        else                                { text = `✖ Challenge failed: ${c.name}. ${ac.failReason}`;               cls = 'bg-red-950 border-red-600 text-red-200'; }
+        box.className = `mb-4 p-3 rounded-lg text-sm font-semibold border ${cls}`;
+        box.innerText = text;
+    }
+
+
+    // ============================================================
     //  ACHIEVEMENT LOGIC
     //  checkAchievements() is called from updateUI(), which runs a few times a second
     //  and after every button press, so conditions are noticed almost instantly.
@@ -2162,19 +3321,17 @@
     function unlockAchievement(a) {
         gameState.achievementsUnlocked.push(a.id);
         logEvent(`🏆 Achievement unlocked: ${a.name}`);
-        showAchievementToast(a);
-        // If the viewer is open right now, refresh it so the new one lights up
-        if (document.getElementById('achievements-overlay').classList.contains('open')) renderAchievements();
+        showToast(a.icon, 'Achievement unlocked', a.name, a.desc);
     }
 
     // The little pop-up at the top of the screen. It removes itself after a few seconds.
-    function showAchievementToast(a) {
+    function showToast(icon, heading, title, text) {
         const toast = document.createElement('div');
         toast.className = 'achievement-toast';
-        toast.innerHTML = `<span class="text-3xl">${a.icon}</span>
-            <div><p class="text-xs font-bold text-yellow-400 uppercase tracking-wide">Achievement unlocked</p>
-            <p class="font-bold text-white">${a.name}</p>
-            <p class="text-xs text-gray-300">${a.desc}</p></div>`;
+        toast.innerHTML = `<span class="text-3xl">${icon}</span>
+            <div><p class="text-xs font-bold text-yellow-400 uppercase tracking-wide">${heading}</p>
+            <p class="font-bold text-white">${title}</p>
+            <p class="text-xs text-gray-300">${text}</p></div>`;
         document.getElementById('achievement-toasts').appendChild(toast);
         setTimeout(() => toast.classList.add('fade-out'), 4000);   // start fading after 4s
         setTimeout(() => toast.remove(), 4600);                    // then delete it
@@ -2185,12 +3342,92 @@
         if (btn) btn.textContent = `🏆 Achievements (${gameState.achievementsUnlocked.length}/${ACHIEVEMENTS.length})`;
     }
 
-    function renderAchievements() {
+
+    // ============================================================
+    //  GOALS PANEL (Challenges & Achievements side menu)
+    //  Like the Module Bay, it only rebuilds when something actually changed,
+    //  so buttons do not get swapped out from under the mouse. The fast-changing
+    //  progress text is updated on its own each tick instead.
+    // ============================================================
+
+    let goalsTab = 'challenges';
+    let _lastGoalsKey = null;
+
+    function openGoals(tab) { goalsTab = tab; _lastGoalsKey = null; openPanel('goals-sidebar'); }
+    function setGoalsTab(tab) { goalsTab = tab; refreshGoalsPanel(); }
+
+    function refreshGoalsPanel() {
+        if (!document.getElementById('goals-sidebar').classList.contains('open')) return;
+        const ac  = gameState.activeChallenge;
+        const key = JSON.stringify({
+            tab: goalsTab, ac: ac && { id: ac.id, status: ac.status }, done: gameState.challengesCompleted.length,
+            ach: gameState.achievementsUnlocked.length, shop: gameState.inShop, paused: gameState.isPaused,
+        });
+        if (key !== _lastGoalsKey) {
+            _lastGoalsKey = key;
+            renderGoalsTabs();
+            document.getElementById('goals-body').innerHTML = goalsTab === 'challenges' ? challengesHTML() : achievementsHTML();
+        }
+        const progress = document.getElementById('goal-progress');
+        if (progress && ac && ac.status === 'active') progress.innerText = getChallenge(ac.id).progress(gameState, gameState.run);
+    }
+
+    function renderGoalsTabs() {
+        const tabs = {
+            challenges:   `🎯 Challenges (${gameState.challengesCompleted.length}/${CHALLENGES.length})`,
+            achievements: `🏆 Achievements (${gameState.achievementsUnlocked.length}/${ACHIEVEMENTS.length})`,
+        };
+        for (const tab in tabs) {
+            const btn = document.getElementById(`goals-tab-${tab}`);
+            btn.textContent = tabs[tab];
+            const on = goalsTab === tab;
+            btn.classList.toggle('bg-violet-700', on);  btn.classList.toggle('border-violet-400', on);  btn.classList.toggle('text-white', on);
+            btn.classList.toggle('bg-gray-800', !on);   btn.classList.toggle('border-gray-600', !on);   btn.classList.toggle('text-gray-400', !on);
+        }
+    }
+
+    function challengesHTML() {
+        const ac = gameState.activeChallenge;
+        const intro = `<p class="text-sm text-gray-400">Starting a challenge restarts your run from 0m with a goal to beat. Each one can be completed once, and its reward is yours for good.</p>`;
+        const cards = CHALLENGES.map(c => {
+            const done     = gameState.challengesCompleted.includes(c.id);
+            const isActive = ac && ac.id === c.id;
+            const reward   = `<p class="text-xs text-violet-300 mt-2">🎁 ${describeReward(c.reward)}</p>`;
+            let border = 'border-gray-700', footer;
+
+            if (isActive && ac.status === 'active') {
+                border = 'border-violet-400';
+                footer = `<p id="goal-progress" class="text-sm font-semibold text-violet-200 mt-2"></p>
+                    <button onclick="abandonChallenge()" class="mt-3 w-full p-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-bold">Abandon challenge</button>`;
+            } else if (isActive && ac.status === 'failed') {
+                border = 'border-red-600';
+                footer = `<p class="text-sm font-semibold text-red-300 mt-2">✖ Failed: ${ac.failReason}</p>`;
+            } else if (done) {
+                border = 'border-green-600';
+                footer = `<p class="text-sm font-bold text-green-400 mt-2">✔ Completed</p>`;
+            }
+            // A "Start" (or "Retry") button for anything not done and not currently running
+            if (!done && !(isActive && ac.status === 'active')) {
+                const blocked = gameState.inShop || gameState.isPaused;
+                footer = (footer || '') + `<button onclick="requestChallenge('${c.id}')" ${blocked ? 'disabled' : ''}
+                    class="mt-3 w-full p-2 rounded-lg text-white text-sm font-bold transition duration-150 ${blocked ? 'bg-gray-700 opacity-60 cursor-not-allowed' : 'bg-violet-700 hover:bg-violet-500'}">
+                    ${isActive ? 'Retry challenge' : 'Start challenge'}</button>`;
+            }
+            return `<div class="bg-gray-800 p-4 rounded-xl border-2 ${border} ${done && !isActive ? 'opacity-80' : ''}">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">${c.icon}</span>
+                    <div><h3 class="font-bold text-white">${c.name}</h3><p class="text-sm text-gray-300">${c.desc}</p></div>
+                </div>
+                ${reward}${footer || ''}</div>`;
+        }).join('');
+        return intro + cards;
+    }
+
+    function achievementsHTML() {
         const done = gameState.achievementsUnlocked;
-        document.getElementById('achievements-title').textContent = `🏆 Achievements (${done.length}/${ACHIEVEMENTS.length})`;
         // Earned ones first, then the rest in the order they are listed in ACHIEVEMENTS
         const sorted = [...ACHIEVEMENTS].sort((a, b) => done.includes(b.id) - done.includes(a.id));
-        document.getElementById('achievements-body').innerHTML = sorted.map(a => {
+        return sorted.map(a => {
             if (done.includes(a.id)) {
                 return `<div class="p-3 rounded-lg border-2 border-yellow-500 bg-gray-800 flex gap-3 items-center">
                     <span class="text-3xl">${a.icon}</span>
@@ -2204,30 +3441,53 @@
         }).join('');
     }
 
-    function openAchievements()  { renderAchievements(); document.getElementById('achievements-overlay').classList.add('open'); }
-    function closeAchievements() { document.getElementById('achievements-overlay').classList.remove('open'); }
-
 
     // ============================================================
-    //  MODULE BAY SIDEBAR
+    //  SIDE PANELS (Module Bay, Workshop, Goals on the right; Skills, Ascension on the left)
     // ============================================================
 
-    // Every slide-out panel has the class "side-panel". Only one can be open at a time.
+    // Every slide-out panel has the class "side-panel" (plus "left" if it opens from the left).
+    // Only one can be open at a time. The body class tells the tabs on that side to slide along with it.
     function openPanel(panelId) {
+        const panel = document.getElementById(panelId);
+        const isLeft = panel.classList.contains('left');
         document.querySelectorAll('.side-panel').forEach(p => p.classList.toggle('open', p.id === panelId));
         document.getElementById('sidebar-overlay').classList.add('open');
-        document.body.classList.add('sidebar-open');
+        document.body.classList.toggle('sidebar-open-left',  isLeft);
+        document.body.classList.toggle('sidebar-open-right', !isLeft);
         if (panelId === 'module-sidebar') refreshModuleBay();
+        if (panelId === 'goals-sidebar')  refreshGoalsPanel();
     }
     function closeSidebar() {
         document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('open'));
         document.getElementById('sidebar-overlay').classList.remove('open');
-        document.body.classList.remove('sidebar-open');
+        document.body.classList.remove('sidebar-open-left', 'sidebar-open-right');
+    }
+
+    // The Skills / Ascension tabs show how many things you can buy right now, and glow when it's more than 0
+    function updateSideTabBadges() {
+        const skillCount = Object.keys(SKILLS).filter(id => {
+            const s = SKILLS[id];
+            return !gameState.unlockedSkills.includes(id) && (!s.prereq || gameState.unlockedSkills.includes(s.prereq))
+                && (!s.minDepth || gameState.depth >= s.minDepth) && gameState.ore >= s.cost;
+        }).length;
+        const perkCount = Object.keys(ASCENSION_UPGRADES).filter(id => {
+            const u = ASCENSION_UPGRADES[id];
+            return !gameState.ascensionOwned.includes(id) && (!u.prereq || gameState.ascensionOwned.includes(u.prereq))
+                && gameState.permanentResearchPoints >= u.cost;
+        }).length;
+        setTabBadge(ui['skills-toggle-btn'],    '🌳 Skills',    skillCount);
+        setTabBadge(ui['ascension-toggle-btn'], '✨ Ascension', perkCount);
+    }
+    function setTabBadge(btn, label, count) {
+        const text = count > 0 ? `${label} (${count})` : label;
+        if (btn.textContent !== text) btn.textContent = text;   // only touch the page when it changed
+        btn.classList.toggle('has-buyable', count > 0);
     }
     function togglePanel(panelId) {
         document.getElementById(panelId).classList.contains('open') ? closeSidebar() : openPanel(panelId);
     }
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSidebar(); closeAchievements(); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
 
 
     // ============================================================
@@ -2259,7 +3519,8 @@
     //  DEV MODE
     // ============================================================
 
-    let devPanelOpen = false;
+    let devPanelOpen   = false;
+    let devPausedGame  = false;   // true only if the DEV PANEL paused the game (so we never un-pause a pause you made yourself)
 
     function toggleDevPanel() {
         devPanelOpen = !devPanelOpen;
@@ -2269,7 +3530,155 @@
         // toggle(className, true) adds the class, toggle(className, false) removes it
         ['text-purple-300', 'border-purple-700', 'bg-purple-950'].forEach(c => btn.classList.toggle(c, devPanelOpen));
         ['text-gray-500', 'bg-gray-800', 'border-gray-700'].forEach(c => btn.classList.toggle(c, !devPanelOpen));
-        if (devPanelOpen) devFill();
+        if (devPanelOpen) {
+            if (document.getElementById('dev-pause').checked) devPause();
+            devFill();
+        } else {
+            devUnpause();
+        }
+    }
+
+    // --- Pausing while the panel is open ---
+    function devPause() {
+        if (gameState.isPaused || gameState.gameOver || gameState.inShop) return;
+        gameState.isPaused = true;   // the game loop stops while this is true
+        devPausedGame = true;
+        gameState.message = '🛠 Dev: game paused while the panel is open.';
+        updateUI();
+    }
+    function devUnpause() {
+        if (!devPausedGame) return;
+        devPausedGame = false;
+        if (gameState.isPaused) { gameState.isPaused = false; startGameLoop(); }
+        gameState.message = '🛠 Dev: game resumed.';
+        updateUI();
+    }
+    function devPauseChanged() {
+        if (!devPanelOpen) return;
+        document.getElementById('dev-pause').checked ? devPause() : devUnpause();
+    }
+
+    // Fills the dropdowns once at startup, straight from the game data, so new skills/modules show up by themselves
+    function buildDevPanel() {
+        const fill = (id, html) => document.getElementById(id).innerHTML = html;
+        fill('dev-skill-select', Object.keys(SKILLS).map(id => `<option value="${id}">${id}: ${SKILLS[id].name}</option>`).join(''));
+        fill('dev-workshop-select', Object.keys(WORKSHOP_UPGRADES).map(id => `<option value="${id}">${WORKSHOP_UPGRADES[id].name}</option>`).join(''));
+        fill('dev-module-select', Object.keys(MODULE_SLOTS).map(slotId => {
+            const slot = MODULE_SLOTS[slotId];
+            const opts = Object.keys(slot.options).map(optId =>
+                `<option value="${slotId}.${optId}">${slot.options[optId].name}${slot.options[optId].special ? ' (challenge)' : ''}</option>`).join('');
+            return `<optgroup label="${slot.name}">${opts}</optgroup>`;
+        }).join(''));
+        fill('dev-deep-select', DEEP_EVENTS.map(d => `<option value="${d.id}">${d.icon} ${d.name}</option>`).join(''));
+        fill('dev-perk-select',Object.keys(ASCENSION_UPGRADES).map(id => `<option value="${id}">${ASCENSION_UPGRADES[id].branch}: ${ASCENSION_UPGRADES[id].name}</option>`).join(''));
+    }
+
+    // Every dev action ends the same way: show a message and redraw everything
+    function devDone(message) {
+        gameState.message = `🛠 Dev: ${message}`;
+        updateUI();
+        devFill();
+    }
+    const devSelected = id => document.getElementById(id).value;
+
+    // --- Skills ---
+    function devAddSkill(id) {   // also adds the skills it needs, so the tree never looks broken
+        if (gameState.unlockedSkills.includes(id)) return;
+        if (SKILLS[id].prereq) devAddSkill(SKILLS[id].prereq);
+        gameState.unlockedSkills.push(id);
+    }
+    function devGiveSkill() {
+        const id = devSelected('dev-skill-select');
+        devAddSkill(id); recalculateMods();
+        devDone(`gave ${SKILLS[id].name}.`);
+    }
+    function devGiveAllSkills() {
+        Object.keys(SKILLS).forEach(devAddSkill); recalculateMods();
+        devDone('gave every skill.');
+    }
+    function devClearSkills() {
+        gameState.unlockedSkills = []; gameState.autoActive = []; recalculateMods();
+        devDone('removed every skill.');
+    }
+
+    // --- Workshop ---
+    function devSetWorkshopTier(id, tier) {
+        gameState.workshopTiers[id] = Math.max(0, Math.min(WORKSHOP_UPGRADES[id].maxTier, tier));
+    }
+    function devWorkshop(change) {   // change = +1, -1 or 'max'
+        const id = devSelected('dev-workshop-select');
+        const u  = WORKSHOP_UPGRADES[id];
+        devSetWorkshopTier(id, change === 'max' ? u.maxTier : gameState.workshopTiers[id] + change);
+        applyPermanentBonuses(); recalculateMods();
+        devDone(`${u.name} is now Tier ${gameState.workshopTiers[id]} of ${u.maxTier}.`);
+    }
+    function devWorkshopAll(mode) {  // mode = 'max' or 'reset'
+        for (const id in WORKSHOP_UPGRADES) devSetWorkshopTier(id, mode === 'max' ? WORKSHOP_UPGRADES[id].maxTier : 0);
+        applyPermanentBonuses(); recalculateMods();
+        devDone(mode === 'max' ? 'maxed every workshop upgrade.' : 'reset every workshop upgrade to Tier 0.');
+    }
+
+    // --- Modules ---
+    function devUnlockSlot(slotId) {
+        if (gameState.unlockedModuleSlots[slotId]) return;
+        const firstOptId = Object.keys(MODULE_SLOTS[slotId].options)[0];   // the plain "no bonus" module
+        gameState.unlockedModuleSlots[slotId]   = true;
+        gameState.unlockedModuleOptions[slotId] = { [firstOptId]: true };
+        gameState.modules[slotId] = firstOptId;
+        grantOwnedSpecialModules();
+    }
+    function devGiveModule() {
+        const [slotId, optId] = devSelected('dev-module-select').split('.');
+        devUnlockSlot(slotId);
+        gameState.unlockedModuleOptions[slotId][optId] = true;
+        gameState.modules[slotId] = optId;
+        recalculateMods();
+        devDone(`installed ${MODULE_SLOTS[slotId].options[optId].name}.`);
+    }
+    function devGiveAllModules() {
+        for (const slotId in MODULE_SLOTS) {
+            devUnlockSlot(slotId);
+            for (const optId in MODULE_SLOTS[slotId].options) gameState.unlockedModuleOptions[slotId][optId] = true;
+        }
+        recalculateMods();
+        devDone('unlocked every slot and module. Use Give & install to switch modules for free (Module Bay swaps are locked while paused).');
+    }
+
+    function devMaxModuleMk() {
+        for (const slotId in gameState.unlockedModuleOptions)
+            for (const optId in gameState.unlockedModuleOptions[slotId])
+                if (isUpgradeableModule(slotId, optId)) gameState.moduleMk[`${slotId}.${optId}`] = MODULE_MAX_MK;
+        recalculateMods();
+        devDone(`every owned module is now ${MK_NAMES[MODULE_MAX_MK]}.`);
+    }
+
+    // --- Deep Events ---
+    function devStartDeepEvent() {
+        if (gameState.gameOver || gameState.inShop || gameState.inChoice || gameState.deepEvent) {
+            gameState.message = '🛠 Dev: finish the current shop, choice or Deep Event first.'; return updateUI();
+        }
+        openDeepEvent(DEEP_EVENTS.find(d => d.id === devSelected('dev-deep-select')));
+    }
+    function devFinishDeepEvent() {
+        if (!gameState.deepEvent) { gameState.message = '🛠 Dev: no Deep Event is running.'; return updateUI(); }
+        endDeepEvent(true);
+        devDone('finished the Deep Event.');
+    }
+
+    // --- Ascension perks ---
+    function devAddPerk(id) {
+        if (gameState.ascensionOwned.includes(id)) return;
+        if (ASCENSION_UPGRADES[id].prereq) devAddPerk(ASCENSION_UPGRADES[id].prereq);
+        gameState.ascensionOwned.push(id);
+    }
+    function devGivePerk() {
+        const id = devSelected('dev-perk-select');
+        devAddPerk(id); recalculateMods();
+        devDone(`gave ${ASCENSION_UPGRADES[id].name}. Perks that change how a run starts kick in on your next run.`);
+    }
+    function devGiveAllPerks() {
+        Object.keys(ASCENSION_UPGRADES).forEach(devAddPerk); recalculateMods();
+        devDone('gave every Ascension perk. Perks that change how a run starts kick in on your next run.');
     }
 
     function devFill() {
@@ -2293,7 +3702,13 @@
         const heat      = get('dev-heat');
 
         if (!isNaN(ore))       gameState.ore = Math.max(0, ore);
-        if (!isNaN(depth))     { gameState.depth = Math.max(0, depth); gameState.maxDepth = Math.max(gameState.maxDepth, gameState.depth); }
+        if (!isNaN(depth) && depth !== Math.floor(gameState.depth)) {
+            gameState.depth = Math.max(0, depth);
+            gameState.maxDepth = Math.max(gameState.maxDepth, gameState.depth);
+            gameState.nextShopDepth = rollNextShopDepth(gameState.depth);   // otherwise a shop pops up the moment you jump deeper
+            gameState.nextCrossroadsDepth = rollNextCrossroadsDepth(gameState.depth);   // same for crossroads
+            gameState.nextDeepEventDepth  = rollNextDeepEventDepth(gameState.depth);    // and Deep Events
+        }
         if (!isNaN(prp))       gameState.permanentResearchPoints = Math.max(0, prp);
         if (!isNaN(power))     gameState.power     = Math.max(0, Math.min(gameState.maxPower,     power));
         if (!isNaN(oxygen))    gameState.oxygen    = Math.max(0, Math.min(gameState.maxOxygen,    oxygen));
@@ -2306,8 +3721,20 @@
     }
 
     function devOpenShop() {
-        if (gameState.gameOver || gameState.isPaused || gameState.inShop) return;
+        if (gameState.gameOver || gameState.inShop) return;   // works while dev-paused too: the shop freezes the game anyway
         if (!openShop()) { gameState.message = '🛠 Dev: nothing left to sell.'; updateUI(); }
+    }
+
+    function devOpenCrossroads() {
+        if (gameState.gameOver || gameState.inShop || gameState.inChoice) return;   // works while dev-paused too
+        if (!openCrossroads()) { gameState.message = '🛠 Dev: no crossroads available at this depth.'; updateUI(); }
+    }
+
+    function devCompleteChallenge() {
+        const ac = gameState.activeChallenge;
+        if (!ac || ac.status !== 'active') { gameState.message = '🛠 Dev: no challenge is running.'; return updateUI(); }
+        completeChallenge(getChallenge(ac.id));
+        updateUI();
     }
 
     function devMaxOut() {
@@ -2333,6 +3760,7 @@
         buildAscension();
         buildSkillTree();
         buildPatchNotesModal();
+        buildDevPanel();
         initializeGame();
         startGameLoop();
     };
