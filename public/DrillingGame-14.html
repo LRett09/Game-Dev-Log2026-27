@@ -70,6 +70,8 @@
         #skills-toggle-btn:hover    { background-color: #16a34a; }
         #ascension-toggle-btn { top: calc(50% + 90px); background-color: #7e22ce; }
         #ascension-toggle-btn:hover { background-color: #9333ea; }
+		#drones-toggle-btn { top: calc(50% + 270px); background-color: #0f766e; }
+        #drones-toggle-btn:hover { background-color: #14b8a6; }
         /* a tab glows when something in its panel can be bought */
         .side-tab.has-buyable { box-shadow: 0 0 14px rgba(250, 204, 21, 0.75); }
         body.sidebar-open-left .side-tab.left { left: 800px; }
@@ -249,7 +251,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-700 pb-3 mb-4">
             <div>
                 <h1 class="text-2xl md:text-3xl font-bold text-yellow-500 leading-tight">⛏️ The Deep Mine</h1>
-                <p class="text-xs text-gray-500">Version 1.3: Merchants of the Mine</p>
+                <p class="text-xs text-gray-500">Version 1.4: Drilling with Company</p>
             </div>
             <div id="permanent-stats-display" class="px-4 py-1.5 rounded-full bg-purple-950 border border-purple-600 text-purple-300 font-bold text-sm">🔮 0 PRP</div>
             <div id="alloy-display" class="hidden px-4 py-1.5 rounded-full bg-slate-800 border border-slate-500 text-slate-200 font-bold text-sm">🔩 0 Alloys</div>
@@ -460,9 +462,20 @@
         <p id="ascension-prp" class="text-lg font-bold text-purple-300 mb-3">0 PRP</p>
         <div id="ascension-container" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
     </div>
+	
+	<!-- Drones panel: a wide panel that slides in from the LEFT. Its contents are drawn by updateDronePanel() in the script. -->
+    <div id="drones-sidebar" class="side-panel left">
+        <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-2">
+            <h2 class="text-2xl font-bold text-teal-400">🤖 Drones</h2>
+            <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
+        </div>
+        <p class="text-sm text-gray-400 mb-4">Build drones with Alloys. They work on their own, but they wear out. Service them with Ore, or build a Mechanic to do it for you. Drones reset when you ascend.</p>
+        <div id="drone-container" class="flex flex-col gap-4"></div>
+    </div>
 
     <button id="skills-toggle-btn"    class="side-tab left" onclick="togglePanel('skills-sidebar')"    title="Open Skill Tree">🌳 Skills</button>
     <button id="ascension-toggle-btn" class="side-tab left" onclick="togglePanel('ascension-sidebar')" title="Open Ascension Tree">✨ Ascension</button>
+	<button id="drones-toggle-btn" class="side-tab left hidden" onclick="togglePanel('drones-sidebar')" title="Open Drones">🤖 Drones</button>
 
     <button id="module-toggle-btn"   class="side-tab" onclick="togglePanel('module-sidebar')"   title="Open Module Bay">⚙ Module Bay</button>
     <button id="workshop-toggle-btn" class="side-tab" onclick="togglePanel('workshop-sidebar')" title="Open Workshop">🔨 Workshop</button>
@@ -526,17 +539,6 @@
         </div>
     </div>
 
-
-    <!-- ============================
-         SHOP SCREEN
-         Opens by itself every so often while drilling (see openShop in the script).
-         The game loop is stopped while it is open, so nothing drains.
-         ============================ -->
-    <!-- ============================
-         CHOICE POP-UP
-         Crossroads and "how do you respond?" events. The game is frozen while it is open,
-         and it can only be closed by picking an option.
-         ============================ -->
     <div id="choice-overlay">
         <div id="choice-modal">
             <h2 id="choice-title" class="text-2xl font-bold text-amber-400 mb-2"></h2>
@@ -653,6 +655,13 @@
             <button class="dev-mini-btn" onclick="devMaxRefinery()">Max upgrades</button>
         </div>
 
+        <p class="dev-section-label">Drones</p>
+        <div class="dev-row"><select id="dev-drone-select"></select></div>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn purple" onclick="devGiveDrone()">Give drone</button>
+            <button class="dev-mini-btn" onclick="devUnlockDrones()">Unlock menu</button>
+            <button class="dev-mini-btn" onclick="devWearDrones()">Wear all to 20%</button>
+        </div>
         <p class="dev-section-label">Deep Events</p>
         <div class="dev-row"><select id="dev-deep-select"></select></div>
         <div class="dev-mini-row">
@@ -709,12 +718,17 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.4', date: '2026-10-09',
+			version: 'v1.4', date: '2026-10-13',
 			changes: [
 				'Added in a main menu',
 					'Added the Refinery! You find an abandoned one for free at 5,500m. It turns ore into alloys used to make drones (not added yet).',
 					'Refinery upgrades (bought with Ore, reset when you ascend): Efficient Furnace uses less Power, Rapid Smelting makes batches faster, and Alloy Yield makes more Alloys per batch.',
 					'Alloys do not have a use yet. They will be used to build drones in a future update.',
+					'Added Drones! The Drones menu unlocks at 6,500m. Build drones with Alloys from the refinery.',
+					'Drone types: Mining Drone (mines Ore), Coolant Drone (cools the drill), Sampler Drone (brings back PRP from the surface) and Mechanic Drone (services other drones for free).',
+					'Drones take up housing space. You start with 8 and can expand it with Alloys.',
+					'Drones wear out. Service them with Ore, or build a Mechanic to do it. Broken drones stop working until serviced.',
+					'Added two drone achievements.',
 				]
 			},
         {
@@ -873,6 +887,30 @@
         eff:   { name: 'Efficient Furnace', icon: '🔥', cost: 20000, growth: 1.8, maxTier: 6, effect: '-12% refinery Power use' },
         speed: { name: 'Rapid Smelting',    icon: '⏩', cost: 30000, growth: 2.0, maxTier: 5, effect: '-2s per batch' },
         yield: { name: 'Alloy Yield',       icon: '🔩', cost: 40000, growth: 2.2, maxTier: 4, effect: '+1 Alloy per batch' },
+    };
+	
+	// ============================================================
+    //  DRONES (unlocked at DRONE_UNLOCK_DEPTH, built with Alloys)
+    //  Change these numbers to balance the drones.
+    // ============================================================
+    const DRONE_UNLOCK_DEPTH        = 6500;  // the Drones menu appears at this depth (each run)
+    const DRONE_START_HOUSING       = 8;     // housing space you start with
+    const DRONE_HOUSING_STEP        = 4;     // extra space per expansion
+    const DRONE_MAX_HOUSING_TIERS   = 6;     // how many times housing can be expanded
+    const DRONE_HOUSING_COST        = 8;     // Alloys for the first expansion
+    const DRONE_HOUSING_GROWTH      = 1.7;   // each expansion costs this many times more than the last
+    const DRONE_SCRAP_REFUND        = 0.5;   // share of the Alloy cost you get back when scrapping (0.5 = half)
+    const DRONE_BROKEN_SERVICE_MULT = 1.5;   // servicing a BROKEN drone costs this much more Ore
+
+    const DRONE_TYPES = {
+        miner:    { name: 'Mining Drone',   icon: '⛏️', space: 1, cost: 3,  wear: 0.4,  serviceOre: 1500, metresPerSec: 1,
+                    desc: t => `Mines Ore on its own, as if you drilled ${t.metresPerSec} metre every second.` },
+        coolant:  { name: 'Coolant Drone',  icon: '❄️', space: 2, cost: 8,  wear: 0.4,  serviceOre: 2000, coolPerSec: 1,
+                    desc: t => `Cools the drill by ${t.coolPerSec} Heat per second, even while drilling.` },
+        sampler:  { name: 'Sampler Drone',  icon: '🧪', space: 3, cost: 20, wear: 0.35, serviceOre: 4000, cycle: 120, prp: 1,
+                    desc: t => `Travels to the surface and back every ${t.cycle}s, bringing ${t.prp} PRP each trip.` },
+        mechanic: { name: 'Mechanic Drone', icon: '🔧', space: 5, cost: 40, wear: 0.15, serviceOre: 8000, interval: 8, serviceBelow: 60,
+                    desc: t => `Services your other drones for free: the most worn one below ${t.serviceBelow}% (or any broken one) every ${t.interval}s. Cannot service itself.` },
     };
 
 
@@ -1406,9 +1444,11 @@
         { id: 'automation',    icon: '🤖', name: 'Hands Free',         desc: 'Install Autonomous Operations.',              check: gs => gs.unlockedSkills.includes('H3') },
         { id: 'speed_demon',   icon: '🏎️', name: 'Speed Demon',        desc: 'Drill at 25 m/s or faster (after rock hardness).', check: gs => getEffectiveDrillSpeed() >= 25 },
         { id: 'scan_boost',    icon: '📡', name: 'Ping!',              desc: 'Use Scan Boost.',                             check: gs => gs.boostTimeRemaining > 0 },
-		{ id: 'first_alloy',   icon: '🔧', name: 'Refining!',          desc: 'Get your first alloy',						check: gs => gs.totalAlloysMade >= 1 },
+		{ id: 'first_alloy',   icon: '🔧', name: 'Refining!',          desc: 'Get your first alloy',						check: gs => gs.alloys >= 1 },
 		{ id: 'many_alloys',   icon: '🔧', name: 'Forge Master',          desc: 'Hold 150 alloys at once',						check: gs => gs.alloys >= 150 },
 
+        { id: 'first_drone',    icon: '🤖', name: 'Drone Operator',     desc: 'Build your first drone.',                     check: gs => gs.drones.list.length >= 1 },
+        { id: 'full_housing',   icon: '🏠', name: 'Full House',         desc: 'Fill every bit of your drone housing.',       check: gs => gs.drones.list.length > 0 && getDroneSpaceUsed() >= getDroneHousing() },
         // --- Shops & modules ---
         { id: 'regular',       icon: '🗺️', name: 'Regular Customer',   desc: 'Find 5 shops in one run.',                    check: gs => gs.shopLog.length >= 5 },
         { id: 'shopaholic',    icon: '🛍️', name: 'Shopaholic',         desc: 'Buy 10 shop items in one run.',               check: gs => gs.run.shopPurchases >= 10 },
@@ -1645,6 +1685,7 @@
             moduleMk: {},                            // Mk level of each module, as { 'slotId.optId': 2 } (missing = Mk I)
             deepEvent: null, nextDeepEventDepth: 0,  // the Deep Event running right now (or null)
             alloys: 0, refinery: newRefineryState(), // Alloys and the refinery both reset every run
+            drones: newDroneState(),                 // drones reset every run too
         };
 
         // Free tiers earned from challenges are installed at the start of every run
@@ -1785,6 +1826,7 @@
         if (gameState.inChoice) return;   // an event asked for a choice: everything freezes until you pick
         tickDeepEvent(dt);
         tickRefinery(dt);
+        tickDrones(dt);
         if (gameState.mods.autoOps) handleAutoOps();
         gameState.run.maxHeat = Math.max(gameState.run.maxHeat, gameState.temperature);
         checkChallenges();   // every frame, so "before you pass Xm" goals are judged exactly
@@ -1818,7 +1860,7 @@
     }
 
     function handleTemperatureUpdate(dt) {
-        gameState.temperature += (gameState.drilling && gameState.power > 0 ? getHeatGainRate() : -getCoolingRate()) * dt;
+        gameState.temperature += ((gameState.drilling && gameState.power > 0 ? getHeatGainRate() : -getCoolingRate()) - getDroneCooling()) * dt;
         gameState.temperature  = Math.min(100, Math.max(0, gameState.temperature));
     }
 
@@ -2885,6 +2927,287 @@
 
 
     // ============================================================
+    //  DRONES
+    //  gameState.drones holds everything:
+    //    unlocked    - has the Drones menu been found this run?
+    //    list        - your drones, each { id, type, condition (0 to 100), timer }
+    //    housingTier - how many times housing has been expanded
+    //    nextId      - the number the next drone will get
+    //  tickDrones() runs every frame from the game loop. The game loop is stopped during shops and
+    //  choice pop-ups, so drones freeze then too, just like everything else.
+    // ============================================================
+
+    function newDroneState() { return { unlocked: false, list: [], housingTier: 0, nextId: 1 }; }
+
+    function getDroneHousing()   { return DRONE_START_HOUSING + gameState.drones.housingTier * DRONE_HOUSING_STEP; }
+    function getDroneSpaceUsed() { return gameState.drones.list.reduce((sum, d) => sum + DRONE_TYPES[d.type].space, 0); }
+    function getHousingUpgradeCost() {
+        const tier = gameState.drones.housingTier;
+        return tier >= DRONE_MAX_HOUSING_TIERS ? Infinity : Math.ceil(DRONE_HOUSING_COST * Math.pow(DRONE_HOUSING_GROWTH, tier));
+    }
+    // Ore price to service one drone: only the missing condition is paid for, and the price rises with depth
+    function getDroneServiceCost(d) {
+        const missing = 1 - d.condition / 100;
+        if (missing <= 0) return 0;
+        const brokenMult = d.condition <= 0 ? DRONE_BROKEN_SERVICE_MULT : 1;
+        return Math.max(1, roundPrice(DRONE_TYPES[d.type].serviceOre * getRefineryDepthMult() * missing * brokenMult));
+    }
+    // Totals used by the game and the panel (only drones with condition above 0 are working)
+    function getWorkingDrones(type) { return gameState.drones.list.filter(d => d.type === type && d.condition > 0); }
+    function getDroneCooling()      { return getWorkingDrones('coolant').length * DRONE_TYPES.coolant.coolPerSec; }
+    function getDroneOrePerSec()    { return getWorkingDrones('miner').length * oreWorth(DRONE_TYPES.miner.metresPerSec) * getEffectMods().oreMult; }
+
+    // quiet = true skips the pop-up and log line (used by Dev Mode)
+    function unlockDrones(quiet = false) {
+        const ds = gameState.drones;
+        if (ds.unlocked) return;
+        ds.unlocked = true;
+        if (quiet) return;
+        gameState.message = `The Drones menu is unlocked at ${DRONE_UNLOCK_DEPTH}m! Open the 🤖 Drones tab on the left to build your first drone.`;
+        logEvent(`${gameState.depth.toFixed(0)}m — Drones unlocked.`);
+        showToast('🤖', 'Drones unlocked', 'Drone Bay', 'Build drones with Alloys from the 🤖 Drones tab.');
+    }
+
+    // Adds a new drone to the list (no cost or space check, the build button does those)
+    function addDrone(typeId) {
+        const ds = gameState.drones;
+        const drone = { id: ds.nextId++, type: typeId, condition: 100, timer: 0 };
+        ds.list.push(drone);
+        return drone;
+    }
+
+    // Runs every frame from the game loop
+    function tickDrones(dt) {
+        const ds = gameState.drones;
+        if (!ds.unlocked) {
+            if (gameState.depth >= DRONE_UNLOCK_DEPTH) unlockDrones();
+            return;
+        }
+        for (const d of ds.list) {
+            if (d.condition <= 0) continue;   // broken drones do nothing until serviced
+            const t = DRONE_TYPES[d.type];
+
+            // Wear down
+            d.condition = Math.max(0, d.condition - t.wear * dt);
+            if (d.condition <= 0) {
+                gameState.message = `A ${t.name} broke down! Service it in the 🤖 Drones tab.`;
+                logEvent(`${gameState.depth.toFixed(0)}m — ${t.name} #${d.id} broke down.`, true);
+                continue;
+            }
+
+            // Do its job
+            if (d.type === 'miner') {
+                gameState.ore += oreWorth(t.metresPerSec * dt) * getEffectMods().oreMult;
+            } else if (d.type === 'sampler') {
+                d.timer += dt;
+                if (d.timer >= t.cycle) {
+                    d.timer -= t.cycle;
+                    gameState.permanentResearchPoints += t.prp;
+                    gameState.message = `Sampler Drone #${d.id} returned from the surface: +${t.prp} PRP.`;
+                    logEvent(`${gameState.depth.toFixed(0)}m — Sampler Drone #${d.id} brought back +${t.prp} PRP.`);
+                }
+            } else if (d.type === 'mechanic') {
+                d.timer = Math.min(t.interval, d.timer + dt);
+                if (d.timer >= t.interval) {
+                    // Pick the most worn drone (not itself) that is broken or below the service threshold
+                    const target = ds.list
+                        .filter(o => o !== d && o.condition < t.serviceBelow)
+                        .sort((a, b) => a.condition - b.condition)[0];
+                    if (target) { target.condition = 100; d.timer = 0; }
+                }
+            }
+            // Coolant Drones do their work inside handleTemperatureUpdate() via getDroneCooling()
+        }
+    }
+
+    // --- Buttons ---
+    function buildDrone(typeId) {
+        if (gameState.gameOver || gameState.isPaused) return;
+        const t = DRONE_TYPES[typeId];
+        const free = getDroneHousing() - getDroneSpaceUsed();
+        if (free < t.space)                     gameState.message = `Not enough housing space for a ${t.name} (needs ${t.space}, ${free} free).`;
+        else if (gameState.alloys < t.cost)     gameState.message = `Need ${t.cost} Alloys to build a ${t.name}.`;
+        else {
+            gameState.alloys -= t.cost;
+            addDrone(typeId);
+            gameState.message = `${t.name} built.`;
+        }
+        updateUI();
+    }
+
+    function expandHousing() {
+        if (gameState.gameOver || gameState.isPaused) return;
+        const cost = getHousingUpgradeCost();
+        if (cost === Infinity)              gameState.message = 'Drone housing is fully expanded.';
+        else if (gameState.alloys < cost)   gameState.message = `Need ${cost} Alloys to expand housing.`;
+        else {
+            gameState.alloys -= cost;
+            gameState.drones.housingTier++;
+            gameState.message = `Housing expanded to ${getDroneHousing()} space.`;
+        }
+        updateUI();
+    }
+
+    function serviceDrone(id) {
+        if (gameState.gameOver || gameState.isPaused) return;
+        const d = gameState.drones.list.find(x => x.id === id);
+        if (!d || d.condition >= 100) return;
+        const cost = getDroneServiceCost(d);
+        if (gameState.ore < cost) gameState.message = `Need ${fmtPrice(cost)} Ore to service that drone.`;
+        else {
+            gameState.ore -= cost;
+            d.condition = 100;
+            gameState.message = `${DRONE_TYPES[d.type].name} #${d.id} serviced for ${fmtPrice(cost)} Ore.`;
+        }
+        updateUI();
+    }
+
+    function getServiceAllCost() {
+        return gameState.drones.list.reduce((sum, d) => sum + getDroneServiceCost(d), 0);
+    }
+    function serviceAllDrones() {
+        if (gameState.gameOver || gameState.isPaused) return;
+        const cost = getServiceAllCost();
+        if (cost <= 0) return;
+        if (gameState.ore < cost) gameState.message = `Need ${fmtPrice(cost)} Ore to service every drone.`;
+        else {
+            gameState.ore -= cost;
+            gameState.drones.list.forEach(d => d.condition = 100);
+            gameState.message = `Every drone serviced for ${fmtPrice(cost)} Ore.`;
+        }
+        updateUI();
+    }
+
+    function scrapDrone(id) {
+        if (gameState.gameOver || gameState.isPaused) return;
+        const ds  = gameState.drones;
+        const i   = ds.list.findIndex(x => x.id === id);
+        if (i === -1) return;
+        const t      = DRONE_TYPES[ds.list[i].type];
+        const refund = Math.floor(t.cost * DRONE_SCRAP_REFUND);
+        ds.list.splice(i, 1);
+        gameState.alloys += refund;
+        gameState.message = `${t.name} scrapped for ${refund} Alloy${refund === 1 ? '' : 's'}.`;
+        updateUI();
+    }
+
+    // --- Drones panel ---
+    // Like the Module Bay, the card layout is only rebuilt when something that changes WHAT is shown
+    // changes (a drone is added or breaks, a button becomes affordable...). The fast-changing numbers
+    // (condition bars, status text, prices) are updated in place every tick, so buttons are never swapped
+    // out from under the mouse.
+    let _lastDroneKey = null;
+
+    function isDronePanelOpen() { return document.getElementById('drones-sidebar').classList.contains('open'); }
+
+    function droneStatusText(d) {
+        const t = DRONE_TYPES[d.type];
+        if (d.condition <= 0)      return '⚠ BROKEN: needs servicing';
+        if (d.type === 'miner')    return `Mining about ${fmt(oreWorth(t.metresPerSec))} Ore/s`;
+        if (d.type === 'coolant')  return `Cooling the drill by ${t.coolPerSec} Heat/s`;
+        if (d.type === 'sampler')  return `Surface trip ${Math.floor(d.timer / t.cycle * 100)}% done (+${t.prp} PRP when it returns)`;
+        if (d.type === 'mechanic') return d.timer >= t.interval ? 'Standing by: nothing needs servicing' : `Recharging (${Math.ceil(t.interval - d.timer)}s)`;
+        return 'Working';
+    }
+
+    function updateDronePanel() {
+        const ds  = gameState.drones;
+        const tab = document.getElementById('drones-toggle-btn');
+        tab.classList.toggle('hidden', !ds.unlocked);   // the tab only shows once drones are unlocked
+        if (!ds.unlocked || !isDronePanelOpen()) return;
+
+        const canAct     = !gameState.gameOver && !gameState.isPaused;
+        const free       = getDroneHousing() - getDroneSpaceUsed();
+        const expandCost = getHousingUpgradeCost();
+        const allCost    = getServiceAllCost();
+        const typeIds    = Object.keys(DRONE_TYPES);
+
+        // Everything that changes which buttons are enabled goes into one text "key".
+        // If the key is the same as last time, the cards are left alone.
+        const canBuild = typeIds.map(id => canAct && gameState.alloys >= DRONE_TYPES[id].cost && free >= DRONE_TYPES[id].space);
+        const key = JSON.stringify({
+            canBuild, free, tier: ds.housingTier, canExpand: canAct && gameState.alloys >= expandCost,
+            canAll: canAct && allCost > 0 && gameState.ore >= allCost, needsAny: allCost > 0, canAct,
+            drones: ds.list.map(d => [d.id, d.type, d.condition <= 0, d.condition >= 100, canAct && gameState.ore >= getDroneServiceCost(d)]),
+        });
+
+        if (key !== _lastDroneKey) {
+            _lastDroneKey = key;
+
+            const buildCards = typeIds.map((id, i) => {
+                const t = DRONE_TYPES[id];
+                const label = canBuild[i] ? `Build (${t.cost} Alloys)` : (free < t.space ? 'Not enough housing space' : `Needs ${t.cost} Alloys`);
+                return `<div class="bg-gray-800 p-3 rounded-lg border border-gray-700 flex flex-col justify-between">
+                    <div>
+                        <p class="font-bold text-teal-300">${t.icon} ${t.name}</p>
+                        <p class="text-xs text-gray-400">Takes ${t.space} housing space</p>
+                        <p class="text-sm text-gray-300 mt-1">${t.desc(t)}</p>
+                    </div>
+                    <button onclick="buildDrone('${id}')" ${canBuild[i] ? '' : 'disabled'}
+                        class="mt-3 w-full p-2 rounded-lg text-white text-sm font-bold transition duration-150 ${canBuild[i] ? 'bg-green-700 hover:bg-green-500 cursor-pointer' : 'bg-red-900 opacity-70 cursor-not-allowed'}">${label}</button></div>`;
+            }).join('');
+
+            const rosterCards = ds.list.length ? ds.list.map(d => {
+                const t       = DRONE_TYPES[d.type];
+                const full    = d.condition >= 100;
+                const canSvc  = canAct && !full && gameState.ore >= getDroneServiceCost(d);
+                const refund  = Math.floor(t.cost * DRONE_SCRAP_REFUND);
+                return `<div class="bg-gray-800 p-3 rounded-lg border border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <p class="font-bold text-white">${t.icon} ${t.name} <span class="text-xs text-gray-500">#${d.id}</span></p>
+                        <span id="drone-pct-${d.id}" class="text-xs font-bold text-gray-300"></span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2 my-2"><div id="drone-bar-${d.id}" class="progress-bar h-2 rounded-full" style="width:0%"></div></div>
+                    <p id="drone-status-${d.id}" class="text-xs text-gray-400"></p>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <button onclick="serviceDrone(${d.id})" ${canSvc ? '' : 'disabled'}
+                            class="p-2 rounded-lg text-white text-xs font-bold transition duration-150 ${canSvc ? 'bg-amber-700 hover:bg-amber-600 cursor-pointer' : 'bg-gray-700 opacity-60 cursor-not-allowed'}">
+                            ${full ? 'Fully serviced' : `🔧 Service (<span id="drone-svc-${d.id}"></span> Ore)`}</button>
+                        <button onclick="scrapDrone(${d.id})" ${canAct ? '' : 'disabled'}
+                            class="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-bold transition duration-150">♻ Scrap (+${refund} Alloys)</button>
+                    </div></div>`;
+            }).join('') : '<p class="text-sm text-gray-500">You have no drones yet. Build one above!</p>';
+
+            const canAll = canAct && allCost > 0 && gameState.ore >= allCost;
+            document.getElementById('drone-container').innerHTML = `
+                <div class="bg-gray-800 p-4 rounded-xl border border-teal-700">
+                    <div class="flex flex-wrap justify-between gap-2">
+                        <p id="drone-alloys" class="font-bold text-slate-200"></p>
+                        <p id="drone-housing" class="font-bold text-teal-300"></p>
+                    </div>
+                    <p id="drone-income" class="text-sm text-gray-400 mt-1"></p>
+                    <button onclick="expandHousing()" ${canAct && gameState.alloys >= expandCost ? '' : 'disabled'}
+                        class="mt-3 w-full p-2 rounded-lg text-white text-sm font-bold transition duration-150 ${canAct && gameState.alloys >= expandCost ? 'bg-teal-700 hover:bg-teal-500 cursor-pointer' : 'bg-gray-700 opacity-60 cursor-not-allowed'}">
+                        ${expandCost === Infinity ? 'Housing fully expanded' : `🏗 Expand housing +${DRONE_HOUSING_STEP} space (${expandCost} Alloys)`}</button>
+                </div>
+                <h3 class="text-lg font-bold text-teal-300">Build a drone</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${buildCards}</div>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-teal-300">Your drones (${ds.list.length})</h3>
+                    <button onclick="serviceAllDrones()" ${canAll ? '' : 'disabled'}
+                        class="px-3 py-1.5 rounded-lg text-white text-xs font-bold transition duration-150 ${canAll ? 'bg-amber-700 hover:bg-amber-600 cursor-pointer' : 'bg-gray-700 opacity-60 cursor-not-allowed'}">
+                        🔧 Service all (<span id="drone-svc-all"></span> Ore)</button>
+                </div>
+                <div class="flex flex-col gap-3">${rosterCards}</div>`;
+        }
+
+        // The numbers that change every tick: updated in place, never rebuilt
+        const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+        setText('drone-alloys',  `🔩 ${Math.floor(gameState.alloys).toLocaleString()} Alloys`);
+        setText('drone-housing', `Housing: ${getDroneSpaceUsed()} / ${getDroneHousing()} space used`);
+        const cooling = getDroneCooling();
+        setText('drone-income',  `Fleet: ${fmt(getDroneOrePerSec())} Ore/s from mining` + (cooling > 0 ? `, -${cooling.toFixed(1)} Heat/s cooling` : ''));
+        setText('drone-svc-all', fmtPrice(allCost));
+        for (const d of ds.list) {
+            setText(`drone-pct-${d.id}`,    `${Math.floor(d.condition)}% condition`);
+            setText(`drone-status-${d.id}`, droneStatusText(d));
+            setText(`drone-svc-${d.id}`,    fmtPrice(getDroneServiceCost(d)));
+            const bar = document.getElementById(`drone-bar-${d.id}`);
+            if (bar) { bar.style.width = `${d.condition}%`; bar.style.backgroundColor = d.condition < 30 ? '#dc2626' : '#14b8a6'; }
+        }
+    }
+
+    // ============================================================
     //  UI RENDERING
     // ============================================================
 
@@ -2906,6 +3229,7 @@
         updateAscendButton();
         updateSurfaceSampleButton();
         updateRefineryPanel();
+        updateDronePanel();
 
         refreshWorkshop();
         refreshAscension();
@@ -3689,6 +4013,7 @@
         document.body.classList.toggle('sidebar-open-right', !isLeft);
         if (panelId === 'module-sidebar') refreshModuleBay();
         if (panelId === 'goals-sidebar')  refreshGoalsPanel();
+        if (panelId === 'drones-sidebar') { _lastDroneKey = null; updateDronePanel(); }
     }
     function closeSidebar() {
         document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('open'));
@@ -3802,6 +4127,7 @@
             return `<optgroup label="${slot.name}">${opts}</optgroup>`;
         }).join(''));
         fill('dev-deep-select', DEEP_EVENTS.map(d => `<option value="${d.id}">${d.icon} ${d.name}</option>`).join(''));
+        fill('dev-drone-select', Object.keys(DRONE_TYPES).map(id => `<option value="${id}">${DRONE_TYPES[id].icon} ${DRONE_TYPES[id].name}</option>`).join(''));
         fill('dev-perk-select',Object.keys(ASCENSION_UPGRADES).map(id => `<option value="${id}">${ASCENSION_UPGRADES[id].branch}: ${ASCENSION_UPGRADES[id].name}</option>`).join(''));
     }
 
@@ -3890,6 +4216,20 @@
             gameState.message = '🛠 Dev: finish the current shop, choice or Deep Event first.'; return updateUI();
         }
         openDeepEvent(DEEP_EVENTS.find(d => d.id === devSelected('dev-deep-select')));
+    }
+    // --- Drones ---
+    function devUnlockDrones() {
+        unlockDrones(true);
+        devDone('unlocked the Drones menu.');
+    }
+    function devGiveDrone() {   // free, and ignores housing space
+        unlockDrones(true);
+        const d = addDrone(devSelected('dev-drone-select'));
+        devDone(`gave a ${DRONE_TYPES[d.type].name}.`);
+    }
+    function devWearDrones() {
+        gameState.drones.list.forEach(d => d.condition = Math.min(d.condition, 20));
+        devDone('worn every drone down to 20%.');
     }
     // --- Refinery ---
     function devUnlockRefinery() {
