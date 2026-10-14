@@ -729,6 +729,8 @@
 					'Drones take up housing space. You start with 8 and can expand it with Alloys.',
 					'Drones wear out. Service them with Ore, or build a Mechanic to do it. Broken drones stop working until serviced.',
 					'Added two drone achievements.',
+				'Added the Drill Speed Drone: adds +4 to your base Drill Speed while it works (12 Alloys, 2 housing space).',
+				'The Heat bar text now shows how much cooling your Coolant Drones are providing.',
 				]
 			},
         {
@@ -907,6 +909,9 @@
                     desc: t => `Mines Ore on its own, as if you drilled ${t.metresPerSec} metre every second.` },
         coolant:  { name: 'Coolant Drone',  icon: '❄️', space: 2, cost: 8,  wear: 0.4,  serviceOre: 2000, coolPerSec: 1,
                     desc: t => `Cools the drill by ${t.coolPerSec} Heat per second, even while drilling.` },
+        // Price sits between the Coolant Drone (8 Alloys) and the Sampler Drone (20 Alloys)
+        driller:  { name: 'Drill Speed Drone', icon: '🌀', space: 2, cost: 12, wear: 0.4,  serviceOre: 3000, speedPerDrone: 4,
+                    desc: t => `Adds +${t.speedPerDrone} to your base Drill Speed while it works. Stacks with more drones.` },
         sampler:  { name: 'Sampler Drone',  icon: '🧪', space: 3, cost: 20, wear: 0.35, serviceOre: 4000, cycle: 120, prp: 1,
                     desc: t => `Travels to the surface and back every ${t.cycle}s, bringing ${t.prp} PRP each trip.` },
         mechanic: { name: 'Mechanic Drone', icon: '🔧', space: 5, cost: 40, wear: 0.15, serviceOre: 8000, interval: 8, serviceBelow: 60,
@@ -1625,7 +1630,7 @@
     function getHeatGainRate() { return Math.max(0, (HEAT_BASE * gameState.mods.heatFactor * (1 + HEAT_DEPTH_SCALE * getKm()) + gameState.mods.heatRateBonus) * getEffectMods().heatMult); }
     function getCoolingRate()  { return 5 * gameState.mods.coolingFactor + gameState.baseCoolingBonus; }
     function getRawDrillSpeed() {
-        let speed = (gameState.baseDrillSpeed + gameState.mods.drillSpeed) * Math.max(0.2, gameState.mods.drillSpeedMultiplier);
+        let speed = (gameState.baseDrillSpeed + gameState.mods.drillSpeed + getDroneDrillSpeed()) * Math.max(0.2, gameState.mods.drillSpeedMultiplier);
         speed *= gameState.mods.drillSpeedFinalMult;   // Phase Drill / Chrono Drill: true multipliers on top of everything
         if (gameState.boostTimeRemaining > 0) speed *= SCAN_BOOST_SPEED_MULTIPLIER;
         speed *= getEffectMods().speedMult;
@@ -2955,6 +2960,8 @@
     // Totals used by the game and the panel (only drones with condition above 0 are working)
     function getWorkingDrones(type) { return gameState.drones.list.filter(d => d.type === type && d.condition > 0); }
     function getDroneCooling()      { return getWorkingDrones('coolant').length * DRONE_TYPES.coolant.coolPerSec; }
+    // Bonus to base drill speed from working Drill Speed Drones (used in getRawDrillSpeed)
+    function getDroneDrillSpeed()   { return getWorkingDrones('driller').length * DRONE_TYPES.driller.speedPerDrone; }
     function getDroneOrePerSec()    { return getWorkingDrones('miner').length * oreWorth(DRONE_TYPES.miner.metresPerSec) * getEffectMods().oreMult; }
 
     // quiet = true skips the pop-up and log line (used by Dev Mode)
@@ -3105,6 +3112,7 @@
         if (d.condition <= 0)      return '⚠ BROKEN: needs servicing';
         if (d.type === 'miner')    return `Mining about ${fmt(oreWorth(t.metresPerSec))} Ore/s`;
         if (d.type === 'coolant')  return `Cooling the drill by ${t.coolPerSec} Heat/s`;
+        if (d.type === 'driller')  return `Adding +${t.speedPerDrone} base Drill Speed`;
         if (d.type === 'sampler')  return `Surface trip ${Math.floor(d.timer / t.cycle * 100)}% done (+${t.prp} PRP when it returns)`;
         if (d.type === 'mechanic') return d.timer >= t.interval ? 'Standing by: nothing needs servicing' : `Recharging (${Math.ceil(t.interval - d.timer)}s)`;
         return 'Working';
@@ -3196,7 +3204,7 @@
         setText('drone-alloys',  `🔩 ${Math.floor(gameState.alloys).toLocaleString()} Alloys`);
         setText('drone-housing', `Housing: ${getDroneSpaceUsed()} / ${getDroneHousing()} space used`);
         const cooling = getDroneCooling();
-        setText('drone-income',  `Fleet: ${fmt(getDroneOrePerSec())} Ore/s from mining` + (cooling > 0 ? `, -${cooling.toFixed(1)} Heat/s cooling` : ''));
+        setText('drone-income',  `Fleet: ${fmt(getDroneOrePerSec())} Ore/s from mining` + (cooling > 0 ? `, -${cooling.toFixed(1)} Heat/s cooling` : '') + (getDroneDrillSpeed() > 0 ? `, +${getDroneDrillSpeed()} base Drill Speed` : ''));
         setText('drone-svc-all', fmtPrice(allCost));
         for (const d of ds.list) {
             setText(`drone-pct-${d.id}`,    `${Math.floor(d.condition)}% condition`);
@@ -3331,7 +3339,9 @@
         ui['temp-bar'].style.width = `${tmpPct}%`;
         ui['temp-bar'].classList.toggle('bg-red-700',    tmpPct >= 50);
         ui['temp-bar'].classList.toggle('bg-yellow-500', tmpPct < 50);
-        ui['temp-bar-text'].innerText = `Heat: ${gameState.temperature.toFixed(0)}% (x${getTemperatureFactor().toFixed(2)} power draw, +${getHeatGainRate().toFixed(1)}/s drilling, -${getCoolingRate().toFixed(1)}/s idle)`;
+        const droneCool = getDroneCooling();   // Coolant Drones work whether you are drilling or idle
+        ui['temp-bar-text'].innerText = `Heat: ${gameState.temperature.toFixed(0)}% (x${getTemperatureFactor().toFixed(2)} power draw, +${getHeatGainRate().toFixed(1)}/s drilling, -${getCoolingRate().toFixed(1)}/s idle` +
+            (droneCool > 0 ? `, -${droneCool.toFixed(1)}/s from drones` : '') + ')';
     }
 
     // Drill, refill, repair and pause buttons
