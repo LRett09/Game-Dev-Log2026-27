@@ -36,11 +36,7 @@
   } else {
     document.getElementById('myDiv01').innerHTML = myIn01 + ' is not complex'
   }
-}">
-
-<hr>
-
-<h4>Decision 4: Password</h4>
+}"><br>
 
 Password:
 <input type="text" id="myPassword01" placeholder="Enter password">
@@ -48,28 +44,26 @@ Password:
 <input type="button" value="Check Password" onclick="{
   let myPassword = document.getElementById('myPassword01').value
 
-  if (myPassword == 'warlock123') {
+  if (myPassword == 'Pass123') {
     document.getElementById('myPasswordResult').innerHTML = 'Correct password! The next two challenges are unlocked!'
     document.getElementById('myMathSection').style.display = 'block'
     document.getElementById('myClickerSection').style.display = 'block'
   } else {
-    document.getElementById('myPasswordResult').innerHTML = 'Wrong password! The correct password is warlock123'
+    document.getElementById('myPasswordResult').innerHTML = 'Wrong password! The correct password is Pass123'
   }
 }">
 
-<div id="myPasswordResult">Enter the password to unlock the next two challenges.</div>
+<div id="myPasswordResult">Enter the password to unlock the next two challenges.</div><br>
 
 <div id="myMathSection" style="display:none;">
 
-  <h4>Decision 5: Math Question</h4>
-
-  What is 12 x 8?
+  What is 2 + 2?
   <input type="number" id="myMathAnswer">
   
   <input type="button" value="Check Answer" onclick="{
     let myAnswer = parseFloat(document.getElementById('myMathAnswer').value)
 
-    if (myAnswer == 96) {
+    if (myAnswer == 4) {
       document.getElementById('myMathResult').innerHTML = 'Correct! You know your math!'
     } else {
       document.getElementById('myMathResult').innerHTML = 'Incorrect! Try again.'
@@ -78,7 +72,7 @@ Password:
 
   <div id="myMathResult">Your answer goes here.</div>
 
-</div>
+</div><br>
 
 <div id="myClickerSection" style="display:none;">
 
