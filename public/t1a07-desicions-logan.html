@@ -1,44 +1,101 @@
-<h1 align=center>T1A07 Desicions</h1>
+```html
+<h1 align=center>T1A07 Decisions</h1>
 
 <h4>Example input output code</h4>
 <pre>
   let myHour = 20
   if (myHour < 18) {
     let myGreeting = 'Good day';
-    }
+  }
 </pre>
 
 <h4>Example Working Code</h4>
 
-<input id="myNum01" type=number value="4" ><br>
+<input id="myNum01" type="number" value="4"><br>
 
-<input type=button value="Simple If Statement" onclick="{
+<input type="button" value="Simple If Statement" onclick="{
   let myIn01 = parseFloat(document.getElementById('myNum01').value)
   if (myIn01 >= 3) {
-    document.getElementById('myDiv01').innerHTML = myIn01 + ' is greater than 3'
+    document.getElementById('myDiv01').innerHTML = myIn01 + ' is greater than or equal to 3'
   }
-  }">
+}">
 
-  <input type=button value="If... else" onclick="{
-    let myIn01 = parseFloat(document.getElementById('myNum01').value)
-    if (myIn01 >= 3){
-      document.getElementById('myDiv01').innerHTML = myIn01 + ' is greater than 3'
-    } else {
-      document.getElementById('myDiv01').innerHTML = myIn01 + ' is less than 3' } 
-    }">
-
-<input type=button value="Complex if" onclick="{
+<input type="button" value="If... else" onclick="{
   let myIn01 = parseFloat(document.getElementById('myNum01').value)
-  if ((myIn01 != 3 || myIn01 > -3) && myIn01 <= 100 ){
+  if (myIn01 >= 3) {
+    document.getElementById('myDiv01').innerHTML = myIn01 + ' is greater than or equal to 3'
+  } else {
+    document.getElementById('myDiv01').innerHTML = myIn01 + ' is less than 3'
+  }
+}">
+
+<input type="button" value="Complex if" onclick="{
+  let myIn01 = parseFloat(document.getElementById('myNum01').value)
+  if ((myIn01 != 3 || myIn01 > -3) && myIn01 <= 100) {
     document.getElementById('myDiv01').innerHTML = myIn01 + ' is complex'
   } else {
-    document.getElementById('myDiv01').innerHTML = myIn01 + ' is not complex' }
+    document.getElementById('myDiv01').innerHTML = myIn01 + ' is not complex'
+  }
+}">
+
+<hr>
+
+<h4>Decision 4: Password</h4>
+
+Password:
+<input type="text" id="myPassword01" placeholder="Enter password">
+
+<input type="button" value="Check Password" onclick="{
+  let myPassword = document.getElementById('myPassword01').value
+
+  if (myPassword == 'warlock123') {
+    document.getElementById('myPasswordResult').innerHTML = 'Correct password! The next two challenges are unlocked!'
+    document.getElementById('myMathSection').style.display = 'block'
+    document.getElementById('myClickerSection').style.display = 'block'
+  } else {
+    document.getElementById('myPasswordResult').innerHTML = 'Wrong password! The correct password is warlock123'
+  }
+}">
+
+<div id="myPasswordResult">Enter the password to unlock the next two challenges.</div>
+
+<div id="myMathSection" style="display:none;">
+
+  <h4>Decision 5: Math Question</h4>
+
+  What is 12 x 8?
+  <input type="number" id="myMathAnswer">
+  
+  <input type="button" value="Check Answer" onclick="{
+    let myAnswer = parseFloat(document.getElementById('myMathAnswer').value)
+
+    if (myAnswer == 96) {
+      document.getElementById('myMathResult').innerHTML = 'Correct! You know your math!'
+    } else {
+      document.getElementById('myMathResult').innerHTML = 'Incorrect! Try again.'
+    }
   }">
 
+  <div id="myMathResult">Your answer goes here.</div>
+
+</div>
+
+<div id="myClickerSection" style="display:none;">
+
+  <button value="Click me for a medal!" onclick="{
+    let myClicks = parseInt(document.getElementById('myClickCount').innerHTML)
+    myClicks = myClicks + 1
+    document.getElementById('myClickCount').innerHTML = myClicks
+
+    if (myClicks >= 10) {
+      document.getElementById('myMedalResult').innerHTML = '🏅 MEDAL EARNED! Congratulations!'
+    }
+  }">Click Me!</button>
+
+  <p>Clicks: <span id="myClickCount">0</span></p>
+
+  <div id="myMedalResult">No medal yet. Keep clicking!</div>
+
+</div>
+
 <div id="myDiv01">...</div>
-
-Ideas for more desicions
-
-  -Input a password. If it's wrong then alert the right password. If it's right then show another input field
-  -In the other input field make it so that it's a math question. If correct it says that the user is smart.
-  -Add a clicker. Everytime you click it a number goes up. If the number is more than ten then it gives the user a gold medal!
