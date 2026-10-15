@@ -460,7 +460,7 @@
         </div>
         <p class="text-sm text-gray-400 mb-1">Spend PRP on permanent perks that change how every future run plays. Each path unlocks from top to bottom.</p>
         <p id="ascension-prp" class="text-lg font-bold text-purple-300 mb-3">0 PRP</p>
-        <div id="ascension-container" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        <div id="ascension-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </div>
 	
 	<!-- Drones panel: a wide panel that slides in from the LEFT. Its contents are drawn by updateDronePanel() in the script. -->
@@ -469,7 +469,7 @@
             <h2 class="text-2xl font-bold text-teal-400">🤖 Drones</h2>
             <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
         </div>
-        <p class="text-sm text-gray-400 mb-4">Build drones with Alloys. They work on their own, but they wear out. Service them with Ore, or build a Mechanic to do it for you. Drones reset when you ascend.</p>
+        <p class="text-sm text-gray-400 mb-4">Build drones with Alloys. They work on their own, but they wear out. Service them with Ore, or build a Mechanic to do it for you. Each drone type has 3 upgrades you can buy once with Alloys. Drones and their upgrades reset when you ascend.</p>
         <div id="drone-container" class="flex flex-col gap-4"></div>
     </div>
 
@@ -731,6 +731,8 @@
 					'Added two drone achievements.',
 				'Added the Drill Speed Drone: adds +4 to your base Drill Speed while it works (12 Alloys, 2 housing space).',
 				'The Heat bar text now shows how much cooling your Coolant Drones are providing.',
+				'New Ascension path, the Swarm: a free Drill Speed Drone when drones unlock, 80% Alloy refund when scrapping, and Tier 1 of every refinery upgrade when you find the refinery.',
+				'Drone upgrades! Every drone type has 3 upgrades bought once with Alloys in the Drones menu. They apply to every drone of that type and reset when you ascend.',
 				]
 			},
         {
@@ -904,6 +906,43 @@
     const DRONE_SCRAP_REFUND        = 0.5;   // share of the Alloy cost you get back when scrapping (0.5 = half)
     const DRONE_BROKEN_SERVICE_MULT = 1.5;   // servicing a BROKEN drone costs this much more Ore
 
+    // ---- Drone upgrades ----
+    // Bought with Alloys, once each, and they apply to EVERY drone of that type. They reset when you ascend.
+    // Each upgrade has a "kind" that says what it changes:
+    //   power   = multiplies what the drone does (ore mined, cooling, drill speed, trip speed, how fast the mechanic works)
+    //   wear    = multiplies how fast the drone wears out (below 1 = lasts longer)
+    //   service = multiplies the Ore price of servicing it (below 1 = cheaper)
+    // Several upgrades of the same kind multiply together.
+    // DRONE_UPGRADE_COST_MULT scales EVERY upgrade price at once: lower it (e.g. 0.7) if the Alloy economy feels too harsh.
+    const DRONE_UPGRADE_COST_MULT = 1;
+    const DRONE_UPGRADES = {
+        miner: [
+            { id: 'bits',   name: 'Sharper Bits',        kind: 'power',   value: 1.5, cost: 5,  desc: '+50% Ore mined' },
+            { id: 'casing', name: 'Hardened Casing',     kind: 'wear',    value: 0.6, cost: 8,  desc: '-40% wear' },
+            { id: 'motors', name: 'Overclocked Motors',  kind: 'power',   value: 2,   cost: 15, desc: 'x2 Ore mined' },
+        ],
+        coolant: [
+            { id: 'radiators', name: 'Better Radiators', kind: 'power',   value: 1.5, cost: 8,  desc: '+50% cooling' },
+            { id: 'panels',    name: 'Easy-Access Panels', kind: 'service', value: 0.5, cost: 12, desc: '-50% service price' },
+            { id: 'cryo',      name: 'Cryo Loop',        kind: 'power',   value: 2,   cost: 22, desc: 'x2 cooling' },
+        ],
+        driller: [
+            { id: 'gearing', name: 'Tuned Gearing',      kind: 'power',   value: 1.5, cost: 10, desc: '+50% Drill Speed bonus' },
+            { id: 'casing',  name: 'Hardened Casing',    kind: 'wear',    value: 0.6, cost: 14, desc: '-40% wear' },
+            { id: 'drive',   name: 'Resonant Drive',     kind: 'power',   value: 2,   cost: 28, desc: 'x2 Drill Speed bonus' },
+        ],
+        sampler: [
+            { id: 'winch',   name: 'Fast Winch',         kind: 'power',   value: 1.5, cost: 25, desc: '+50% faster surface trips' },
+            { id: 'bearing', name: 'Sealed Bearings',    kind: 'wear',    value: 0.6, cost: 30, desc: '-40% wear' },
+            { id: 'rocket',  name: 'Rocket Lift',        kind: 'power',   value: 2,   cost: 55, desc: 'x2 faster surface trips' },
+        ],
+        mechanic: [
+            { id: 'hands',   name: 'Quick Hands',        kind: 'power',   value: 1.5, cost: 30, desc: 'Services 50% more often' },
+            { id: 'joints',  name: 'Self-Lubricating Joints', kind: 'wear', value: 0.5, cost: 35, desc: '-50% wear' },
+            { id: 'tools',   name: 'Precision Tools',    kind: 'power',   value: 2,   cost: 60, desc: 'Services twice as often' },
+        ],
+    };
+
     const DRONE_TYPES = {
         miner:    { name: 'Mining Drone',   icon: '⛏️', space: 1, cost: 3,  wear: 0.4,  serviceOre: 1500, metresPerSec: 1,
                     desc: t => `Mines Ore on its own, as if you drilled ${t.metresPerSec} metre every second.` },
@@ -942,6 +981,7 @@
         Fortune:  { icon: '💰', color: 'yellow', blurb: 'Turn every ascension into wealth.' },
         Voyager:  { icon: '🧭', color: 'cyan',   blurb: 'Start deeper and cheat death.' },
         Engineer: { icon: '⚙️', color: 'orange', blurb: 'Skip the slow start of every run.' },
+        Swarm:    { icon: '🤖', color: 'teal',   blurb: 'Get your drones and refinery running faster each run.' },
     };
     const ASCENSION_UPGRADES = {
         FOR1: { branch: 'Fortune',  name: 'Compound Interest',  cost: 1,  prereq: null,   effect: '+2% Ore Value for every time you have ascended (max +100%)', bonus: { compoundInterest: 0.02 } },
@@ -953,6 +993,10 @@
         ENG1: { branch: 'Engineer', name: 'Foundry Memory',     cost: 1,  prereq: null,   effect: 'Each new run starts with all Tier 1 skills installed',       bonus: { startTier: 1 } },
         ENG2: { branch: 'Engineer', name: 'Core Resonance',     cost: 8, prereq: 'ENG1', effect: 'Surface Sample gives +1 PRP and costs 200m less',            bonus: { sampleBonusPrp: 1, sampleDiscount: 200 } },
         ENG3: { branch: 'Engineer', name: 'Master Blueprints',  cost: 26, prereq: 'ENG2', effect: 'Each new run starts with Tier 1, 2 and 3 skills installed',  bonus: { startTier: 2 } },
+        // Swarm: these matter from 5,500m (refinery) and 6,500m (drones), so they cost a bit more than the paths above.
+        SWM1: { branch: 'Swarm',    name: 'Prefab Drone',       cost: 5,  prereq: null,   effect: 'When the Drones menu unlocks each run, you get a free Drill Speed Drone', bonus: { droneStart: true } },
+        SWM2: { branch: 'Swarm',    name: 'Salvage Contracts',  cost: 16, prereq: 'SWM1', effect: 'Scrapping a drone gives back 80% of its Alloys instead of 50%',           bonus: { droneScrapRefund: 0.3 } },
+        SWM3: { branch: 'Swarm',    name: 'Refinery Blueprints', cost: 32, prereq: 'SWM2', effect: 'When you find the refinery each run, it already has every Tier 1 upgrade', bonus: { refineryStartTier: 1 } },
     }
 
     const SKILLS = {
@@ -1760,6 +1804,7 @@
             integrityWearFactor: 1, caveAdapted: false,
             compoundInterest: 0, deepEventBonus: 0, goldenAge: false, deepDrop: 0, secondWind: false,
             recordDepthBonus: 0, startTier: 0, sampleBonusPrp: 0, sampleDiscount: 0,
+            droneStart: false, droneScrapRefund: 0, refineryStartTier: 0,   // Swarm path
         };
         for (const skillId of gameState.unlockedSkills) {
             if (SKILLS[skillId]?.bonus) applyBonusToMods(SKILLS[skillId].bonus);
@@ -2799,6 +2844,10 @@
         const r = gameState.refinery;
         if (r.unlocked) return;
         r.unlocked = true;
+        // Swarm perk "Refinery Blueprints": start with Tier 1 (or more) of every refinery upgrade
+        for (const id in REFINERY_UPGRADES) {
+            r.tiers[id] = Math.max(r.tiers[id] || 0, Math.min(REFINERY_UPGRADES[id].maxTier, gameState.mods.refineryStartTier));
+        }
         if (quiet) return;
         gameState.message = `You found an abandoned refinery at ${REFINERY_UNLOCK_DEPTH}m! It is yours. Switch it on to turn Ore into Alloys.`;
         logEvent(`${gameState.depth.toFixed(0)}m — Found an abandoned refinery.`);
@@ -2942,7 +2991,22 @@
     //  choice pop-ups, so drones freeze then too, just like everything else.
     // ============================================================
 
-    function newDroneState() { return { unlocked: false, list: [], housingTier: 0, nextId: 1 }; }
+    function newDroneState() { return { unlocked: false, list: [], housingTier: 0, nextId: 1, upgrades: {} }; }
+
+    // --- Drone upgrades: helpers ---
+    // gameState.drones.upgrades looks like { 'miner.bits': true, 'coolant.cryo': true }
+    function hasDroneUpgrade(typeId, upId) { return !!gameState.drones.upgrades[`${typeId}.${upId}`]; }
+    function getDroneUpgradeCost(u)        { return Math.max(1, Math.ceil(u.cost * DRONE_UPGRADE_COST_MULT)); }
+    // Alloys you get back for scrapping a drone: base share plus the Swarm perk, never 100% (that would let you build and scrap for free)
+    function getDroneScrapRefund(t) {
+        return Math.floor(t.cost * Math.min(0.9, DRONE_SCRAP_REFUND + gameState.mods.droneScrapRefund));
+    }
+    // Multiplies together every owned upgrade of one kind for one drone type (1 = no upgrades)
+    function getDroneUpgradeMult(typeId, kind) {
+        return (DRONE_UPGRADES[typeId] || [])
+            .filter(u => u.kind === kind && hasDroneUpgrade(typeId, u.id))
+            .reduce((product, u) => product * u.value, 1);
+    }
 
     function getDroneHousing()   { return DRONE_START_HOUSING + gameState.drones.housingTier * DRONE_HOUSING_STEP; }
     function getDroneSpaceUsed() { return gameState.drones.list.reduce((sum, d) => sum + DRONE_TYPES[d.type].space, 0); }
@@ -2955,21 +3019,25 @@
         const missing = 1 - d.condition / 100;
         if (missing <= 0) return 0;
         const brokenMult = d.condition <= 0 ? DRONE_BROKEN_SERVICE_MULT : 1;
-        return Math.max(1, roundPrice(DRONE_TYPES[d.type].serviceOre * getRefineryDepthMult() * missing * brokenMult));
+        return Math.max(1, roundPrice(DRONE_TYPES[d.type].serviceOre * getRefineryDepthMult() * missing * brokenMult * getDroneUpgradeMult(d.type, 'service')));
     }
     // Totals used by the game and the panel (only drones with condition above 0 are working)
     function getWorkingDrones(type) { return gameState.drones.list.filter(d => d.type === type && d.condition > 0); }
-    function getDroneCooling()      { return getWorkingDrones('coolant').length * DRONE_TYPES.coolant.coolPerSec; }
+    function getDroneCooling()      { return getWorkingDrones('coolant').length * DRONE_TYPES.coolant.coolPerSec * getDroneUpgradeMult('coolant', 'power'); }
     // Bonus to base drill speed from working Drill Speed Drones (used in getRawDrillSpeed)
-    function getDroneDrillSpeed()   { return getWorkingDrones('driller').length * DRONE_TYPES.driller.speedPerDrone; }
-    function getDroneOrePerSec()    { return getWorkingDrones('miner').length * oreWorth(DRONE_TYPES.miner.metresPerSec) * getEffectMods().oreMult; }
+    function getDroneDrillSpeed()   { return getWorkingDrones('driller').length * DRONE_TYPES.driller.speedPerDrone * getDroneUpgradeMult('driller', 'power'); }
+    function getDroneOrePerSec()    { return getWorkingDrones('miner').length * oreWorth(DRONE_TYPES.miner.metresPerSec) * getEffectMods().oreMult * getDroneUpgradeMult('miner', 'power'); }
 
     // quiet = true skips the pop-up and log line (used by Dev Mode)
     function unlockDrones(quiet = false) {
         const ds = gameState.drones;
         if (ds.unlocked) return;
         ds.unlocked = true;
+        // Swarm perk "Prefab Drone": a free Drill Speed Drone (only if there is housing space for it)
+        const gotFreeDrone = gameState.mods.droneStart && getDroneHousing() - getDroneSpaceUsed() >= DRONE_TYPES.driller.space;
+        if (gotFreeDrone) addDrone('driller');
         if (quiet) return;
+        if (gotFreeDrone) showToast('🌀', 'Prefab Drone', 'Free Drill Speed Drone', 'Your Swarm perk gave you a Drill Speed Drone.');
         gameState.message = `The Drones menu is unlocked at ${DRONE_UNLOCK_DEPTH}m! Open the 🤖 Drones tab on the left to build your first drone.`;
         logEvent(`${gameState.depth.toFixed(0)}m — Drones unlocked.`);
         showToast('🤖', 'Drones unlocked', 'Drone Bay', 'Build drones with Alloys from the 🤖 Drones tab.');
@@ -2995,7 +3063,7 @@
             const t = DRONE_TYPES[d.type];
 
             // Wear down
-            d.condition = Math.max(0, d.condition - t.wear * dt);
+            d.condition = Math.max(0, d.condition - t.wear * getDroneUpgradeMult(d.type, 'wear') * dt);
             if (d.condition <= 0) {
                 gameState.message = `A ${t.name} broke down! Service it in the 🤖 Drones tab.`;
                 logEvent(`${gameState.depth.toFixed(0)}m — ${t.name} #${d.id} broke down.`, true);
@@ -3004,9 +3072,9 @@
 
             // Do its job
             if (d.type === 'miner') {
-                gameState.ore += oreWorth(t.metresPerSec * dt) * getEffectMods().oreMult;
+                gameState.ore += oreWorth(t.metresPerSec * dt) * getEffectMods().oreMult * getDroneUpgradeMult('miner', 'power');
             } else if (d.type === 'sampler') {
-                d.timer += dt;
+                d.timer += dt * getDroneUpgradeMult('sampler', 'power');   // upgrades make the trip clock run faster
                 if (d.timer >= t.cycle) {
                     d.timer -= t.cycle;
                     gameState.permanentResearchPoints += t.prp;
@@ -3014,8 +3082,9 @@
                     logEvent(`${gameState.depth.toFixed(0)}m — Sampler Drone #${d.id} brought back +${t.prp} PRP.`);
                 }
             } else if (d.type === 'mechanic') {
-                d.timer = Math.min(t.interval, d.timer + dt);
-                if (d.timer >= t.interval) {
+                const interval = t.interval / getDroneUpgradeMult('mechanic', 'power');   // upgrades shorten the wait
+                d.timer = Math.min(interval, d.timer + dt);
+                if (d.timer >= interval) {
                     // Pick the most worn drone (not itself) that is broken or below the service threshold
                     const target = ds.list
                         .filter(o => o !== d && o.condition < t.serviceBelow)
@@ -3038,6 +3107,21 @@
             gameState.alloys -= t.cost;
             addDrone(typeId);
             gameState.message = `${t.name} built.`;
+        }
+        updateUI();
+    }
+
+    // Buy one upgrade for a whole drone TYPE (it affects every drone of that type, now and later).
+    function buyDroneUpgrade(typeId, upId) {
+        if (gameState.gameOver || gameState.isPaused) return;
+        const u = (DRONE_UPGRADES[typeId] || []).find(x => x.id === upId);
+        if (!u || hasDroneUpgrade(typeId, upId)) return;
+        const cost = getDroneUpgradeCost(u);
+        if (gameState.alloys < cost) gameState.message = `Need ${cost} Alloys for ${u.name}.`;
+        else {
+            gameState.alloys -= cost;
+            gameState.drones.upgrades[`${typeId}.${upId}`] = true;
+            gameState.message = `${u.name} bought: ${u.desc} for every ${DRONE_TYPES[typeId].name}.`;
         }
         updateUI();
     }
@@ -3091,7 +3175,7 @@
         const i   = ds.list.findIndex(x => x.id === id);
         if (i === -1) return;
         const t      = DRONE_TYPES[ds.list[i].type];
-        const refund = Math.floor(t.cost * DRONE_SCRAP_REFUND);
+        const refund = getDroneScrapRefund(t);
         ds.list.splice(i, 1);
         gameState.alloys += refund;
         gameState.message = `${t.name} scrapped for ${refund} Alloy${refund === 1 ? '' : 's'}.`;
@@ -3110,11 +3194,14 @@
     function droneStatusText(d) {
         const t = DRONE_TYPES[d.type];
         if (d.condition <= 0)      return '⚠ BROKEN: needs servicing';
-        if (d.type === 'miner')    return `Mining about ${fmt(oreWorth(t.metresPerSec))} Ore/s`;
-        if (d.type === 'coolant')  return `Cooling the drill by ${t.coolPerSec} Heat/s`;
-        if (d.type === 'driller')  return `Adding +${t.speedPerDrone} base Drill Speed`;
+        if (d.type === 'miner')    return `Mining about ${fmt(oreWorth(t.metresPerSec) * getDroneUpgradeMult('miner', 'power'))} Ore/s`;
+        if (d.type === 'coolant')  return `Cooling the drill by ${+(t.coolPerSec * getDroneUpgradeMult('coolant', 'power')).toFixed(1)} Heat/s`;
+        if (d.type === 'driller')  return `Adding +${+(t.speedPerDrone * getDroneUpgradeMult('driller', 'power')).toFixed(1)} base Drill Speed`;
         if (d.type === 'sampler')  return `Surface trip ${Math.floor(d.timer / t.cycle * 100)}% done (+${t.prp} PRP when it returns)`;
-        if (d.type === 'mechanic') return d.timer >= t.interval ? 'Standing by: nothing needs servicing' : `Recharging (${Math.ceil(t.interval - d.timer)}s)`;
+        if (d.type === 'mechanic') {
+            const interval = t.interval / getDroneUpgradeMult('mechanic', 'power');
+            return d.timer >= interval ? 'Standing by: nothing needs servicing' : `Recharging (${Math.ceil(interval - d.timer)}s)`;
+        }
         return 'Working';
     }
 
@@ -3133,8 +3220,11 @@
         // Everything that changes which buttons are enabled goes into one text "key".
         // If the key is the same as last time, the cards are left alone.
         const canBuild = typeIds.map(id => canAct && gameState.alloys >= DRONE_TYPES[id].cost && free >= DRONE_TYPES[id].space);
+        // For every upgrade: 'owned', 'yes' (can afford it now) or 'no'. Part of the key so buttons refresh when this changes.
+        const upState = typeIds.map(id => (DRONE_UPGRADES[id] || []).map(u =>
+            hasDroneUpgrade(id, u.id) ? 'owned' : (canAct && gameState.alloys >= getDroneUpgradeCost(u) ? 'yes' : 'no')));
         const key = JSON.stringify({
-            canBuild, free, tier: ds.housingTier, canExpand: canAct && gameState.alloys >= expandCost,
+            canBuild, upState, free, tier: ds.housingTier, canExpand: canAct && gameState.alloys >= expandCost,
             canAll: canAct && allCost > 0 && gameState.ore >= allCost, needsAny: allCost > 0, canAct,
             drones: ds.list.map(d => [d.id, d.type, d.condition <= 0, d.condition >= 100, canAct && gameState.ore >= getDroneServiceCost(d)]),
         });
@@ -3145,11 +3235,22 @@
             const buildCards = typeIds.map((id, i) => {
                 const t = DRONE_TYPES[id];
                 const label = canBuild[i] ? `Build (${t.cost} Alloys)` : (free < t.space ? 'Not enough housing space' : `Needs ${t.cost} Alloys`);
+                // One small row per upgrade: owned (green), affordable (blue button) or too expensive (grey)
+                const upgradeRows = (DRONE_UPGRADES[id] || []).map((u, n) => {
+                    const state = upState[i][n];
+                    const cost  = getDroneUpgradeCost(u);
+                    if (state === 'owned') return `<div class="flex justify-between text-xs p-1.5 rounded bg-green-900 text-green-200"><span>✔ ${u.name}</span><span>${u.desc}</span></div>`;
+                    return `<button onclick="buyDroneUpgrade('${id}', '${u.id}')" ${state === 'yes' ? '' : 'disabled'}
+                        class="flex justify-between gap-2 w-full text-left text-xs p-1.5 rounded text-white transition duration-150 ${state === 'yes' ? 'bg-sky-700 hover:bg-sky-500 cursor-pointer' : 'bg-gray-700 opacity-60 cursor-not-allowed'}">
+                        <span>${u.name}: ${u.desc}</span><span class="font-bold whitespace-nowrap">${cost} 🔩</span></button>`;
+                }).join('');
                 return `<div class="bg-gray-800 p-3 rounded-lg border border-gray-700 flex flex-col justify-between">
                     <div>
                         <p class="font-bold text-teal-300">${t.icon} ${t.name}</p>
                         <p class="text-xs text-gray-400">Takes ${t.space} housing space</p>
                         <p class="text-sm text-gray-300 mt-1">${t.desc(t)}</p>
+                        <p class="text-xs text-sky-300 font-bold mt-2 mb-1">Upgrades (apply to every ${t.name})</p>
+                        <div class="flex flex-col gap-1">${upgradeRows}</div>
                     </div>
                     <button onclick="buildDrone('${id}')" ${canBuild[i] ? '' : 'disabled'}
                         class="mt-3 w-full p-2 rounded-lg text-white text-sm font-bold transition duration-150 ${canBuild[i] ? 'bg-green-700 hover:bg-green-500 cursor-pointer' : 'bg-red-900 opacity-70 cursor-not-allowed'}">${label}</button></div>`;
@@ -3159,7 +3260,7 @@
                 const t       = DRONE_TYPES[d.type];
                 const full    = d.condition >= 100;
                 const canSvc  = canAct && !full && gameState.ore >= getDroneServiceCost(d);
-                const refund  = Math.floor(t.cost * DRONE_SCRAP_REFUND);
+                const refund  = getDroneScrapRefund(t);
                 return `<div class="bg-gray-800 p-3 rounded-lg border border-gray-700">
                     <div class="flex items-center justify-between">
                         <p class="font-bold text-white">${t.icon} ${t.name} <span class="text-xs text-gray-500">#${d.id}</span></p>
