@@ -9,7 +9,7 @@
 
 <h4>Example working code</h4>
 
-Max Loops: <input id="myNum01" typer=number value="4" ><br>
+Max Loops: <input id="myNum01" type=number value="4" ><br>
 weird number: <input id="myWeird" type=number value="2" ><br>
 
 <input type=button value="Basic For loop with Decisions" onclick="{
@@ -18,10 +18,11 @@ weird number: <input id="myWeird" type=number value="2" ><br>
   let myMax = parseInt(document.getElementById('myNum01').value)
 
   for (let myLoop = 0; myLoop < myMax; myLoop++ ){
-  if (myLoop * 2 > myMax){
+  let myWeird = parseInt(document.getElementById('myWeird').value)
+  if (myLoop * myWeird > myMax){
   myTemp += ' cool '
   }
-  myTemp += 'Loop number: ' + myLoop + '<br>
+  myTemp += 'Loop number: ' + myLoop + '<br>'
   }
   document.getElementById('myDiv01').innerHTML = myTemp
   }">
@@ -35,7 +36,7 @@ weird number: <input id="myWeird" type=number value="2" ><br>
   for (let myLoop = 0; myLoop < myMax; myLoop++){
     if (myLoop % 2 == 0){
       myTemp += 'Even Number,' }
-      myTemp += 'Loop number: ' + myLoop + '<br>
+      myTemp += 'Loop number: ' + myLoop + '<br>'
   }
   document.getElementById('myDiv01').innerHTML = myTemp
   }">
