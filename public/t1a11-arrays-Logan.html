@@ -1,6 +1,14 @@
+```html
 <h1 align=center>T1A11 Arrays</h1>
 
-<h4> Example working array</h4>
+<h4>Example working array</h4>
+
+<script>
+  let myArray = new Array()
+  myArray[0] = 'Logan'
+  myArray[1] = 'Cam'
+  myArray[2] = 'Brian'
+</script>
 
 Max Array Entry: <input type=number id="myText01" value="3"><br>
 
@@ -9,27 +17,21 @@ Max Array Entry: <input type=number id="myText01" value="3"><br>
     let mySum = ' '
     document.getElementById('myDiv01').innerHTML = ' '
 
-myArray = new Array()
-  myArray[0] = 'Logan'
-  myArray[1] = 'Cam'
-  myArray[2] = 'Brian'
- 
-  for (let myLoop=0; myLoop < myTemp; myLoop++) {
-    mySum += 'Loop #: ' + myLoop + ' array entry: ' + myArray[myLoop] + '<br>'
-  }
-  document.getElementById('myDiv01').innerHTML = mySum
-  }">
+    for (let myLoop = 0; myLoop < myTemp; myLoop++) {
+      mySum += 'Loop #: ' + myLoop + ' array entry: ' + myArray[myLoop] + '<br>'
+    }
 
-  <div id="myDiv01">...</div>
+    document.getElementById('myDiv01').innerHTML = mySum
+}">
 
-  <br>
+<div id="myDiv01">...</div>
 
-<input type=number id="myText02" value="3">
+<br>
+
+<input type=number id="myText02" value="0" min="0" max="2">
 
 <input type=button value="Get one value" onClick="{
     let myTemp = document.getElementById('myText02').value
-    let myArray = new Array()
-    let mySum = myArray[myText02]
-    document.getElementById('myDiv01').innerHTML = myArray[myText02]
-    }">
-
+    document.getElementById('myDiv01').innerHTML = myArray[myTemp]
+}">
+```
