@@ -718,21 +718,15 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.4', date: '2026-10-13',
+			version: 'v1.4', date: '2026-10-15',
 			changes: [
 				'Added in a main menu',
-					'Added the Refinery! You find an abandoned one for free at 5,500m. It turns ore into alloys used to make drones (not added yet).',
-					'Refinery upgrades (bought with Ore, reset when you ascend): Efficient Furnace uses less Power, Rapid Smelting makes batches faster, and Alloy Yield makes more Alloys per batch.',
-					'Alloys do not have a use yet. They will be used to build drones in a future update.',
-					'Added Drones! The Drones menu unlocks at 6,500m. Build drones with Alloys from the refinery.',
-					'Drone types: Mining Drone (mines Ore), Coolant Drone (cools the drill), Sampler Drone (brings back PRP from the surface) and Mechanic Drone (services other drones for free).',
-					'Drones take up housing space. You start with 8 and can expand it with Alloys.',
-					'Drones wear out. Service them with Ore, or build a Mechanic to do it. Broken drones stop working until serviced.',
-					'Added two drone achievements.',
-				'Added the Drill Speed Drone: adds +4 to your base Drill Speed while it works (12 Alloys, 2 housing space).',
-				'The Heat bar text now shows how much cooling your Coolant Drones are providing.',
+				'Added the Refinery! You find an abandoned one for free at 5,500m. It turns ore into alloys used to make drones (not added yet).',
+				'Refinery upgrades (bought with Ore, reset when you ascend): Efficient Furnace uses less Power, Rapid Smelting makes batches faster, and Alloy Yield makes more Alloys per batch.',
+				'Added Drones! The Drones menu unlocks at 6,500m. Build drones with Alloys from the refinery.',
+				'Drone types: Mining Drone (mines Ore), Coolant Drone (cools the drill), Sampler Drone (brings back PRP from the surface) and Mechanic Drone (services other drones for free).',
+				'Drones take up housing space. You start with 8 and can expand it with Alloys.',
 				'New Ascension path, the Swarm: a free Drill Speed Drone when drones unlock, 80% Alloy refund when scrapping, and Tier 1 of every refinery upgrade when you find the refinery.',
-				'Drone upgrades! Every drone type has 3 upgrades bought once with Alloys in the Drones menu. They apply to every drone of that type and reset when you ascend.',
 				]
 			},
         {
@@ -879,11 +873,11 @@
     // One "batch" = pay REFINERY_ORE_COST Ore, then wait REFINERY_BASE_CYCLE seconds (using power the whole time) to get alloys.
     // These numbers are first guesses: change them to balance the refinery.
     const REFINERY_UNLOCK_DEPTH   = 5500;    // you get the refinery for free when you reach this depth (each run)
-    const REFINERY_BASE_CYCLE     = 20;      // seconds per batch before any upgrades
+    const REFINERY_BASE_CYCLE     = 25;      // seconds per batch before any upgrades
     const REFINERY_MIN_CYCLE      = 6;       // upgrades can never make a batch faster than this
     const REFINERY_BASE_POWER     = 2;       // Power per second the refinery uses while smelting (before upgrades)
     const REFINERY_MIN_POWER_PCT  = 0.15;    // the refinery stalls when Power is below this share of Max Power, so it can't drain you to zero
-    const REFINERY_ORE_COST       = 5000;    // Ore per batch at REFINERY_UNLOCK_DEPTH (it rises with depth, see getRefineryDepthMult)
+    const REFINERY_ORE_COST       = 3000;    // Ore per batch at REFINERY_UNLOCK_DEPTH (it rises with depth, see getRefineryDepthMult)
     const REFINERY_DEPTH_EXPONENT = 1.5;     // how fast Ore costs (batches and upgrades) climb with depth
     // Refinery upgrades, bought with Ore from the refinery panel. They reset when you ascend.
     // cost = price of tier 1 at the unlock depth, growth = how much the price multiplies per tier.
@@ -948,13 +942,12 @@
                     desc: t => `Mines Ore on its own, as if you drilled ${t.metresPerSec} metre every second.` },
         coolant:  { name: 'Coolant Drone',  icon: '❄️', space: 2, cost: 8,  wear: 0.4,  serviceOre: 2000, coolPerSec: 1,
                     desc: t => `Cools the drill by ${t.coolPerSec} Heat per second, even while drilling.` },
-        // Price sits between the Coolant Drone (8 Alloys) and the Sampler Drone (20 Alloys)
-        driller:  { name: 'Drill Speed Drone', icon: '🌀', space: 2, cost: 12, wear: 0.4,  serviceOre: 3000, speedPerDrone: 4,
+        driller:  { name: 'Drill Speed Drone', icon: '🌀', space: 3, cost: 12, wear: 0.4,  serviceOre: 3000, speedPerDrone: 4,
                     desc: t => `Adds +${t.speedPerDrone} to your base Drill Speed while it works. Stacks with more drones.` },
-        sampler:  { name: 'Sampler Drone',  icon: '🧪', space: 3, cost: 20, wear: 0.35, serviceOre: 4000, cycle: 120, prp: 1,
-                    desc: t => `Travels to the surface and back every ${t.cycle}s, bringing ${t.prp} PRP each trip.` },
-        mechanic: { name: 'Mechanic Drone', icon: '🔧', space: 5, cost: 40, wear: 0.15, serviceOre: 8000, interval: 8, serviceBelow: 60,
+        mechanic: { name: 'Mechanic Drone', icon: '🔧', space: 4, cost: 25, wear: 0.15, serviceOre: 8000, interval: 8, serviceBelow: 60,
                     desc: t => `Services your other drones for free: the most worn one below ${t.serviceBelow}% (or any broken one) every ${t.interval}s. Cannot service itself.` },
+        sampler:  { name: 'Sampler Drone',  icon: '🧪', space: 6, cost: 35, wear: 0.35, serviceOre: 4000, cycle: 120, prp: 1,
+                    desc: t => `Travels to the surface and back every ${t.cycle}s, bringing ${t.prp} PRP each trip.` },
     };
 
 
