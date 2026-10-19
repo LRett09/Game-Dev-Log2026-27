@@ -718,7 +718,7 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.4', date: '2026-10-15',
+			version: 'v1.4', date: '2026-10-19',
 			changes: [
 				'Added in a main menu',
 				'Added the Refinery! You find an abandoned one for free at 5,500m. It turns ore into alloys used to make drones (not added yet).',
@@ -727,6 +727,7 @@
 				'Drone types: Mining Drone (mines Ore), Coolant Drone (cools the drill), Sampler Drone (brings back PRP from the surface) and Mechanic Drone (services other drones for free).',
 				'Drones take up housing space. You start with 8 and can expand it with Alloys.',
 				'New Ascension path, the Swarm: a free Drill Speed Drone when drones unlock, 80% Alloy refund when scrapping, and Tier 1 of every refinery upgrade when you find the refinery.',
+				'Reworked Deep Drop: the depth it skips for you now only counts for 25% of its PRP when you ascend. Before, you could ascend the moment a run started to farm PRP. Starting deep still saves you the whole early game.',
 				]
 			},
         {
@@ -815,6 +816,11 @@
     // Surface Sample (Cave Adapted F1 ability)
     const SURFACE_SAMPLE_BASE_COST     = 750;  // depth cost of your FIRST Surface Sample each run
     const SURFACE_SAMPLE_COST_INCREASE = 250;  // extra depth added to the cost after every use
+
+    // Deep Drop (Voyager perk): the depth it skips only earns this share of its PRP when you ascend.
+    // 0.25 = the skipped depth is worth 25%. 1 = no discount (the old, farmable behaviour).
+    // Keep it at about 0.35 or lower: any higher and ascending right after a 1500m start could give 1 PRP again.
+    const DEEP_DROP_PRP_SHARE = 0.25;
 
     // Scanner Boost
     const SCAN_BOOST_POWER_COST       = 20;
@@ -980,7 +986,7 @@
         FOR1: { branch: 'Fortune',  name: 'Compound Interest',  cost: 1,  prereq: null,   effect: '+2% Ore Value for every time you have ascended (max +100%)', bonus: { compoundInterest: 0.02 } },
         FOR2: { branch: 'Fortune',  name: "Prospector's Eye",   cost: 10,  prereq: 'FOR1', effect: 'Ore rewards from Deep Events are doubled',                   bonus: { deepEventBonus: 1 } },
         FOR3: { branch: 'Fortune',  name: 'Golden Age',         cost: 20, prereq: 'FOR2', effect: 'Every 1000m you drill triggers 15s of x3 Ore',               bonus: { goldenAge: true } },
-        VOY1: { branch: 'Voyager',  name: 'Deep Drop',          cost: 1,  prereq: null,   effect: 'Each new run starts at 10% of your record depth (max 1500m)', bonus: { deepDrop: 0.10 } },
+        VOY1: { branch: 'Voyager',  name: 'Deep Drop',          cost: 1,  prereq: null,   effect: 'Each new run starts at 10% of your record depth (max 1500m). The skipped depth only earns 25% of its PRP when you ascend', bonus: { deepDrop: 0.10 } },
         VOY2: { branch: 'Voyager',  name: 'Second Wind',        cost: 12, prereq: 'VOY1', effect: 'Once per run, a fatal overheat or suffocation is cancelled', bonus: { secondWind: true } },
         VOY3: { branch: 'Voyager',  name: 'Abyssal Attunement', cost: 24, prereq: 'VOY2', effect: '+1% Ore Value per 500m of your record depth',                bonus: { recordDepthBonus: 0.00002 } },
         ENG1: { branch: 'Engineer', name: 'Foundry Memory',     cost: 1,  prereq: null,   effect: 'Each new run starts with all Tier 1 skills installed',       bonus: { startTier: 1 } },
@@ -1487,10 +1493,18 @@
         { id: 'speed_demon',   icon: '🏎️', name: 'Speed Demon',        desc: 'Drill at 25 m/s or faster (after rock hardness).', check: gs => getEffectiveDrillSpeed() >= 25 },
         { id: 'scan_boost',    icon: '📡', name: 'Ping!',              desc: 'Use Scan Boost.',                             check: gs => gs.boostTimeRemaining > 0 },
 		{ id: 'first_alloy',   icon: '🔧', name: 'Refining!',          desc: 'Get your first alloy',						check: gs => gs.alloys >= 1 },
-		{ id: 'many_alloys',   icon: '🔧', name: 'Forge Master',          desc: 'Hold 150 alloys at once',						check: gs => gs.alloys >= 150 },
+		{ id: 'many_alloys',   icon: '🔧', name: 'Forge Master',       desc: 'Hold 150 alloys at once',						check: gs => gs.alloys >= 150 },
 
         { id: 'first_drone',    icon: '🤖', name: 'Drone Operator',     desc: 'Build your first drone.',                     check: gs => gs.drones.list.length >= 1 },
-        { id: 'full_housing',   icon: '🏠', name: 'Full House',         desc: 'Fill every bit of your drone housing.',       check: gs => gs.drones.list.length > 0 && getDroneSpaceUsed() >= getDroneHousing() },
+        { id: 'full_housing',   icon: '🏠', name: 'Full House',         desc: 'Fill 8 drone housing space with drones.',     check: gs => getDroneSpaceUsed() >= 8 },
+        { id: 'full_housing_32', icon: '🏢', name: 'Packed Hangar',     desc: 'Fill 32 drone housing space with drones (the maximum).', check: gs => getDroneSpaceUsed() >= 32 },
+        { id: 'one_of_each',    icon: '🧰', name: 'One of Each',        desc: 'Own at least one of every drone type at once.', check: gs => Object.keys(DRONE_TYPES).every(t => gs.drones.list.some(d => d.type === t)) },
+        { id: 'drone_upgrade',  icon: '🔩', name: 'Tinkerer',           desc: 'Buy your first drone upgrade.',               check: gs => Object.keys(gs.drones.upgrades).length >= 1 },
+        { id: 'drone_type_max', icon: '🛠️', name: 'Specialist',         desc: 'Buy all 3 upgrades for one drone type.',      check: gs => Object.keys(DRONE_UPGRADES).some(t => DRONE_UPGRADES[t].every(u => gs.drones.upgrades[`${t}.${u.id}`])) },
+        { id: 'max_housing',    icon: '🏗️', name: 'Urban Planner',      desc: 'Expand drone housing as far as it goes.',     check: gs => gs.drones.housingTier >= DRONE_MAX_HOUSING_TIERS },
+        { id: 'drone_swarm',    icon: '🐝', name: 'Swarm',              desc: 'Have 12 drones at the same time.',            check: gs => gs.drones.list.length >= 12 },
+        { id: 'refinery_max',   icon: '🔥', name: 'Foundry Boss',       desc: 'Max out every refinery upgrade in one run.',  check: gs => Object.keys(REFINERY_UPGRADES).every(id => (gs.refinery.tiers[id] || 0) >= REFINERY_UPGRADES[id].maxTier) },
+        { id: 'alloy_total',    icon: '⚙️', name: 'Mass Production',   desc: 'Produce 500 Alloys in total, across all runs.', check: gs => gs.totalAlloysMade >= 500 },
         // --- Shops & modules ---
         { id: 'regular',       icon: '🗺️', name: 'Regular Customer',   desc: 'Find 5 shops in one run.',                    check: gs => gs.shopLog.length >= 5 },
         { id: 'shopaholic',    icon: '🛍️', name: 'Shopaholic',         desc: 'Buy 10 shop items in one run.',               check: gs => gs.run.shopPurchases >= 10 },
@@ -1632,7 +1646,14 @@
     function getOxygenRefillCost() { return Math.ceil(6 * (1 + getKm() * 0.95)); }
     function getFullRepairCost()   { return Math.ceil(8 * (1 + getKm() * 1.7)); }
     function getRepairCost()       { return Math.max(1, Math.ceil(getFullRepairCost() * (gameState.maxIntegrity - gameState.integrity) / gameState.maxIntegrity)); }
-    function getAscendGain(depth)  { return depth < 500 ? 0 : Math.floor(Math.pow(depth / 500, 0.9)); }
+    // PRP for ascending from `depth`. The curve is depth^0.9. If Deep Drop started the run deeper than 0m,
+    // we subtract that start's value (minus the share it is allowed to keep), so skipped depth is mostly worth nothing.
+    function prpCurve(depth)       { return Math.pow(Math.max(0, depth) / 500, 0.9); }
+    function getAscendGain(depth)  {
+        if (depth < 500) return 0;
+        const skippedValue = prpCurve(gameState.startDepth || 0) * (1 - DEEP_DROP_PRP_SHARE);
+        return Math.max(0, Math.floor(prpCurve(depth) - skippedValue));
+    }
 
     // Rate helpers
     function getEffectMods() {
@@ -1726,6 +1747,7 @@
             inChoice: false, currentChoice: null, choiceWasDrilling: false, nextCrossroadsDepth: 0,
             moduleMk: {},                            // Mk level of each module, as { 'slotId.optId': 2 } (missing = Mk I)
             deepEvent: null, nextDeepEventDepth: 0,  // the Deep Event running right now (or null)
+            startDepth: 0,                           // depth this run began at (Deep Drop), used to work out PRP
             alloys: 0, refinery: newRefineryState(), // Alloys and the refinery both reset every run
             drones: newDroneState(),                 // drones reset every run too
         };
@@ -1748,6 +1770,7 @@
             gameState.message = `Challenge started: ${getChallenge(challengeId).name}. ${getChallenge(challengeId).desc}`;
         } else if (startDepth > 0) {
             gameState.depth = startDepth;
+            gameState.startDepth = startDepth;
             gameState.message = `Deep Drop: this run begins at ${startDepth}m.`;
         }
         gameState.power     = gameState.maxPower;
@@ -2762,7 +2785,7 @@
     function requestAscend() {
         if (gameState.gameOver || gameState.isPaused) return;
         const prpGained = getAscendGain(gameState.depth);
-        if (prpGained <= 0) { gameState.message = 'You must reach at least 500m to ascend.'; return updateUI(); }
+        if (prpGained <= 0) { gameState.message = gameState.depth >= 500 ? 'Drill deeper first: the depth Deep Drop skipped does not earn PRP.' : 'You must reach at least 500m to ascend.'; return updateUI(); }
         gameState.isPaused = true;   // the game loop stops while this is true
         document.getElementById('ascend-confirm-text').innerText =
             `You are at ${gameState.depth.toFixed(0)}m. Ascending gives you ${prpGained} PRP, but resets your current run. Are you sure?`;
@@ -2789,7 +2812,7 @@
     function ascendGame() {
         if (gameState.gameOver || gameState.isPaused) return;
         const prpGained = getAscendGain(gameState.depth);
-        if (prpGained <= 0) { gameState.message = 'You must reach at least 500m to ascend.'; return updateUI(); }
+        if (prpGained <= 0) { gameState.message = gameState.depth >= 500 ? 'Drill deeper first: the depth Deep Drop skipped does not earn PRP.' : 'You must reach at least 500m to ascend.'; return updateUI(); }
         gameState.permanentResearchPoints += prpGained;
         gameState.totalAscensions++;
         initializeGame(); startGameLoop();
@@ -3476,7 +3499,7 @@
             btn.disabled  = gameState.gameOver || gameState.isPaused;
             btn.className = 'px-6 py-3 rounded-xl bg-purple-700 hover:bg-purple-500 text-white font-bold shadow-md transition duration-150';
         } else {
-            btn.innerText = 'Ascend (reach 500m)';
+            btn.innerText = gameState.depth >= 500 ? 'Ascend (drill deeper for PRP)' : 'Ascend (reach 500m)';
             btn.disabled  = true;
             btn.className = 'px-6 py-3 rounded-xl bg-purple-800 opacity-50 cursor-not-allowed text-white font-bold shadow-md';
         }
