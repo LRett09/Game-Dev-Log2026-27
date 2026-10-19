@@ -1,0 +1,31 @@
+<h1 align=center>T1A12 Objects</h1>
+
+<script>
+  let myPerson
+  
+</script>
+
+Objects are stored named variables
+
+<h2>Example working Objects code.</h2>
+Nothing: <input type=text id="myText01" value="Useless at the moment"><br>
+
+<input type=button value="Example Object Set and Show" onClick="{
+
+  let myPerson = {
+    'firstName' : 'Logan',
+    'lastName' :  'the Awesome',
+    'age' :       '1000',
+    'eyeColour' : 'blue',
+    }
+
+    document.getElementById('myDiv01').innerHTML = '<br>myPerson Object has properties: <br>'
+    document.getElementById('myDiv01').innerHTML += 'firstName: ' + myPerson.firstName + '<br>'
+
+    }">
+
+<div id="myDiv01">...</div>
+
+
+
+    
