@@ -8,7 +8,7 @@
 Objects are stored named variables
 
 <h2>Example working Objects code.</h2>
-Nothing: <input type=text id="myText01" value="Useless at the moment"><br>
+Nothing: <input type=text id="myText01" value="Set the mood"><br>
 
 <input type=button value="Example Object Set and Show" onClick="{
 
@@ -17,6 +17,7 @@ Nothing: <input type=text id="myText01" value="Useless at the moment"><br>
     'lastName' :  'the Awesome',
     'age' :       '1000',
     'eyeColour' : 'blue',
+    'mood' : document.getElementById('myText01').value
     }
 
     document.getElementById('myDiv01').innerHTML = '<br>myPerson Object has properties: <br>'
