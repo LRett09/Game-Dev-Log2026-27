@@ -72,6 +72,8 @@
         #ascension-toggle-btn:hover { background-color: #9333ea; }
 		#drones-toggle-btn { top: calc(50% + 270px); background-color: #0f766e; }
         #drones-toggle-btn:hover { background-color: #14b8a6; }
+        #lab-toggle-btn { top: calc(50% - 270px); background-color: #be185d; }
+        #lab-toggle-btn:hover { background-color: #db2777; }
         /* a tab glows when something in its panel can be bought */
         .side-tab.has-buyable { box-shadow: 0 0 14px rgba(250, 204, 21, 0.75); }
         body.sidebar-open-left .side-tab.left { left: 800px; }
@@ -251,9 +253,10 @@
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-700 pb-3 mb-4">
             <div>
                 <h1 class="text-2xl md:text-3xl font-bold text-yellow-500 leading-tight">⛏️ The Deep Mine</h1>
-                <p class="text-xs text-gray-500">Version 1.4: Drilling with Company</p>
+                <p class="text-xs text-gray-500">Version 1.5: The Laboratory</p>
             </div>
             <div id="permanent-stats-display" class="px-4 py-1.5 rounded-full bg-purple-950 border border-purple-600 text-purple-300 font-bold text-sm">🔮 0 PRP</div>
+            <button id="lab-points-display" onclick="togglePanel('lab-sidebar')" class="px-4 py-1.5 rounded-full bg-pink-950 border border-pink-600 text-pink-300 hover:bg-pink-900 font-bold text-sm transition duration-150" title="Lab Points: earned from achievements, spent in the Laboratory">🧪 0 LP</button>
             <div id="alloy-display" class="hidden px-4 py-1.5 rounded-full bg-slate-800 border border-slate-500 text-slate-200 font-bold text-sm">🔩 0 Alloys</div>
             <div class="flex flex-wrap gap-2">
                 <button onclick="openGoals('achievements')" id="achievements-btn" class="px-3 py-1.5 rounded-lg bg-yellow-700 hover:bg-yellow-600 text-white text-sm font-semibold transition duration-150 border border-yellow-500">
@@ -473,6 +476,18 @@
         <div id="drone-container" class="flex flex-col gap-4"></div>
     </div>
 
+    <!-- Laboratory panel: a wide panel that slides in from the LEFT. Its contents are drawn by updateLabPanel() in the script. -->
+    <div id="lab-sidebar" class="side-panel left">
+        <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-2">
+            <h2 class="text-2xl font-bold text-pink-400">🧪 Laboratory</h2>
+            <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
+        </div>
+        <p class="text-sm text-gray-400 mb-1">Earn Lab Points from achievements, then spend them here to research new modules, drones and upgrades. Only one project can run at a time. Research and your Lab Points are permanent: they are not lost when you ascend.</p>
+        <p id="lab-lp" class="text-lg font-bold text-pink-300 mb-3"></p>
+        <div id="lab-container" class="flex flex-col gap-3"></div>
+    </div>
+
+    <button id="lab-toggle-btn"       class="side-tab left" onclick="togglePanel('lab-sidebar')"       title="Open Laboratory">🧪 Lab</button>
     <button id="skills-toggle-btn"    class="side-tab left" onclick="togglePanel('skills-sidebar')"    title="Open Skill Tree">🌳 Skills</button>
     <button id="ascension-toggle-btn" class="side-tab left" onclick="togglePanel('ascension-sidebar')" title="Open Ascension Tree">✨ Ascension</button>
 	<button id="drones-toggle-btn" class="side-tab left hidden" onclick="togglePanel('drones-sidebar')" title="Open Drones">🤖 Drones</button>
@@ -521,7 +536,7 @@
         <div id="title-menu" class="flex flex-col items-center">
             <div id="title-logo" class="text-7xl mb-4">⛏️</div>
             <h1 class="text-5xl md:text-6xl font-bold text-yellow-500 mb-2">The Deep Mine</h1>
-            <p class="text-sm text-gray-500 mb-1">Version 1.4: Drilling with Company</p>
+            <p class="text-sm text-gray-500 mb-1">Version 1.5: The Laboratory</p>
             <p class="text-gray-400 max-w-md mb-8">Drill deep, but be warned: the lower you go the more dangerous the caves get. Can you reach the bottom?</p>
             <div class="flex flex-col gap-3 items-center">
                 <button id="title-start-btn" onclick="startGameFromTitle()" class="title-btn bg-green-600 hover:bg-green-500">▶ Start Game</button>
@@ -554,8 +569,9 @@
                 <h2 class="text-2xl font-bold text-emerald-400">🏪 Wandering Shop</h2>
                 <p id="shop-ore" class="text-lg font-bold text-yellow-500"></p>
             </div>
-            <p class="text-sm text-gray-400 mb-1">You have come across a shop deep in the rock. Power, oxygen, heat and every timer are frozen while you are here.</p>
+            <p class="text-sm text-gray-400 mb-1">You have come across a shop deep in the rock. Power, oxygen, heat and the drill are frozen while you are here, but Laboratory research keeps going, so the shop closes by itself after a couple of minutes without a purchase.</p>
             <p class="text-sm text-gray-400 mb-3">Each item can be bought once. When you leave, the shop stays behind you, so choose carefully! (If a Surface Sample ever pulls you back above it, you can return.)</p>
+            <p id="shop-timer" class="text-sm font-semibold text-gray-400 mb-2"></p>
             <p id="shop-message" class="text-sm font-semibold text-amber-300 mb-3 min-h-[1.25rem]"></p>
             <div id="shop-items" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5"></div>
             <button onclick="leaveShop()" class="w-full px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-500 text-white font-bold shadow-md transition duration-150">Leave shop and keep drilling</button>
@@ -669,6 +685,16 @@
             <button class="dev-mini-btn" onclick="devFinishDeepEvent()">Finish running one</button>
         </div>
 
+        <p class="dev-section-label">Laboratory</p>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn purple" onclick="devGiveLabPoints()">+10 Lab Points</button>
+            <button class="dev-mini-btn" onclick="devFinishResearch()">Finish running research</button>
+        </div>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn" onclick="devResearchAll()">Research everything</button>
+            <button class="dev-mini-btn" onclick="devResetLab()">Reset research</button>
+        </div>
+
         <p class="dev-section-label">Ascension perks (free)</p>
         <div class="dev-row"><select id="dev-perk-select"></select></div>
         <div class="dev-mini-row">
@@ -717,6 +743,18 @@
     //  Fields: version (string), date (string), changes (string[])
     // ============================================================
     const PATCH_NOTES = [
+		{
+			version: 'v1.5', date: '2026-10-20',
+			changes: [
+				'Added the Laboratory! Click the new 🧪 Lab tab on the left edge. Achievements now give Lab Points (1 each, 2 for hidden ones), which you spend on research.',
+				'Research takes real time, and only one project can run at a time. It keeps going while the game is paused, in a shop or in a pop-up, but stops while you are on the main menu. Longer and more powerful research takes longer.',
+				'Lab Points and finished research are permanent. They are not lost when you ascend or restart.',
+				'Some content is now locked behind research: Resonator, Voidborer, Fusion, Dark Matter, Obsidian, Plasma, Oracle and Void Heat Sink modules, Mk III module upgrades, Mechanic and Sampler drones, five drone upgrades, and the whole Tier 9 Singularity row of the skill tree.',
+				'Shops now close by themselves after 2 minutes (real time) without a purchase. Every purchase resets the timer, and it stops counting while you are on the main menu.',
+				'Added a Lab Points counter to the top bar, and each achievement now shows how many Lab Points it gives.',
+				'Dev Mode: new Laboratory section to add Lab Points, finish research instantly, research everything, or reset.',
+				]
+			},
 		{
 			version: 'v1.4', date: '2026-10-19',
 			changes: [
@@ -868,6 +906,11 @@
     // Items you already bought stay sold. Each item you did NOT buy has this chance (0 to 1)
     // of being swapped for something new. 0 = shop stays exactly the same, 1 = all unsold items reroll.
     const SHOP_REVISIT_REROLL_CHANCE = 0.25;
+
+    // Shop timer: a shop closes by itself after this many REAL seconds with no purchase.
+    // Every purchase gives you the full time again. It stops counting while the main menu is open.
+    // (This stops the Laboratory, which runs in real time, from being farmed by leaving a shop open.)
+    const SHOP_TIME_LIMIT = 120;
 
     // Workshop price = base x growth^tier x (1 + depth / DIVISOR)^EXPONENT
     // Smaller DIVISOR or bigger EXPONENT = prices climb faster as you go deeper.
@@ -1561,6 +1604,69 @@
     }));
 
     // ============================================================
+    //  LAB RESEARCH
+    //  Spend Lab Points (earned from achievements) in the Laboratory to research things.
+    //  Only ONE research can run at a time. Research runs in REAL time (it keeps going while the game is
+    //  paused or in a shop), and stops only while the title screen / main menu is open.
+    //  Everything listed here is LOCKED until it is researched. Anything not listed stays free, as before.
+    //
+    //  Fields:  name, icon, group (the heading it is shown under), cost (Lab Points), time (seconds),
+    //           prereq (id of another research, or null), unlocks (what it gives, see below).
+    //  "unlocks" can be:
+    //     { type: 'module',      slotId, optId }   a module can now appear in shops
+    //     { type: 'drone',       id }              a drone type can now be built
+    //     { type: 'droneUpgrade', drone, id }      one drone upgrade can now be bought
+    //     { type: 'moduleMk',    mk }              module upgrades up to this Mk level can now be bought
+    //     { type: 'skillTier',   tier }            a whole skill tree tier (a letter, 'A' to 'I') can now be bought
+    //  To add research: add one more line below. The Laboratory panel draws it by itself.
+    // ============================================================
+    const LAB_RESEARCH = {
+        // --- Module schematics ---
+        r_resonator: { name: 'Resonator Bit Schematics', icon: '📐', group: 'Module schematics', cost: 2,  time: 90,   prereq: null,
+                       unlocks: { type: 'module', slotId: 'drillHead',    optId: 'resonator' } },
+        r_voidborer: { name: 'Voidborer Bit Schematics', icon: '📐', group: 'Module schematics', cost: 4,  time: 240,  prereq: 'r_resonator',
+                       unlocks: { type: 'module', slotId: 'drillHead',    optId: 'voidborer' } },
+        r_fusion:    { name: 'Fusion Core Schematics',   icon: '📐', group: 'Module schematics', cost: 3,  time: 180,  prereq: null,
+                       unlocks: { type: 'module', slotId: 'reactorCore',  optId: 'fusion' } },
+        r_darkmatter:{ name: 'Dark Matter Containment',  icon: '📐', group: 'Module schematics', cost: 6,  time: 480,  prereq: 'r_fusion',
+                       unlocks: { type: 'module', slotId: 'reactorCore',  optId: 'darkMatter' } },
+        r_obsidian:  { name: 'Obsidian Plating Casting', icon: '📐', group: 'Module schematics', cost: 5,  time: 360,  prereq: null,
+                       unlocks: { type: 'module', slotId: 'hullPlating',  optId: 'obsidian' } },
+        r_plasma:    { name: 'Plasma Injector Design',   icon: '📐', group: 'Module schematics', cost: 6,  time: 480,  prereq: null,
+                       unlocks: { type: 'module', slotId: 'fuelInjector', optId: 'plasma' } },
+        r_oracle:    { name: 'Oracle Array Calibration', icon: '📐', group: 'Module schematics', cost: 7,  time: 600,  prereq: null,
+                       unlocks: { type: 'module', slotId: 'sensorArray',  optId: 'oracle' } },
+        r_voidsink:  { name: 'Void Heat Sink Prototype', icon: '📐', group: 'Module schematics', cost: 8,  time: 720,  prereq: null,
+                       unlocks: { type: 'module', slotId: 'exhaustVent',  optId: 'voidSink' } },
+
+        // --- Module refits ---
+        r_mk3:       { name: 'Mk III Refit Techniques',  icon: '🔧', group: 'Module refits',     cost: 6,  time: 600,  prereq: null,
+                       unlocks: { type: 'moduleMk', mk: 3 } },
+
+        // --- Drone programs ---
+        r_mechanic:  { name: 'Mechanic Drone Program',   icon: '🔧', group: 'Drone programs',    cost: 4,  time: 300,  prereq: null,
+                       unlocks: { type: 'drone', id: 'mechanic' } },
+        r_sampler:   { name: 'Sampler Drone Program',    icon: '🧪', group: 'Drone programs',    cost: 6,  time: 600,  prereq: 'r_mechanic',
+                       unlocks: { type: 'drone', id: 'sampler' } },
+
+        // --- Drone upgrades ---
+        r_motors:    { name: 'Overclocked Motors',       icon: '⚙️', group: 'Drone upgrades',    cost: 3,  time: 240,  prereq: null,
+                       unlocks: { type: 'droneUpgrade', drone: 'miner',    id: 'motors' } },
+        r_cryo:      { name: 'Cryo Loop Research',       icon: '❄️', group: 'Drone upgrades',    cost: 4,  time: 300,  prereq: null,
+                       unlocks: { type: 'droneUpgrade', drone: 'coolant',  id: 'cryo' } },
+        r_drive:     { name: 'Resonant Drive Research',  icon: '🌀', group: 'Drone upgrades',    cost: 5,  time: 420,  prereq: null,
+                       unlocks: { type: 'droneUpgrade', drone: 'driller',  id: 'drive' } },
+        r_tools:     { name: 'Precision Tools Research', icon: '🛠️', group: 'Drone upgrades',    cost: 6,  time: 540,  prereq: 'r_mechanic',
+                       unlocks: { type: 'droneUpgrade', drone: 'mechanic', id: 'tools' } },
+        r_rocket:    { name: 'Rocket Lift Research',     icon: '🚀', group: 'Drone upgrades',    cost: 7,  time: 660,  prereq: 'r_sampler',
+                       unlocks: { type: 'droneUpgrade', drone: 'sampler',  id: 'rocket' } },
+
+        // --- Skill tree ---
+        r_tier_i:    { name: 'Singularity Theory',       icon: '🕳️', group: 'Skill tree',        cost: 15, time: 1800, prereq: null,
+                       unlocks: { type: 'skillTier', tier: 'I' } },
+    };
+
+    // ============================================================
     //  GLOBAL STATE
     // ============================================================
 
@@ -1583,6 +1689,11 @@
         totalChoicesMade: 0,      // crossroads + event choices picked, across all runs
         deepEventsSurvived: 0,    // Deep Events finished successfully, across all runs
         totalAlloysMade: 0,       // Alloys the refinery has ever produced, across all runs
+        // --- Laboratory (all of this survives ascension, and will be part of the save file later) ---
+        labPoints: 0,             // Lab Points you can spend right now (earned from achievements)
+        labPointsEarned: 0,       // every Lab Point you have ever earned (only for display)
+        labResearched: [],        // ids of finished research, from LAB_RESEARCH
+        labActive: null,          // research in progress, as { id, timeLeft } (or null). Only one at a time.
     };
 
     // Cached DOM element references
@@ -1598,6 +1709,7 @@
             'workshop-container', 'module-bay-container', 'skill-tree-container', 'surface-sample-button',
             'auto-ops-panel', 'ascension-container', 'workshop-ore', 'challenge-status', 'deep-event-panel',
             'skills-ore', 'ascension-prp', 'skills-toggle-btn', 'ascension-toggle-btn',
+            'lab-points-display', 'lab-toggle-btn',
         ];
         ids.forEach(id => ui[id] = document.getElementById(id));
     }
@@ -1738,7 +1850,7 @@
             unlockedModuleOptions: { drillHead: { balanced: true }, reactorCore: { stable: true }, hullPlating: { standard: true } },
             mods: {}, unlockedSkills: [], timeSinceLastUIUpdate: 0,
             surfaceSamplesUsed: 0, autoActive: [], autoResumeDrill: false,
-            inShop: false, shopStock: [], shopWasDrilling: false, nextShopDepth: 0, shopLog: [],
+            inShop: false, shopStock: [], shopWasDrilling: false, nextShopDepth: 0, shopLog: [], shopTimeLeft: 0,
             permanentResearchPoints: previousPrp, maxDepth: globalMaxDepth, workshopTiers: {}, secondWindUsed: false,
             // Challenge tracking for this run
             activeChallenge: challengeId ? { id: challengeId, status: 'active', failReason: '' } : null,
@@ -2376,6 +2488,11 @@
 
     function buySkill(skillId) {
         if (gameState.gameOver || gameState.isPaused) return;
+        const tierLock = getSkillTierLock(skillId[0]);   // a whole tier can be locked behind Laboratory research
+        if (tierLock && !gameState.unlockedSkills.includes(skillId)) {
+            gameState.message = `${SKILLS[skillId].name} needs research first: ${tierLock.name} (Laboratory).`;
+            return updateUI();
+        }
         const skill    = SKILLS[skillId];
         const depthMet = !skill.minDepth || gameState.depth >= skill.minDepth;
 
@@ -2503,6 +2620,8 @@
         const mk  = getModuleMk(slotId, optId);
         const cost = getModuleUpgradeCost(slotId, optId);
         if (!gameState.unlockedModuleOptions[slotId]?.[optId] || !isUpgradeableModule(slotId, optId)) return;
+        const mkLock = mk < MODULE_MAX_MK ? getModuleMkLock(mk + 1) : null;   // is the next Mk locked behind research?
+        if (mkLock) { gameState.message = `Upgrading to ${MK_NAMES[mk + 1]} needs research: ${mkLock.name} (Laboratory).`; return updateUI(); }
         if (mk >= MODULE_MAX_MK)                       gameState.message = `${opt.name} is already ${MK_NAMES[MODULE_MAX_MK]}.`;
         else if (gameState.depth < MODULE_UPGRADE_DEPTH) gameState.message = `Module upgrades unlock at ${MODULE_UPGRADE_DEPTH.toLocaleString()}m.`;
         else if (gameState.ore < cost)                 gameState.message = `Need ${fmtPrice(cost)} Ore to upgrade ${opt.name}.`;
@@ -2588,7 +2707,7 @@
             const owned = gameState.unlockedModuleOptions[slotId] || {};
             for (const optId in slot.options) {
                 const opt = slot.options[optId];
-                if (!owned[optId] && !opt.special && gameState.depth >= opt.unlockDepth) pool.push({ type: 'module', slotId, optId });
+                if (!owned[optId] && !opt.special && !getModuleLock(slotId, optId) && gameState.depth >= opt.unlockDepth) pool.push({ type: 'module', slotId, optId });
             }
         }
         return pool;
@@ -2603,7 +2722,7 @@
         }
         const slot = MODULE_SLOTS[item.slotId];
         if (item.type === 'slot') {
-            const names = Object.values(slot.options).slice(1).filter(o => !o.special).map(o => o.name).join(', ');
+            const names = Object.entries(slot.options).slice(1).filter(([optId, o]) => !o.special && !getModuleLock(item.slotId, optId)).map(([optId, o]) => o.name).join(', ') || 'none yet (more need Laboratory research)';
             return { tag: '⚙ New module slot', color: 'purple', name: `${slot.name} Slot`,
                      desc: `Installs the ${slot.name} slot so future shops can sell you modules for it. Possible modules: ${names}.`, price: slot.slotUnlockCost };
         }
@@ -2685,6 +2804,7 @@
         gameState.shopWasDrilling = gameState.drilling;   // so we can carry on drilling afterwards
         gameState.drilling = false;
         gameState.inShop   = true;
+        gameState.shopTimeLeft = SHOP_TIME_LIMIT;   // the real-time countdown starts (see labClockTick)
         closeSidebar();
         if (revisitShop) {
             logEvent(`${gameState.depth.toFixed(0)}m — Returned to a shop you passed earlier.`);
@@ -2694,6 +2814,7 @@
             setShopMessage('');
         }
         renderShop();
+        updateShopTimer();
         document.getElementById('shop-overlay').classList.add('open');
         updateUI();
         return true;
@@ -2741,6 +2862,7 @@
         gameState.ore -= info.price;
         item.sold = true;
         gameState.run.shopPurchases++;
+        gameState.shopTimeLeft = SHOP_TIME_LIMIT;   // buying something gives you the full time again
 
         if (item.type === 'workshop') {
             gameState.workshopTiers[item.id]++;
@@ -2776,6 +2898,25 @@
         gameState.shopWasDrilling = false;
         gameState.message = 'You leave the shop behind and carry on.';
         startGameLoop();   // the loop stopped when the shop opened, so start it again
+        updateUI();
+    }
+
+    // The countdown line inside the shop window. Called by the lab clock every tick while you are in a shop.
+    function updateShopTimer() {
+        const el = document.getElementById('shop-timer');
+        if (!el) return;
+        const t = Math.max(0, gameState.shopTimeLeft);
+        el.textContent = `⏳ This shop closes in ${fmtDuration(t)} unless you buy something.`;
+        el.classList.toggle('text-red-400',  t <= 30);   // turns red for the last 30 seconds
+        el.classList.toggle('text-gray-400', t > 30);
+    }
+
+    // The timer ran out: the shop packs up and the game carries on
+    function autoCloseShop() {
+        if (!gameState.inShop) return;
+        leaveShop();
+        gameState.message = 'The shop packed up and moved on while you were deciding.';
+        logEvent(`${gameState.depth.toFixed(0)}m — The shop closed after ${SHOP_TIME_LIMIT / 60} minutes without a purchase.`, true);
         updateUI();
     }
 
@@ -3116,6 +3257,8 @@
     function buildDrone(typeId) {
         if (gameState.gameOver || gameState.isPaused) return;
         const t = DRONE_TYPES[typeId];
+        const lock = getDroneLock(typeId);   // locked behind Laboratory research?
+        if (lock) { gameState.message = `${t.name}s need research first: ${lock.name} (Laboratory).`; return updateUI(); }
         const free = getDroneHousing() - getDroneSpaceUsed();
         if (free < t.space)                     gameState.message = `Not enough housing space for a ${t.name} (needs ${t.space}, ${free} free).`;
         else if (gameState.alloys < t.cost)     gameState.message = `Need ${t.cost} Alloys to build a ${t.name}.`;
@@ -3132,6 +3275,8 @@
         if (gameState.gameOver || gameState.isPaused) return;
         const u = (DRONE_UPGRADES[typeId] || []).find(x => x.id === upId);
         if (!u || hasDroneUpgrade(typeId, upId)) return;
+        const lock = getDroneUpgradeLock(typeId, upId);   // locked behind Laboratory research?
+        if (lock) { gameState.message = `${u.name} needs research first: ${lock.name} (Laboratory).`; return updateUI(); }
         const cost = getDroneUpgradeCost(u);
         if (gameState.alloys < cost) gameState.message = `Need ${cost} Alloys for ${u.name}.`;
         else {
@@ -3235,12 +3380,15 @@
 
         // Everything that changes which buttons are enabled goes into one text "key".
         // If the key is the same as last time, the cards are left alone.
-        const canBuild = typeIds.map(id => canAct && gameState.alloys >= DRONE_TYPES[id].cost && free >= DRONE_TYPES[id].space);
+        const locks    = typeIds.map(id => { const l = getDroneLock(id); return l ? l.name : null; });   // research each drone type still needs (or null)
+        const canBuild = typeIds.map((id, i) => canAct && !locks[i] && gameState.alloys >= DRONE_TYPES[id].cost && free >= DRONE_TYPES[id].space);
         // For every upgrade: 'owned', 'yes' (can afford it now) or 'no'. Part of the key so buttons refresh when this changes.
         const upState = typeIds.map(id => (DRONE_UPGRADES[id] || []).map(u =>
-            hasDroneUpgrade(id, u.id) ? 'owned' : (canAct && gameState.alloys >= getDroneUpgradeCost(u) ? 'yes' : 'no')));
+            hasDroneUpgrade(id, u.id) ? 'owned'
+                : getDroneUpgradeLock(id, u.id) ? 'locked:' + getDroneUpgradeLock(id, u.id).name
+                : (canAct && gameState.alloys >= getDroneUpgradeCost(u) ? 'yes' : 'no')));
         const key = JSON.stringify({
-            canBuild, upState, free, tier: ds.housingTier, canExpand: canAct && gameState.alloys >= expandCost,
+            canBuild, upState, locks, free, tier: ds.housingTier, canExpand: canAct && gameState.alloys >= expandCost,
             canAll: canAct && allCost > 0 && gameState.ore >= allCost, needsAny: allCost > 0, canAct,
             drones: ds.list.map(d => [d.id, d.type, d.condition <= 0, d.condition >= 100, canAct && gameState.ore >= getDroneServiceCost(d)]),
         });
@@ -3250,12 +3398,13 @@
 
             const buildCards = typeIds.map((id, i) => {
                 const t = DRONE_TYPES[id];
-                const label = canBuild[i] ? `Build (${t.cost} Alloys)` : (free < t.space ? 'Not enough housing space' : `Needs ${t.cost} Alloys`);
+                const label = canBuild[i] ? `Build (${t.cost} Alloys)` : (locks[i] ? `🔒 Needs research: ${locks[i]}` : free < t.space ? 'Not enough housing space' : `Needs ${t.cost} Alloys`);
                 // One small row per upgrade: owned (green), affordable (blue button) or too expensive (grey)
                 const upgradeRows = (DRONE_UPGRADES[id] || []).map((u, n) => {
                     const state = upState[i][n];
                     const cost  = getDroneUpgradeCost(u);
                     if (state === 'owned') return `<div class="flex justify-between text-xs p-1.5 rounded bg-green-900 text-green-200"><span>✔ ${u.name}</span><span>${u.desc}</span></div>`;
+                    if (state.startsWith('locked:')) return `<div class="flex justify-between gap-2 text-xs p-1.5 rounded bg-gray-900 text-gray-500"><span>🔒 ${u.name}</span><span class="text-pink-300 text-right">Research: ${state.slice(7)}</span></div>`;
                     return `<button onclick="buyDroneUpgrade('${id}', '${u.id}')" ${state === 'yes' ? '' : 'disabled'}
                         class="flex justify-between gap-2 w-full text-left text-xs p-1.5 rounded text-white transition duration-150 ${state === 'yes' ? 'bg-sky-700 hover:bg-sky-500 cursor-pointer' : 'bg-gray-700 opacity-60 cursor-not-allowed'}">
                         <span>${u.name}: ${u.desc}</span><span class="font-bold whitespace-nowrap">${cost} 🔩</span></button>`;
@@ -3333,6 +3482,199 @@
     }
 
     // ============================================================
+    //  LABORATORY
+    //  Lab Points come from achievements (see unlockAchievement). They are spent on research from LAB_RESEARCH.
+    //  gameState.labActive = { id, timeLeft } is the one project running right now (or null).
+    //
+    //  THE LAB CLOCK: the game loop stops during pauses, shops and pop-ups, but research must NOT stop then.
+    //  So the lab has its own clock, labClockTick(), driven by setInterval (started in window.onload).
+    //  It measures REAL elapsed time with Date.now(), so it stays correct even if the browser slows the
+    //  timer down in a background tab. It does nothing while the title screen / main menu is open.
+    //  The same clock also counts down the shop timer (see SHOPS).
+    // ============================================================
+
+    // 95 -> "1m 35s", 3700 -> "1h 1m"
+    function fmtDuration(seconds) {
+        const s = Math.max(0, Math.ceil(seconds));
+        const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+        if (h > 0) return `${h}h ${m}m`;
+        if (m > 0) return `${m}m ${String(sec).padStart(2, '0')}s`;
+        return `${sec}s`;
+    }
+
+    function isResearched(id) { return gameState.labResearched.includes(id); }
+
+    // Is something locked behind research? Returns the research that unlocks it (if you do not have it yet), or null.
+    // "test" receives a research's "unlocks" object and says whether that is the thing we are asking about.
+    function getLabLock(type, test) {
+        for (const id in LAB_RESEARCH) {
+            const r = LAB_RESEARCH[id];
+            if (r.unlocks.type === type && test(r.unlocks) && !isResearched(id)) return { id, ...r };
+        }
+        return null;
+    }
+    function getModuleLock(slotId, optId)      { return getLabLock('module',       u => u.slotId === slotId && u.optId === optId); }
+    function getDroneLock(typeId)              { return getLabLock('drone',        u => u.id === typeId); }
+    function getDroneUpgradeLock(typeId, upId) { return getLabLock('droneUpgrade', u => u.drone === typeId && u.id === upId); }
+    function getModuleMkLock(mk)               { return getLabLock('moduleMk',     u => mk >= u.mk); }
+    function getSkillTierLock(tierLetter)      { return getLabLock('skillTier',    u => u.tier === tierLetter); }
+
+    // A readable sentence for what a research gives you (used on the cards and in the pop-up)
+    function labUnlockText(u) {
+        if (u.type === 'module') {
+            const slot = MODULE_SLOTS[u.slotId];
+            return `${slot.options[u.optId].name} (${slot.name} module) can now appear in shops.`;
+        }
+        if (u.type === 'drone') return `${DRONE_TYPES[u.id].name}s can now be built.`;
+        if (u.type === 'droneUpgrade') {
+            const up = DRONE_UPGRADES[u.drone].find(x => x.id === u.id);
+            return `${up.name} (${up.desc}) can now be bought for ${DRONE_TYPES[u.drone].name}s.`;
+        }
+        if (u.type === 'moduleMk')  return `Modules can now be upgraded to ${MK_NAMES[u.mk]}.`;
+        if (u.type === 'skillTier') return `${SKILL_TIERS[u.tier].title} skills can now be bought.`;
+        return '';
+    }
+
+    // What state is a research in?  done | active | locked (needs another research first) | poor (not enough
+    // Lab Points) | busy (affordable, but another project is running) | ready (you can start it now)
+    function getLabState(id) {
+        const r = LAB_RESEARCH[id], gs = gameState;
+        if (isResearched(id))                       return 'done';
+        if (gs.labActive && gs.labActive.id === id) return 'active';
+        if (r.prereq && !isResearched(r.prereq))    return 'locked';
+        if (gs.labPoints < r.cost)                  return 'poor';
+        if (gs.labActive)                           return 'busy';
+        return 'ready';
+    }
+
+    function startResearch(id) {
+        if (getLabState(id) !== 'ready') return;
+        const r = LAB_RESEARCH[id];
+        gameState.labPoints -= r.cost;
+        gameState.labActive  = { id, timeLeft: r.time };
+        gameState.message    = `Research started: ${r.name} (${fmtDuration(r.time)}).`;
+        updateUI();
+    }
+
+    // Cancelling gives the Lab Points back, but the progress is lost
+    function cancelResearch() {
+        const a = gameState.labActive;
+        if (!a) return;
+        const r = LAB_RESEARCH[a.id];
+        gameState.labPoints += r.cost;
+        gameState.labActive  = null;
+        gameState.message    = `Research cancelled: ${r.name}. ${r.cost} Lab Points refunded.`;
+        updateUI();
+    }
+
+    function finishResearch() {
+        const a = gameState.labActive;
+        if (!a) return;
+        const r = LAB_RESEARCH[a.id];
+        gameState.labActive = null;
+        if (!isResearched(a.id)) gameState.labResearched.push(a.id);
+        gameState.message = `RESEARCH COMPLETE: ${r.name}! ${labUnlockText(r.unlocks)}`;
+        logEvent(`🧪 Research complete: ${r.name}`);
+        showToast(r.icon, 'Research complete', r.name, labUnlockText(r.unlocks));
+        updateUI();
+    }
+
+    // --- The lab clock ---
+    let labLastTick = 0;   // the real time (in milliseconds) of the previous tick
+    function isTitleScreenOpen() { return document.getElementById('title-screen').classList.contains('open'); }
+
+    function labClockTick() {
+        const now = Date.now();
+        const dt  = labLastTick ? Math.max(0, (now - labLastTick) / 1000) : 0;   // real seconds since the last tick
+        labLastTick = now;                       // updated even in the menu, so menu time is never counted later
+        if (dt === 0 || isTitleScreenOpen()) return;
+
+        // 1) the shop timer (only counts while you are standing in a shop)
+        if (gameState.inShop) {
+            gameState.shopTimeLeft -= dt;
+            if (gameState.shopTimeLeft <= 0) autoCloseShop();
+            else updateShopTimer();
+        }
+        // 2) the research timer
+        if (gameState.labActive) {
+            gameState.labActive.timeLeft -= dt;
+            if (gameState.labActive.timeLeft <= 0) finishResearch();   // finishResearch() redraws everything
+            else updateLabPanel();                                     // otherwise just refresh the open panel
+        }
+    }
+
+    // --- The Laboratory panel ---
+    // Like the Drones panel: the cards are only rebuilt when something that changes what is shown changes
+    // (a state changes, Lab Points change). The progress bar and time left are updated in place every tick.
+    let _lastLabKey = null;
+    function isLabPanelOpen() { return document.getElementById('lab-sidebar').classList.contains('open'); }
+
+    function updateLabPanel() {
+        if (!isLabPanelOpen()) return;
+        const gs = gameState, active = gs.labActive;
+        const ids    = Object.keys(LAB_RESEARCH);
+        const states = ids.map(getLabState);
+
+        document.getElementById('lab-lp').textContent = `🧪 ${gs.labPoints} Lab Points (${gs.labPointsEarned} earned in total)`;
+
+        const key = JSON.stringify({ lp: gs.labPoints, states });
+        if (key !== _lastLabKey) {
+            _lastLabKey = key;
+
+            // The box at the top: what is being researched now
+            const activeBox = active ? `
+                <div class="bg-gray-800 p-4 rounded-xl border-2 border-pink-500">
+                    <p class="text-xs font-bold text-pink-300 uppercase tracking-wide">Researching</p>
+                    <p class="font-bold text-white mt-1">${LAB_RESEARCH[active.id].icon} ${LAB_RESEARCH[active.id].name}</p>
+                    <div class="w-full bg-gray-700 rounded-full h-3 my-2"><div id="lab-active-bar" class="progress-bar h-3 rounded-full bg-pink-500" style="width:0%"></div></div>
+                    <p id="lab-active-text" class="text-sm font-semibold text-gray-200"></p>
+                    <button onclick="cancelResearch()" class="mt-3 w-full p-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-bold">Cancel (Lab Points refunded, progress lost)</button>
+                </div>`
+                : `<div class="bg-gray-800 p-4 rounded-xl border border-gray-700"><p class="text-sm text-gray-400">No research is running. Pick a project below. Research keeps going while the game is paused or you are in a shop, but stops in the main menu.</p></div>`;
+
+            // One card per research
+            const cardHTML = id => {
+                const r = LAB_RESEARCH[id], st = states[ids.indexOf(id)];
+                let border = 'border-gray-700', footer = '';
+                if (st === 'done')        { border = 'border-green-600'; footer = '<p class="text-sm font-bold text-green-400 mt-2">✔ Researched</p>'; }
+                else if (st === 'active') { border = 'border-pink-500';  footer = '<p class="text-sm font-bold text-pink-300 mt-2">⏳ Researching (see above)</p>'; }
+                else if (st === 'locked') { footer = `<p class="text-xs text-gray-500 mt-1">Cost: ${r.cost} LP · Time: ${fmtDuration(r.time)}</p>
+                                                      <p class="text-xs font-semibold text-red-300 mt-1">🔒 Requires: ${LAB_RESEARCH[r.prereq].name}</p>`; }
+                else {
+                    const ready = st === 'ready';
+                    const label = ready ? `Research (${r.cost} LP · ${fmtDuration(r.time)})`
+                                : st === 'busy' ? `Another project is running (${r.cost} LP · ${fmtDuration(r.time)})`
+                                : `Needs ${r.cost} Lab Points (${fmtDuration(r.time)})`;
+                    const colour = ready ? 'bg-pink-700 hover:bg-pink-500 cursor-pointer'
+                                 : st === 'busy' ? 'bg-gray-700 opacity-60 cursor-not-allowed' : 'bg-red-900 opacity-70 cursor-not-allowed';
+                    footer = `<button onclick="startResearch('${id}')" ${ready ? '' : 'disabled'}
+                        class="mt-3 w-full p-2 rounded-lg text-white text-sm font-bold transition duration-150 ${colour}">${label}</button>`;
+                }
+                return `<div class="bg-gray-800 p-3 rounded-xl border-2 ${border} ${st === 'done' ? 'opacity-80' : ''} flex flex-col justify-between">
+                    <div><p class="font-bold text-white">${r.icon} ${r.name}</p>
+                    <p class="text-xs text-gray-300 mt-1">${labUnlockText(r.unlocks)}</p></div>${footer}</div>`;
+            };
+
+            // Group the cards under their headings, in the order the groups first appear in LAB_RESEARCH
+            const groups = [];
+            ids.forEach(id => { if (!groups.includes(LAB_RESEARCH[id].group)) groups.push(LAB_RESEARCH[id].group); });
+            const groupsHTML = groups.map(g => `
+                <h3 class="text-lg font-bold text-pink-300 mt-2">${g}</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">${ids.filter(id => LAB_RESEARCH[id].group === g).map(cardHTML).join('')}</div>`).join('');
+
+            document.getElementById('lab-container').innerHTML = activeBox + groupsHTML;
+        }
+
+        // The fast-changing numbers, updated in place
+        if (active) {
+            const r   = LAB_RESEARCH[active.id];
+            const bar = document.getElementById('lab-active-bar'), txt = document.getElementById('lab-active-text');
+            if (bar) bar.style.width = `${Math.max(0, Math.min(100, (1 - active.timeLeft / r.time) * 100))}%`;
+            if (txt) txt.textContent = `${fmtDuration(active.timeLeft)} left of ${fmtDuration(r.time)}`;
+        }
+    }
+
+    // ============================================================
     //  UI RENDERING
     // ============================================================
 
@@ -3361,6 +3703,7 @@
         refreshSkillTree();
         refreshModuleBay();
         refreshGoalsPanel();
+        updateLabPanel();
         updateSideTabBadges();
     }
 
@@ -3380,6 +3723,7 @@
         ui['max-depth-display'].innerText       = `${gameState.maxDepth.toFixed(1)}m`;
         ui['permanent-stats-display'].innerText = `🔮 ${gameState.permanentResearchPoints} PRP`;
         ui['permanent-stats-display'].title     = 'Permanent Research Points: spend them in the Ascension tree';
+        ui['lab-points-display'].innerText      = `🧪 ${gameState.labPoints} LP` + (gameState.labActive ? ' · researching' : '');
         ui['drill-speed-display'].innerText     = `${getEffectiveDrillSpeed().toFixed(2)} m/s`;
         ui['hardness-display'].innerText        = `Rock hardness x${getHardness().toFixed(2)} (raw ${getRawDrillSpeed().toFixed(1)} m/s)`;
         ui['pressure-display'].innerText        = gameState.depth < GRACE_DEPTH
@@ -3594,14 +3938,16 @@
             for (const optId in (gameState.unlockedModuleOptions[slotId] || {})) {
                 if (!isUpgradeableModule(slotId, optId)) continue;
                 const cost = getModuleUpgradeCost(slotId, optId);
-                upgrades[`${slotId}.${optId}`] = { cost, ok: upgradesOpen && canAct && gameState.ore >= cost };
+                const nextMk = getModuleMk(slotId, optId) + 1;
+                const lock   = nextMk <= MODULE_MAX_MK ? getModuleMkLock(nextMk) : null;   // research this upgrade still needs (or null)
+                upgrades[`${slotId}.${optId}`] = { cost, ok: upgradesOpen && canAct && !lock && gameState.ore >= cost, lock: lock ? lock.name : null };
             }
         }
 
         const bayKey = JSON.stringify({
             slots: gameState.unlockedModuleSlots, options: gameState.unlockedModuleOptions,
             modules: gameState.modules, swapCost, canAffordSwap, fav: gameState.favoriteSlot, ban: gameState.banishedSlots,
-            mk: gameState.moduleMk, upgradesOpen, upgrades,
+            mk: gameState.moduleMk, upgradesOpen, upgrades, lab: gameState.labResearched.length,
         });
         if (bayKey === _lastModuleBayKey) return;
         _lastModuleBayKey = bayKey;
@@ -3661,7 +4007,9 @@
                 }
                 optionsHTML += `<div class="flex flex-col gap-1">${main}${moduleUpgradeRow(slotId, optId, mk, upgrades, upgradesOpen)}</div>`;
             }
-            const missing = Object.values(slot.options).filter(o => !o.special).length - ownedCount;   // challenge modules are not sold in shops
+            const sellable    = Object.entries(slot.options).filter(([oid, o]) => !o.special);   // challenge modules are not sold in shops
+            const missing     = sellable.length - ownedCount;
+            const lockedCount = sellable.filter(([oid]) => !owned[oid] && getModuleLock(slotId, oid)).length;   // still need research
             card.className = 'bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col gap-3';
             card.innerHTML = `
                 <div class="flex items-center justify-between border-b border-gray-700 pb-2">
@@ -3669,7 +4017,8 @@
                     <span class="flex items-center gap-3"><span class="text-xs text-gray-500">Swap cost: ${swapCost} Ore</span>${starBtn}</span>
                 </div>
                 <div class="flex flex-col gap-2">${optionsHTML}</div>
-                ${missing > 0 ? `<p class="text-xs text-gray-500">${missing} more module${missing === 1 ? '' : 's'} can be found in shops.</p>` : ''}`;
+                ${missing - lockedCount > 0 ? `<p class="text-xs text-gray-500">${missing - lockedCount} more module${missing - lockedCount === 1 ? '' : 's'} can be found in shops.</p>` : ''}
+                ${lockedCount > 0 ? `<p class="text-xs text-pink-300">🔒 ${lockedCount} more need${lockedCount === 1 ? 's' : ''} research in the Laboratory first.</p>` : ''}`;
             container.appendChild(card);
         }
     }
@@ -3680,6 +4029,7 @@
         if (!info) return '';   // starter "no bonus" modules can't be upgraded
         if (mk >= MODULE_MAX_MK) return `<p class="text-xs font-bold text-amber-300 px-1">★ ${MK_NAMES[mk]} (fully upgraded)</p>`;
         if (!upgradesOpen)       return `<p class="text-xs text-gray-500 px-1">⬆ Module upgrades unlock at ${MODULE_UPGRADE_DEPTH.toLocaleString()}m</p>`;
+        if (info.lock)           return `<p class="text-xs text-pink-300 px-1">🔒 ${MK_NAMES[mk + 1]} needs research: ${info.lock}</p>`;
         const preview = bonusText(scaleModuleBonus(MODULE_SLOTS[slotId].options[optId].bonus, mk + 1));
         return `<button onclick="upgradeModule('${slotId}', '${optId}')" ${info.ok ? '' : 'disabled'} title="${MK_NAMES[mk + 1]}: ${preview}"
             class="text-left text-xs font-bold px-3 py-1.5 rounded-lg transition duration-150 ${info.ok ? 'bg-amber-700 hover:bg-amber-600 text-white' : 'bg-gray-900 text-gray-500 cursor-not-allowed'}">
@@ -3833,10 +4183,11 @@
             const prereqMet  = !skill.prereq || gameState.unlockedSkills.includes(skill.prereq);
             const depthMet   = !skill.minDepth || gameState.depth >= skill.minDepth;
             const canAfford  = gameState.ore >= skill.cost;
+            const tierLock   = getSkillTierLock(id[0]);   // research this tier still needs (or null)
 
             let state, blocked;
             if (isUnlocked)              { state = 'bg-yellow-600 border-2 border-yellow-400 opacity-90 cursor-default'; blocked = true; }
-            else if (!prereqMet || !depthMet) { state = 'bg-gray-700 cursor-not-allowed'; blocked = true; }
+            else if (!prereqMet || !depthMet || tierLock) { state = 'bg-gray-700 cursor-not-allowed'; blocked = true; }
             else if (!canAfford)         { state = 'bg-red-800 opacity-70 cursor-not-allowed'; blocked = true; }
             else                         { state = 'bg-green-700 hover:bg-green-500 hover:scale-105 cursor-pointer'; blocked = false; }
             if (gameState.isPaused) { state += ' opacity-50 cursor-not-allowed'; blocked = true; }
@@ -3844,6 +4195,7 @@
             let status = isUnlocked ? 'Unlocked' : `Cost: ${skill.cost.toLocaleString()} Ore`;
             if (!isUnlocked && !prereqMet) status += `<br><span class="text-red-300">Requires ${SKILLS[skill.prereq].name}</span>`;
             else if (!isUnlocked && !depthMet) status += `<br><span class="text-orange-300">Drill to ${skill.minDepth.toLocaleString()}m to install</span>`;
+            else if (!isUnlocked && tierLock)  status += `<br><span class="text-pink-300">🔒 Needs research: ${tierLock.name}</span>`;
 
             nodes.status.innerHTML = status;
             setButtonState(nodes.button, state, blocked);
@@ -4001,10 +4353,17 @@
         updateAchievementsButton();
     }
 
+    // How many Lab Points an achievement gives. Add  lp: 3  to an achievement to override this.
+    // Otherwise: 1 point, or 2 for hidden (secret) achievements.
+    function getAchievementLp(a) { return a.lp !== undefined ? a.lp : (a.hidden ? 4 : 2); }
+
     function unlockAchievement(a) {
         gameState.achievementsUnlocked.push(a.id);
-        logEvent(`🏆 Achievement unlocked: ${a.name}`);
-        showToast(a.icon, 'Achievement unlocked', a.name, a.desc);
+        const lp = getAchievementLp(a);
+        gameState.labPoints       += lp;
+        gameState.labPointsEarned += lp;
+        logEvent(`🏆 Achievement unlocked: ${a.name} (+${lp} Lab Point${lp === 2 ? '' : 's'})`);
+        showToast(a.icon, 'Achievement unlocked', a.name, `${a.desc} · +${lp} 🧪 Lab Point${lp === 2 ? '' : 's'}`);
     }
 
     // The little pop-up at the top of the screen. It removes itself after a few seconds.
@@ -4114,13 +4473,15 @@
             if (done.includes(a.id)) {
                 return `<div class="p-3 rounded-lg border-2 border-yellow-500 bg-gray-800 flex gap-3 items-center">
                     <span class="text-3xl">${a.icon}</span>
-                    <div><p class="font-bold text-yellow-300">${a.name}</p><p class="text-xs text-gray-300">${a.desc}</p></div></div>`;
+                    <div><p class="font-bold text-yellow-300">${a.name}</p><p class="text-xs text-gray-300">${a.desc}</p></div>
+                    <span class="ml-auto text-xs font-bold text-pink-300 whitespace-nowrap">🧪 +${getAchievementLp(a)}</span></div>`;
             }
             const secret = a.hidden;
             return `<div class="p-3 rounded-lg border border-gray-700 bg-gray-900 flex gap-3 items-center opacity-60">
                 <span class="text-3xl grayscale">${secret ? '❓' : a.icon}</span>
                 <div><p class="font-bold text-gray-400">${secret ? '???' : a.name}</p>
-                <p class="text-xs text-gray-500">${secret ? 'Hidden achievement.' : a.desc}</p></div></div>`;
+                <p class="text-xs text-gray-500">${secret ? 'Hidden achievement.' : a.desc}</p></div>
+                <span class="ml-auto text-xs font-bold text-pink-400 whitespace-nowrap">🧪 +${getAchievementLp(a)}</span></div>`;
         }).join('');
     }
 
@@ -4141,6 +4502,7 @@
         if (panelId === 'module-sidebar') refreshModuleBay();
         if (panelId === 'goals-sidebar')  refreshGoalsPanel();
         if (panelId === 'drones-sidebar') { _lastDroneKey = null; updateDronePanel(); }
+        if (panelId === 'lab-sidebar')    { _lastLabKey = null;   updateLabPanel(); }
     }
     function closeSidebar() {
         document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('open'));
@@ -4153,7 +4515,7 @@
         const skillCount = Object.keys(SKILLS).filter(id => {
             const s = SKILLS[id];
             return !gameState.unlockedSkills.includes(id) && (!s.prereq || gameState.unlockedSkills.includes(s.prereq))
-                && (!s.minDepth || gameState.depth >= s.minDepth) && gameState.ore >= s.cost;
+                && (!s.minDepth || gameState.depth >= s.minDepth) && gameState.ore >= s.cost && !getSkillTierLock(id[0]);
         }).length;
         const perkCount = Object.keys(ASCENSION_UPGRADES).filter(id => {
             const u = ASCENSION_UPGRADES[id];
@@ -4162,6 +4524,9 @@
         }).length;
         setTabBadge(ui['skills-toggle-btn'],    '🌳 Skills',    skillCount);
         setTabBadge(ui['ascension-toggle-btn'], '✨ Ascension', perkCount);
+        // The Lab tab shows how many research projects you could start right now, and glows when there are some
+        const labCount = Object.keys(LAB_RESEARCH).filter(id => getLabState(id) === 'ready').length;
+        setTabBadge(ui['lab-toggle-btn'], '🧪 Lab', labCount);
     }
     function setTabBadge(btn, label, count) {
         const text = count > 0 ? `${label} (${count})` : label;
@@ -4395,6 +4760,31 @@
         devDone('gave every Ascension perk. Perks that change how a run starts kick in on your next run.');
     }
 
+    // --- Laboratory ---
+    function devGiveLabPoints() {
+        gameState.labPoints       += 10;
+        gameState.labPointsEarned += 10;
+        devDone('gave 10 Lab Points.');
+    }
+    function devFinishResearch() {
+        if (!gameState.labActive) { gameState.message = '🛠 Dev: no research is running.'; return updateUI(); }
+        finishResearch();
+        devDone('finished the running research.');
+    }
+    function devResearchAll() {
+        gameState.labActive = null;
+        Object.keys(LAB_RESEARCH).forEach(id => { if (!isResearched(id)) gameState.labResearched.push(id); });
+        _lastModuleBayKey = null;   // so the Module Bay redraws
+        devDone('researched everything.');
+    }
+    function devResetLab() {   // forgets all research and gives every Lab Point you ever earned back
+        gameState.labResearched = [];
+        gameState.labActive     = null;
+        gameState.labPoints     = gameState.labPointsEarned;
+        _lastModuleBayKey = null;
+        devDone('reset all research. Every Lab Point was refunded.');
+    }
+
     function devFill() {
         document.getElementById('dev-ore').value       = Math.floor(gameState.ore);
         document.getElementById('dev-depth').value     = Math.floor(gameState.depth);
@@ -4537,6 +4927,9 @@
         buildPatchNotesModal();
         buildDevPanel();
         initializeGame();
+        // The lab clock runs on its own timer, because research must keep going while the game loop is stopped
+        // (paused, in a shop, in a pop-up). It does nothing while the title screen is open.
+        setInterval(labClockTick, 250);
         // The game loop is NOT started here any more. Pressing "Start Game" on the title screen starts it.
     };
 
