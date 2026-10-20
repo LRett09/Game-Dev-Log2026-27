@@ -7,18 +7,22 @@ Classes are both objects that store variables (properties) and functions that wo
 <input type=button value="Tell me about my dog" onClick="{
 
 class myAnimal {
-  constructor(passName, passAge) {
-    this.myName = passName;
-    this.myAge = passAge;
+  constructor(mypassName, mypassAge) {
+    this.myName = mypassName;
+    this.myAge = mypassAge;
   }
   myShow(){
-    document.getElementById('myDiv01').innerHTML = 'Your dogs name is '+ this.myName + '. and it is ' + this.myAge + ' years old<br>'
+    document.getElementById('myDiv01').innerHTML = 'Your dogs name is '+ this.myName + ', and it is ' + this.myAge + ' years old<br>'
     }
   }
 
     myDog = new myAnimal('Sheep', 80)
     myDog.myShow()
 
-  }">
+  }"><br><br>
+
+  <input type=text id="myDogsName" value="Write your dogs name" onBlur="{
+    mypassName = myDogsName
+    }">
 
   <div id="myDiv01">...</div>
