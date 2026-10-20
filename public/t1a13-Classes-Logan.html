@@ -1,0 +1,24 @@
+<h1 align=center>T1A13 Classes</h1>
+
+Classes are both objects that store variables (properties) and functions that work on the variables (methods)<br>
+
+<h2>Example working code:</h2>
+
+<input type=button value="Example class set and show for a dog" onClick="{
+
+class myAnimal {
+  constructor(passName, passAge) {
+    this.myName = passName;
+    this.myAge = passAge;
+  }
+  myShow(){
+    document.getElementById('myDiv01').innerHTML = 'Hello '+ this.myName + '. You are ' + this.myAge + ' years old<br>'
+    }
+  }
+
+    myDog = new myAnimal('Sheep', 80)
+    myDog.myShow()
+
+  }">
+
+  <div id="myDiv01">...</div>
