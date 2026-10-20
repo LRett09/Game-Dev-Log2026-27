@@ -1,7 +1,7 @@
 <h1 align=center>T1A12 Objects</h1>
 
 <script>
-  let myPerson{
+  let myPerson = {
     'age' : 1000
   }
 </script>
@@ -17,13 +17,10 @@ Objects are stored named variables
 
 <input type=button id="myButton01" value="Example Object Set and Show" onClick="{
 
-  let myPerson = {
-    'firstName' : 'Logan',
-    'lastName' :  'the Awesome',
-    'age' :       'myPerson.age',
-    'eyeColour' : 'blue',
-    'mood' : document.getElementById('myText01').value
-    }
+    myPerson.firstName : 'Logan',
+    myPerson.lastName :  'the Awesome',
+    myPerson.eyeColour : 'blue',
+    myPerson.mood : document.getElementById('myText01').value
 
     document.getElementById('myDiv01').innerHTML = '<br>myPerson Object has properties: <br>'
     document.getElementById('myDiv01').innerHTML += 'firstName: ' + myPerson.firstName + '<br>'
