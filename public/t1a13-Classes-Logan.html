@@ -16,11 +16,13 @@ class myAnimal {
     }
   }
 
-    let myDog = new myAnimal(document.getElementById('myDogsName').value, 80)
+    let myDog = new myAnimal(document.getElementById('myDogsName').value, document.getElementById('myDogsAge'))
     myDog.myShow()
 
   }"><br><br>
 
   <input type=text id="myDogsName" value="Sheep">
+
+    <input type=text id="myDogsAge" value="80">
 
   <div id="myDiv01">...</div>
