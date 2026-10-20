@@ -2,6 +2,7 @@
 
 <script>
   let myPerson
+  let myPerson.age = 1000
   
 </script>
 
@@ -12,7 +13,6 @@ Objects are stored named variables
 
 <input type=button value="change age" onClick="{
   myPerson.age--
-  document.getElementById('myButton01').innerHTML = 'age: ' + myPerson.age
   }"><br><br>
 
 <input type=button id="myButton01" value="Example Object Set and Show" onClick="{
@@ -20,7 +20,7 @@ Objects are stored named variables
   let myPerson = {
     'firstName' : 'Logan',
     'lastName' :  'the Awesome',
-    'age' :       '1000',
+    'age' :       'myPerson.age',
     'eyeColour' : 'blue',
     'mood' : document.getElementById('myText01').value
     }
