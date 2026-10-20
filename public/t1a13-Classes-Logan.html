@@ -16,13 +16,11 @@ class myAnimal {
     }
   }
 
-    myDog = new myAnimal('Sheep', 80)
+    let myDog = new myAnimal(document.getElementById('myDogsName').value, 80)
     myDog.myShow()
 
   }"><br><br>
 
-  <input type=text id="myDogsName" value="Write your dogs name" onBlur="{
-    this.myName = myDogsName
-    }">
+  <input type=text id="myDogsName" value="Sheep">
 
   <div id="myDiv01">...</div>
