@@ -1079,6 +1079,10 @@
         'I1': { name: 'Singularity Compressor',cost: 5000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'H1', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
         'I2': { name: 'Chrono Drill',          cost: 5000000, effect: 'x2 Drill Speed (multiplies again)',    prereq: 'H2', minDepth: 21000, bonus: { drillSpeedFinalMult: 2.0 } },
         'I3': { name: 'Adamantine Chassis',    cost: 5000000, effect: '-65% bit wear, -50% event damage',      prereq: 'H3', minDepth: 21000, bonus: { integrityWearFactor: 0.35, eventResist: 0.5, failureReduction: 0.2 } },
+		// Tier J - Unnamed for Now
+		'J1': { name: 'Singularity Compressor',cost: 5000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'I1', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
+		'J2': { name: 'Singularity Compressor',cost: 5000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'I2', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
+		'J3': { name: 'Singularity Compressor',cost: 5000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'I3', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
     };
 
     const SKILL_TIERS = {
@@ -1091,6 +1095,7 @@
         'G': { title: 'Tier 7: Foundations of Magic',  color: 'pink'    },
         'H': { title: 'Tier 8: Deep Core Engineering', color: 'sky'     },
         'I': { title: 'Tier 9: Singularity',           color: 'fuchsia' },
+		'J': { title: 'Tier 10: Ill choose a name later', color: 'teal' },
     };
 
     const MODULE_SLOTS = {
