@@ -1,0 +1,42 @@
+<script>
+  
+  //Make class in script to make it global
+  class myAnimal {
+    constructor(passName, passAge) {
+      this.myName = passName;
+      this.myAge = passAge;
+    }
+    myShow() {
+      document.getElementById('myDiv01').innerHTML = 'Hello '+ this.myName+'<br>'
+    }
+  }
+  
+</script>
+
+<h1 align=center>T1A14 Extending Classes</h1>
+
+<h2>Example working</h2>
+
+<input type=button value="Example set and show animal" onClick="{
+
+  let myDog = new myAnimal('Snickers',5)
+  myDog.myShow()
+
+}">
+
+<h2>Example Working Extending</h2>
+
+<input type=button value="Example Extention" onClick="{
+
+  class myCat extends myAnimal {
+
+    myShow(){
+      document.getElementById('myDiv01').innerHTML = this.myName + ' is a great cat<br>'
+    }
+  }
+
+    let myPet = new myCat('Fluffy', 14)
+    myPet.myShow()
+  }">
+
+  <div id="myDiv01">...</div>
