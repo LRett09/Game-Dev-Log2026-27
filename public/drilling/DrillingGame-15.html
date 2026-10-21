@@ -150,6 +150,37 @@
         }
         .dev-apply-btn:hover { background: #6d28d9; }
 
+        /* --- DEV PANEL: collapsible sections (<details>) --- */
+        .dev-section { border: 1px solid #374151; border-radius: 8px; margin-bottom: 0.45rem; background: #111827; }
+        .dev-section > summary {
+            cursor: pointer; list-style: none; padding: 0.4rem 0.6rem;
+            color: #c4b5fd; font-weight: 700; font-size: 0.8rem; user-select: none;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .dev-section > summary::-webkit-details-marker { display: none; }   /* hides the default triangle (Chrome/Safari) */
+        .dev-section > summary::after { content: '▸'; color: #6b7280; transition: transform 0.15s; }
+        .dev-section[open] > summary::after { transform: rotate(90deg); }
+        .dev-section > summary:hover { background: #1f2937; border-radius: 8px; }
+        .dev-section-body { padding: 0.25rem 0.6rem 0.6rem; }
+
+        /* --- DEV STATS INSPECTOR: a second pop-out that shows live numbers --- */
+        #dev-inspector {
+            display: none; position: fixed; bottom: 1.5rem; left: 23rem;
+            z-index: 1600; background-color: #0d1117;
+            border: 2px solid #0891b2; border-radius: 12px;
+            padding: 0.75rem 1rem; width: 430px; max-width: calc(100vw - 25rem);
+            max-height: calc(100vh - 3rem); display: none; flex-direction: column;
+            box-sizing: border-box; box-shadow: 0 8px 32px rgba(8,145,178,0.4);
+        }
+        #dev-inspector.open { display: flex; }
+        #dev-inspector-body { overflow-y: auto; flex: 1; }
+        @media (max-width: 900px) { #dev-inspector { left: 1rem; bottom: auto; top: 1rem; max-width: calc(100vw - 2rem); } }
+        .dev-ins-row { display: flex; justify-content: space-between; gap: 0.75rem; font-size: 0.76rem; padding: 0.12rem 0; border-bottom: 1px solid #1f2937; }
+        .dev-ins-row span:first-child { color: #9ca3af; }
+        .dev-ins-row span:last-child  { color: #e5e7eb; font-weight: 600; text-align: right; }
+        .dev-ins-note { font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem; }
+        #dev-inspector .dev-section > summary { color: #67e8f9; }
+
         /* --- ACHIEVEMENT / CHALLENGE pop-up toasts --- */
         #achievement-toasts {
             position: fixed; top: 1rem; left: 50%; transform: translateX(-50%);
@@ -618,89 +649,150 @@
             <button onclick="toggleDevPanel()" class="text-gray-400 hover:text-white text-xl font-bold leading-none -mt-3" title="Close">✕</button>
         </div>
         <label class="dev-check"><input type="checkbox" id="dev-pause" checked onchange="devPauseChanged()"> ⏸ Pause the game while this panel is open</label>
-        <p class="dev-section-label">Resources</p>
-        <div class="dev-row"><label>Ore</label>      <input type="number" id="dev-ore"       placeholder="e.g. 50000" min="0"></div>
-        <div class="dev-row"><label>Depth (m)</label> <input type="number" id="dev-depth"     placeholder="e.g. 2000"  min="0"></div>
-        <div class="dev-row"><label>PRP</label>       <input type="number" id="dev-prp"       placeholder="e.g. 10"    min="0"></div>
-        <p class="dev-section-label">Systems</p>
-        <div class="dev-row"><label>Power</label>     <input type="number" id="dev-power"     placeholder="e.g. 100"   min="0"></div>
-        <div class="dev-row"><label>Oxygen</label>    <input type="number" id="dev-oxygen"    placeholder="e.g. 100"   min="0"></div>
-        <div class="dev-row"><label>Integrity</label> <input type="number" id="dev-integrity" placeholder="e.g. 100"   min="0"></div>
-        <div class="dev-row"><label>Heat %</label>    <input type="number" id="dev-heat"      placeholder="e.g. 0"     min="0" max="99"></div>
-        <button class="dev-apply-btn" onclick="devApply()">✔ Apply Changes</button>
-        <button class="dev-apply-btn" style="background:#065f46" onclick="devMaxOut()">⚡ Max Out Resources</button>
-        <button class="dev-apply-btn" style="background:#b45309" onclick="devOpenShop()">🏪 Open Shop Now</button>
-        <button class="dev-apply-btn" style="background:#92400e" onclick="devOpenCrossroads()">🔀 Open Crossroads Now</button>
-        <button class="dev-apply-btn" style="background:#6d28d9" onclick="devCompleteChallenge()">🎯 Complete Active Challenge</button>
+
+        <button class="dev-apply-btn" style="background:#0e7490; margin-top:0; margin-bottom:0.5rem" onclick="toggleDevInspector()">📊 Open Stats Inspector</button>
+        <div class="dev-mini-row">
+            <button class="dev-mini-btn" onclick="devExpandAll(true)">Expand all</button>
+            <button class="dev-mini-btn" onclick="devExpandAll(false)">Collapse all</button>
+        </div>
+
+        <!-- Each <details> is a dropdown section. Add the "open" attribute to make one start expanded. -->
+        <details class="dev-section" open>
+            <summary>💰 Resources &amp; Systems</summary>
+            <div class="dev-section-body">
+                <div class="dev-row"><label>Ore</label>      <input type="number" id="dev-ore"       placeholder="e.g. 50000" min="0"></div>
+                <div class="dev-row"><label>Depth (m)</label> <input type="number" id="dev-depth"     placeholder="e.g. 2000"  min="0"></div>
+                <div class="dev-row"><label>PRP</label>       <input type="number" id="dev-prp"       placeholder="e.g. 10"    min="0"></div>
+                <div class="dev-row"><label>Power</label>     <input type="number" id="dev-power"     placeholder="e.g. 100"   min="0"></div>
+                <div class="dev-row"><label>Oxygen</label>    <input type="number" id="dev-oxygen"    placeholder="e.g. 100"   min="0"></div>
+                <div class="dev-row"><label>Integrity</label> <input type="number" id="dev-integrity" placeholder="e.g. 100"   min="0"></div>
+                <div class="dev-row"><label>Heat %</label>    <input type="number" id="dev-heat"      placeholder="e.g. 0"     min="0" max="99"></div>
+                <button class="dev-apply-btn" onclick="devApply()">✔ Apply Changes</button>
+                <button class="dev-apply-btn" style="background:#065f46" onclick="devMaxOut()">⚡ Max Out Resources</button>
+            </div>
+        </details>
+
+        <details class="dev-section">
+            <summary>🎬 Quick Actions</summary>
+            <div class="dev-section-body">
+                <button class="dev-apply-btn" style="background:#b45309; margin-top:0" onclick="devOpenShop()">🏪 Open Shop Now</button>
+                <button class="dev-apply-btn" style="background:#92400e" onclick="devOpenCrossroads()">🔀 Open Crossroads Now</button>
+                <button class="dev-apply-btn" style="background:#6d28d9" onclick="devCompleteChallenge()">🎯 Complete Active Challenge</button>
+            </div>
+        </details>
 
         <!-- Everything below is free and ignores depth, prerequisite and price rules -->
-        <p class="dev-section-label">Skills (free, prerequisites included)</p>
-        <div class="dev-row"><select id="dev-skill-select"></select></div>
-        <div class="dev-mini-row">
-            <button class="dev-mini-btn purple" onclick="devGiveSkill()">Give skill</button>
-            <button class="dev-mini-btn" onclick="devGiveAllSkills()">Give all skills</button>
-            <button class="dev-mini-btn" onclick="devClearSkills()">Remove all</button>
-        </div>
+        <details class="dev-section">
+            <summary>🌳 Skills (free, prerequisites included)</summary>
+            <div class="dev-section-body">
+                <div class="dev-row"><select id="dev-skill-select"></select></div>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn purple" onclick="devGiveSkill()">Give skill</button>
+                    <button class="dev-mini-btn" onclick="devGiveAllSkills()">Give all skills</button>
+                </div>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn purple" onclick="devRemoveSkill()">Remove skill</button>
+                    <button class="dev-mini-btn" onclick="devClearSkills()">Remove all</button>
+                </div>
+            </div>
+        </details>
 
-        <p class="dev-section-label">Workshop upgrades (free)</p>
-        <div class="dev-row"><select id="dev-workshop-select"></select></div>
-        <div class="dev-mini-row">
-            <button class="dev-mini-btn purple" onclick="devWorkshop(1)">+1 tier</button>
-            <button class="dev-mini-btn" onclick="devWorkshop(-1)">-1 tier</button>
-            <button class="dev-mini-btn" onclick="devWorkshop('max')">Max</button>
-        </div>
-        <div class="dev-mini-row">
-            <button class="dev-mini-btn" onclick="devWorkshopAll('max')">Max all upgrades</button>
-            <button class="dev-mini-btn" onclick="devWorkshopAll('reset')">Reset all</button>
-        </div>
+        <details class="dev-section">
+            <summary>🔨 Workshop upgrades (free)</summary>
+            <div class="dev-section-body">
+                <div class="dev-row"><select id="dev-workshop-select"></select></div>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn purple" onclick="devWorkshop(1)">+1 tier</button>
+                    <button class="dev-mini-btn" onclick="devWorkshop(-1)">-1 tier</button>
+                    <button class="dev-mini-btn" onclick="devWorkshop('max')">Max</button>
+                </div>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn" onclick="devWorkshopAll('max')">Max all upgrades</button>
+                    <button class="dev-mini-btn" onclick="devWorkshopAll('reset')">Reset all</button>
+                </div>
+            </div>
+        </details>
 
-        <p class="dev-section-label">Modules (free, installs it and its slot)</p>
-        <div class="dev-row"><select id="dev-module-select"></select></div>
-        <div class="dev-mini-row">
-            <button class="dev-mini-btn purple" onclick="devGiveModule()">Give &amp; install</button>
-            <button class="dev-mini-btn" onclick="devGiveAllModules()">Give every module</button>
-        </div>
-        <div class="dev-mini-row">
-            <button class="dev-mini-btn" onclick="devMaxModuleMk()">Mk III every owned module</button>
-        </div>
+        <details class="dev-section">
+            <summary>⚙ Modules (free, installs it and its slot)</summary>
+            <div class="dev-section-body">
+                <div class="dev-row"><select id="dev-module-select"></select></div>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn purple" onclick="devGiveModule()">Give &amp; install</button>
+                    <button class="dev-mini-btn" onclick="devGiveAllModules()">Give every module</button>
+                </div>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn" onclick="devMaxModuleMk()">Mk III every owned module</button>
+                </div>
+            </div>
+        </details>
 
-        <p class="dev-section-label">Refinery</p>
-        <div class="dev-mini-row">
-            <button class="dev-mini-btn purple" onclick="devUnlockRefinery()">Unlock refinery</button>
-            <button class="dev-mini-btn" onclick="devGiveAlloys()">+1000 alloys</button>
-            <button class="dev-mini-btn" onclick="devMaxRefinery()">Max upgrades</button>
-        </div>
+        <details class="dev-section">
+            <summary>🏭 Refinery &amp; Drones</summary>
+            <div class="dev-section-body">
+                <p class="dev-section-label" style="margin-top:0">Refinery</p>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn purple" onclick="devUnlockRefinery()">Unlock refinery</button>
+                    <button class="dev-mini-btn" onclick="devGiveAlloys()">+1000 alloys</button>
+                    <button class="dev-mini-btn" onclick="devMaxRefinery()">Max upgrades</button>
+                </div>
+                <p class="dev-section-label">Drones</p>
+                <div class="dev-row"><select id="dev-drone-select"></select></div>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn purple" onclick="devGiveDrone()">Give drone</button>
+                    <button class="dev-mini-btn" onclick="devUnlockDrones()">Unlock menu</button>
+                    <button class="dev-mini-btn" onclick="devWearDrones()">Wear all to 20%</button>
+                </div>
+            </div>
+        </details>
 
-        <p class="dev-section-label">Drones</p>
-        <div class="dev-row"><select id="dev-drone-select"></select></div>
-        <div class="dev-mini-row">
-            <button class="dev-mini-btn purple" onclick="devGiveDrone()">Give drone</button>
-            <button class="dev-mini-btn" onclick="devUnlockDrones()">Unlock menu</button>
-            <button class="dev-mini-btn" onclick="devWearDrones()">Wear all to 20%</button>
-        </div>
-        <p class="dev-section-label">Deep Events</p>
-        <div class="dev-row"><select id="dev-deep-select"></select></div>
-        <div class="dev-mini-row">
-            <button class="dev-mini-btn purple" onclick="devStartDeepEvent()">Start it now</button>
-            <button class="dev-mini-btn" onclick="devFinishDeepEvent()">Finish running one</button>
-        </div>
+        <details class="dev-section">
+            <summary>🌋 Deep Events</summary>
+            <div class="dev-section-body">
+                <div class="dev-row"><select id="dev-deep-select"></select></div>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn purple" onclick="devStartDeepEvent()">Start it now</button>
+                    <button class="dev-mini-btn" onclick="devFinishDeepEvent()">Finish running one</button>
+                </div>
+            </div>
+        </details>
 
-        <p class="dev-section-label">Laboratory</p>
-        <div class="dev-mini-row">
-            <button class="dev-mini-btn purple" onclick="devGiveLabPoints()">+10 Lab Points</button>
-            <button class="dev-mini-btn" onclick="devFinishResearch()">Finish running research</button>
-        </div>
-        <div class="dev-mini-row">
-            <button class="dev-mini-btn" onclick="devResearchAll()">Research everything</button>
-            <button class="dev-mini-btn" onclick="devResetLab()">Reset research</button>
-        </div>
+        <details class="dev-section">
+            <summary>🧪 Laboratory</summary>
+            <div class="dev-section-body">
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn purple" onclick="devGiveLabPoints()">+10 Lab Points</button>
+                    <button class="dev-mini-btn" onclick="devFinishResearch()">Finish running research</button>
+                </div>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn" onclick="devResearchAll()">Research everything</button>
+                    <button class="dev-mini-btn" onclick="devResetLab()">Reset research</button>
+                </div>
+            </div>
+        </details>
 
-        <p class="dev-section-label">Ascension perks (free)</p>
-        <div class="dev-row"><select id="dev-perk-select"></select></div>
-        <div class="dev-mini-row">
-            <button class="dev-mini-btn purple" onclick="devGivePerk()">Give perk</button>
-            <button class="dev-mini-btn" onclick="devGiveAllPerks()">Give all perks</button>
+        <details class="dev-section">
+            <summary>✨ Ascension perks (free)</summary>
+            <div class="dev-section-body">
+                <div class="dev-row"><select id="dev-perk-select"></select></div>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn purple" onclick="devGivePerk()">Give perk</button>
+                    <button class="dev-mini-btn" onclick="devGiveAllPerks()">Give all perks</button>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- ============================
+         DEV STATS INSPECTOR
+         A second pop-out with live numbers. Opened from the Dev panel. Its contents are drawn by renderDevInspector().
+         ============================ -->
+    <div id="dev-inspector">
+        <div class="flex items-center justify-between mb-2">
+            <h3 style="color:#67e8f9; font-weight:700; font-size:0.95rem;">📊 Stats Inspector <span class="text-xs text-gray-500 font-normal">(live)</span></h3>
+            <button onclick="toggleDevInspector()" class="text-gray-400 hover:text-white text-xl font-bold leading-none" title="Close">✕</button>
         </div>
+        <div id="dev-inspector-body"></div>
     </div>
 
 
@@ -4659,6 +4751,25 @@ function isBanishedItem(item) {
         Object.keys(SKILLS).forEach(devAddSkill); recalculateMods();
         devDone('gave every skill.');
     }
+    // Removes the selected skill AND every skill that needs it (its "children"), so the tree never has a skill
+    // owned without the one above it. It collects the skill first, then keeps adding any owned skill whose prereq is in the list.
+    function devRemoveSkill() {
+        const id = devSelected('dev-skill-select');
+        if (!gameState.unlockedSkills.includes(id)) { gameState.message = `🛠 Dev: ${SKILLS[id].name} is not owned.`; return updateUI(); }
+        const toRemove = new Set([id]);
+        let grew = true;
+        while (grew) {   // repeat until no more dependants are found
+            grew = false;
+            for (const sid of gameState.unlockedSkills) {
+                if (!toRemove.has(sid) && toRemove.has(SKILLS[sid].prereq)) { toRemove.add(sid); grew = true; }
+            }
+        }
+        gameState.unlockedSkills = gameState.unlockedSkills.filter(sid => !toRemove.has(sid));
+        recalculateMods();
+        if (!gameState.mods.autoOps) gameState.autoActive = [];   // Autonomous Operations is gone, so switch its routines off
+        const extra = toRemove.size - 1;
+        devDone(`removed ${SKILLS[id].name}` + (extra > 0 ? ` and ${extra} skill${extra === 1 ? '' : 's'} that needed it.` : '.'));
+    }
     function devClearSkills() {
         gameState.unlockedSkills = []; gameState.autoActive = []; recalculateMods();
         devDone('removed every skill.');
@@ -4796,6 +4907,187 @@ function isBanishedItem(item) {
         gameState.labPoints     = gameState.labPointsEarned;
         _lastModuleBayKey = null;
         devDone('reset all research. Every Lab Point was refunded.');
+    }
+
+    // --- Dev panel sections ---
+    function devExpandAll(open) {
+        document.querySelectorAll('#dev-panel details.dev-section').forEach(d => d.open = open);
+    }
+
+    // ============================================================
+    //  DEV STATS INSPECTOR
+    //  renderDevInspector() builds the HTML for every section from the live gameState and puts it in the pop-out.
+    //  It re-draws twice a second while open (see devInspectorTick). Dropdown sections you opened stay open.
+    // ============================================================
+    let devInspectorOpen = false;
+    let devInspOpenKeys  = new Set(['Reductions & resistances', 'Drones']);   // sections that start expanded
+
+    function toggleDevInspector() {
+        devInspectorOpen = !devInspectorOpen;
+        document.getElementById('dev-inspector').classList.toggle('open', devInspectorOpen);
+        if (devInspectorOpen) renderDevInspector();
+    }
+    function devInspectorTick() { if (devInspectorOpen) renderDevInspector(); }
+
+    function renderDevInspector() {
+        const gs = gameState, m = gs.mods;
+        const body = document.getElementById('dev-inspector-body');
+        const scrollTop = body.scrollTop;
+        // Remember which sections you have open so the redraw does not snap them shut
+        if (body.childElementCount) devInspOpenKeys = new Set([...body.querySelectorAll('details[open]')].map(d => d.dataset.key));
+
+        // Small helpers that turn numbers into text
+        const pct  = v => `${(v * 100).toFixed(1)}%`;
+        const mult = v => `x${v.toFixed(2)}`;
+        const num  = (v, d = 2) => (+v).toFixed(d);
+        const row  = (label, value) => `<div class="dev-ins-row"><span>${label}</span><span>${value}</span></div>`;
+        const section = (title, html) =>
+            `<details class="dev-section" data-key="${title}" ${devInspOpenKeys.has(title) ? 'open' : ''}><summary>${title}</summary><div class="dev-section-body">${html}</div></details>`;
+        const fx = getEffectMods();
+
+        // --- 1) Reductions & resistances ---
+        const failChance = 0.005 * (1 - m.failureReduction) * (gs.integrity <= 0 ? 3 : 1) * getShallowFactor(GRACE_FAIL_FACTOR);
+        const resist =
+            row('Failure reduction', `${pct(m.failureReduction)}`) +
+            row('Minor failure chance / sec', `${(failChance * 100).toFixed(3)}%` + (failChance > 0 ? ` (about 1 per ${Math.round(1 / failChance)}s)` : '')) +
+            row('Event resistance (cap 75%)', pct(m.eventResist)) +
+            row('Pressure resistance (cap 80%)', pct(m.pressureResist)) +
+            row('Oxygen pressure resist (cap 60%)', pct(m.oxygenPressureResist)) +
+            row('Bit wear factor', `${mult(m.integrityWearFactor)} (${m.integrityWearFactor < 1 ? '-' : '+'}${Math.abs(Math.round((1 - m.integrityWearFactor) * 100))}%)`) +
+            row('Power consumption factor', mult(m.powerConsumptionFactor)) +
+            row('Heat gain factor', mult(m.heatFactor)) +
+            row('Cooling factor', mult(m.coolingFactor)) +
+            `<p class="dev-ins-note">Failure chance includes the shallow-depth grace period and the x3 broken-bit penalty.</p>`;
+
+        // --- 2) Drill speed ---
+        const drillSpeed =
+            row('Base drill speed (workshop)', num(gs.baseDrillSpeed)) +
+            row('Skill / module flat speed', `+${num(m.drillSpeed)}`) +
+            row('Drone speed bonus', `+${num(getDroneDrillSpeed())}`) +
+            row('Speed multiplier (modules)', mult(Math.max(0.2, m.drillSpeedMultiplier))) +
+            row('Phase / Chrono multiplier', mult(m.drillSpeedFinalMult)) +
+            row('Scan Boost', gs.boostTimeRemaining > 0 ? `${mult(SCAN_BOOST_SPEED_MULTIPLIER)} (${num(gs.boostTimeRemaining, 1)}s)` : 'off') +
+            row('Active effect speed', mult(fx.speedMult)) +
+            row('Worn-bit speed', mult(getIntegritySpeedFactor())) +
+            row('Raw speed', `${num(getRawDrillSpeed())} m/s`) +
+            row('Rock hardness', mult(getHardness())) +
+            row('Effective speed', `${num(getEffectiveDrillSpeed())} m/s`) +
+            row('Critical drill chance', `${pct(m.critChance)} per sec (x${m.critMultiplier})`) +
+            row('Mega-crit chance', `${pct(m.megaCritChance)} per sec (x${m.megaCritMultiplier})`);
+
+        // --- 3) Ore ---
+        const res = getCurrentResource(gs.depth);
+        const ore =
+            row('Current ore', `${res.name} (base ${getResourceValue(res)})`) +
+            row('Workshop base ore value', num(gs.baseOreValue)) +
+            row('Ore value bonus (skills/modules)', `+${pct(m.oreValueMultiplier)}`) +
+            row('Depth bonus', `+${pct(gs.depth * m.depthValueBonus)}`) +
+            row('Record-depth bonus', `+${pct(gs.maxDepth * m.recordDepthBonus)}`) +
+            row('Compound Interest', `+${pct(Math.min(1, gs.totalAscensions * m.compoundInterest))} (${gs.totalAscensions} ascensions)`) +
+            row('Total ore multiplier', mult(getOreMultiplier())) +
+            row('Active effect ore multiplier', mult(fx.oreMult)) +
+            row('Ore per metre (final)', fmt(getResourceValue(res) * getOreMultiplier() * fx.oreMult)) +
+            row('Ore per second drilling', fmt(getResourceValue(res) * getOreMultiplier() * fx.oreMult * getEffectiveDrillSpeed()));
+
+        // --- 4) Rates per second ---
+        const pRate = getEffectivePowerConsumptionRate(), oRate = getEffectiveOxygenRate();
+        const rates =
+            row('Power (net)', `${pRate >= 0 ? '+' : ''}${num(pRate)}/s`) +
+            row('Oxygen (net)', `${oRate >= 0 ? '+' : ''}${num(oRate)}/s`) +
+            row('Bit wear (drilling)', `-${num(getWearRate())}/s`) +
+            row('Heat gain (drilling)', `+${num(getHeatGainRate())}/s`) +
+            row('Cooling (idle)', `-${num(getCoolingRate())}/s`) +
+            row('Drone cooling', `-${num(getDroneCooling())}/s`) +
+            row('Power drain multiplier (effects)', mult(fx.powerDrainMult)) +
+            row('Extra oxygen drain (effects)', `${num(fx.oxygenDrain)}/s`) +
+            row('Heat multiplier (effects)', mult(fx.heatMult)) +
+            row('Wear multiplier (effects)', mult(fx.wearMult));
+
+        // --- 5) Drones ---
+        const ds = gs.drones;
+        let droneHTML = row('Unlocked', ds.unlocked ? 'yes' : 'no') +
+            row('Housing', `${getDroneSpaceUsed()} / ${getDroneHousing()}`) +
+            row('Ore from drones', `${fmt(getDroneOrePerSec())} /s`) +
+            row('Cooling from drones', `${num(getDroneCooling())} Heat/s`) +
+            row('Drill speed from drones', `+${num(getDroneDrillSpeed())}`) +
+            row('Alloys', `${Math.floor(gs.alloys)}`) +
+            row('Scrap refund', pct(Math.min(0.9, DRONE_SCRAP_REFUND + m.droneScrapRefund)));
+        droneHTML += `<p class="dev-section-label">Per type (working / broken / upgrades)</p>`;
+        for (const id in DRONE_TYPES) {
+            const t = DRONE_TYPES[id];
+            const total = ds.list.filter(d => d.type === id).length;
+            const working = getWorkingDrones(id).length;
+            const ups = (DRONE_UPGRADES[id] || []).filter(u => hasDroneUpgrade(id, u.id)).length;
+            droneHTML += row(`${t.icon} ${t.name}`, `${working} / ${total - working} / ${ups} of ${(DRONE_UPGRADES[id] || []).length}` +
+                ` (power x${getDroneUpgradeMult(id, 'power')}, wear x${getDroneUpgradeMult(id, 'wear')})`);
+        }
+
+        // --- 6) Modules ---
+        let modHTML = '';
+        for (const slotId in MODULE_SLOTS) {
+            const slot = MODULE_SLOTS[slotId];
+            if (!gs.unlockedModuleSlots[slotId]) { modHTML += row(slot.name, '<span style="color:#6b7280">not installed</span>'); continue; }
+            const optId = gs.modules[slotId], opt = slot.options[optId], mk = getModuleMk(slotId, optId);
+            const txt = Object.keys(opt.bonus).length ? bonusText(scaleModuleBonus(opt.bonus, mk)) : 'no bonus';
+            modHTML += row(slot.name, `${opt.name}${mk > 1 ? ' ' + MK_NAMES[mk] : ''}`) +
+                       `<p class="dev-ins-note" style="margin:0 0 0.2rem">${txt}</p>`;
+        }
+
+        // --- 7) Workshop ---
+        let wsHTML = '';
+        for (const id in WORKSHOP_UPGRADES) {
+            const u = WORKSHOP_UPGRADES[id], tier = gs.workshopTiers[id] || 0;
+            wsHTML += row(u.name, `Tier ${tier}/${u.maxTier} · ${u.stat} = ${num(gs[u.stat])}`);
+        }
+
+        // --- 8) Skills & perks ---
+        const owned = gs.unlockedSkills;
+        const flags = ['scanner', 'autoOps', 'caveAdapted', 'goldenAge', 'secondWind', 'trueBanish'].filter(k => m[k]);
+        const skillsHTML =
+            row('Skills owned', `${owned.length} / ${Object.keys(SKILLS).length}`) +
+            `<p class="dev-ins-note" style="margin:0 0 0.3rem">${owned.length ? owned.join(', ') : 'none'}</p>` +
+            row('Ascension perks', `${gs.ascensionOwned.length} / ${Object.keys(ASCENSION_UPGRADES).length}`) +
+            `<p class="dev-ins-note" style="margin:0 0 0.3rem">${gs.ascensionOwned.length ? gs.ascensionOwned.map(id => ASCENSION_UPGRADES[id].name).join(', ') : 'none'}</p>` +
+            row('Special abilities on', flags.length ? flags.join(', ') : 'none') +
+            row('Second Wind used this run', gs.secondWindUsed ? 'yes' : 'no') +
+            row('Start tier / Deep Drop', `${m.startTier} / ${pct(m.deepDrop)}`) +
+            row('Free shop item chance', pct(m.freeItemChance)) +
+            row('Favorite limit', m.favoriteLimit) +
+            row('Surface Sample', `${getSurfaceSampleCost()}m for +${1 + m.sampleBonusPrp} PRP (used ${gs.surfaceSamplesUsed})`);
+
+        // --- 9) Active effects ---
+        const effHTML = gs.activeEffects.length
+            ? gs.activeEffects.map(e => row(`${e.bad ? '🔴' : '🟢'} ${e.name}`, `${num(e.remaining, 0)}s · ${JSON.stringify(e.effect || {})}`)).join('')
+            : '<p class="dev-ins-note">No active effects.</p>';
+
+        // --- 10) Run state ---
+        const r = gs.refinery, lab = gs.labActive;
+        const runHTML =
+            row('Depth / record', `${num(gs.depth, 0)}m / ${num(gs.maxDepth, 0)}m`) +
+            row('Run started at', `${gs.startDepth}m`) +
+            row('Ascend would give', `${getAscendGain(gs.depth)} PRP`) +
+            row('Next shop at', `${num(gs.nextShopDepth, 0)}m`) +
+            row('Next crossroads at', `${num(gs.nextCrossroadsDepth, 0)}m`) +
+            row('Next Deep Event at', `${num(gs.nextDeepEventDepth, 0)}m`) +
+            row('Next random event in', `${num(Math.max(0, gs.nextEventIn), 0)}s`) +
+            row('Refinery', r.unlocked ? `${r.state} · tiers ${r.tiers.eff}/${r.tiers.speed}/${r.tiers.yield} · ${num(getRefineryCycleTime(), 0)}s batch` : 'not found yet') +
+            row('Lab Points', `${gs.labPoints} (${gs.labResearched.length} researched)`) +
+            row('Lab project', lab ? `${LAB_RESEARCH[lab.id].name} · ${fmtDuration(lab.timeLeft)} left` : 'none') +
+            row('Challenge', gs.activeChallenge ? `${gs.activeChallenge.id} (${gs.activeChallenge.status})` : 'none') +
+            row('Run counters', `shops ${gs.run.shopPurchases}, skills ${gs.run.skillsBought}, repairs ${gs.run.repairs}`);
+
+        body.innerHTML =
+            section('Reductions & resistances', resist) +
+            section('Drill speed', drillSpeed) +
+            section('Ore value', ore) +
+            section('Rates per second', rates) +
+            section('Drones', droneHTML) +
+            section('Active modules', modHTML) +
+            section('Workshop upgrades', wsHTML) +
+            section('Skills & perks', skillsHTML) +
+            section('Active effects', effHTML) +
+            section('Run state', runHTML);
+        body.scrollTop = scrollTop;
     }
 
     function devFill() {
@@ -4943,6 +5235,7 @@ function isBanishedItem(item) {
         // The lab clock runs on its own timer, because research must keep going while the game loop is stopped
         // (paused, in a shop, in a pop-up). It does nothing while the title screen is open.
         setInterval(labClockTick, 250);
+        setInterval(devInspectorTick, 500);   // keeps the Dev Stats Inspector live while it is open
         // The game loop is NOT started here any more. Pressing "Start Game" on the title screen starts it.
     };
 
