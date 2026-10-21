@@ -744,15 +744,14 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.5', date: '2026-10-20',
+			version: 'v1.5', date: '2026-10-21',
 			changes: [
-				'Added the Laboratory! Click the new 🧪 Lab tab on the left edge. Achievements now give Lab Points (1 each, 2 for hidden ones), which you spend on research.',
+				'Added the Laboratory! Click the new 🧪 Lab tab on the left edge. Achievements now give Lab Points (2 each, 4 for hidden ones), which you spend on research.',
 				'Research takes real time, and only one project can run at a time. It keeps going while the game is paused, in a shop or in a pop-up, but stops while you are on the main menu. Longer and more powerful research takes longer.',
-				'Lab Points and finished research are permanent. They are not lost when you ascend or restart.',
-				'Some content is now locked behind research: Resonator, Voidborer, Fusion, Dark Matter, Obsidian, Plasma, Oracle and Void Heat Sink modules, Mk III module upgrades, Mechanic and Sampler drones, five drone upgrades, and the whole Tier 9 Singularity row of the skill tree.',
-				'Shops now close by themselves after 2 minutes (real time) without a purchase. Every purchase resets the timer, and it stops counting while you are on the main menu.',
-				'Added a Lab Points counter to the top bar, and each achievement now shows how many Lab Points it gives.',
+				'Some content is now locked behind research including some modules, tier 10 of the skill tree, and some more.
+				'Shops now close by themselves after 2 minutes (real time) without a purchase.
 				'Dev Mode: new Laboratory section to add Lab Points, finish research instantly, research everything, or reset.',
+				'Added a new tier 8, pushing the old tier 8 and tier 9 down to tier 9 and 10. Its placement may be adjusted later',
 				]
 			},
 		{
@@ -901,6 +900,9 @@
     const FAVORITE_WEIGHT    = 3;     // a favorited item is this many times more likely to be picked (1 = no boost)
     const BANISH_WEIGHT      = 0.25;  // a banished item is this likely compared to a normal one (0.25 = 4x rarer, 0 = only if nothing else is left)
     const BANISH_LIMIT       = 2;     // how many workshop upgrades, and how many module slots, can be banished at once
+	
+	function rollFree() { return Math.random() < gameState.mods.freeItemChance; }   // 0.15 = 15% true
+	function getShopItemPrice(item) { return item.free ? 0 : item.info.price; }
 
     // When you drill back down to a shop that Surface Sample pulled you above, it reopens.
     // Items you already bought stay sold. Each item you did NOT buy has this chance (0 to 1)
@@ -1071,18 +1073,18 @@
         'G1': { name: 'Enhanced Drill',        cost: 400000,   effect: '+50 Base Drill Speed',                  prereq: 'F1', minDepth: 8000,  bonus: { drillSpeed: 50 } },
         'G2': { name: 'Magical Enhancements',  cost: 400000,   effect: "Ores are double the price",             prereq: 'F2', minDepth: 8000,  bonus: { oreValueMultiplier: 2.0 } },
         'G3': { name: 'Protective Barrier',    cost: 400000,   effect: 'More failure reduction',                prereq: 'F3', minDepth: 8000,  bonus: { failureReduction: 0.3, eventResist: 0.25 } },
-        // Tier H — Deep Core Engineering
-        'H1': { name: 'Pressure Hull',         cost: 1000000,  effect: 'Halves depth pressure on life support', prereq: 'G1', minDepth: 13000, bonus: { pressureResist: 0.5 } },
-        'H2': { name: 'Phase Drill',           cost: 1000000,  effect: 'x2.5 Drill Speed (multiplies all speed)', prereq: 'G2', minDepth: 13000, bonus: { drillSpeedFinalMult: 2.5 } },
-        'H3': { name: 'Autonomous Operations', cost: 1000000,  effect: 'automate any 2 systems at once',        prereq: 'G3', minDepth: 13000, bonus: { autoOps: true } },
-        // Tier I — Singularity
-        'I1': { name: 'Singularity Compressor',cost: 5000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'H1', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
-        'I2': { name: 'Chrono Drill',          cost: 5000000, effect: 'x2 Drill Speed (multiplies again)',    prereq: 'H2', minDepth: 21000, bonus: { drillSpeedFinalMult: 2.0 } },
-        'I3': { name: 'Adamantine Chassis',    cost: 5000000, effect: '-65% bit wear, -50% event damage',      prereq: 'H3', minDepth: 21000, bonus: { integrityWearFactor: 0.35, eventResist: 0.5, failureReduction: 0.2 } },
-		// Tier J - Unnamed for Now
-		'J1': { name: 'Singularity Compressor',cost: 5000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'I1', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
-		'J2': { name: 'Singularity Compressor',cost: 5000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'I2', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
-		'J3': { name: 'Singularity Compressor',cost: 5000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'I3', minDepth: 21000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
+        // Tier H - Run Building
+		'H1': { name: 'Store Credit',          cost: 1000000, effect: 'Favorite 2 upgrades and 2 module slots at a time', prereq: 'G1', minDepth: 13000, bonus: { favoriteLimit: 1 } },
+'H2': { name: 'True Banishment',               cost: 1000000, effect: 'Banished items never appear in shops',             prereq: 'G2', minDepth: 13000, bonus: { trueBanish: true } },
+'H3': { name: 'Freebie!',                      cost: 1000000, effect: 'Each shop item has a 15% chance to be free',       prereq: 'G3', minDepth: 13000, bonus: { freeItemChance: 0.15 } },
+        // Tier I — Deep Core Engineering
+        'I1': { name: 'Pressure Hull',         cost: 5000000,  effect: 'Halves depth pressure on life support', prereq: 'H1', minDepth: 21000, bonus: { pressureResist: 0.5 } },
+        'I2': { name: 'Phase Drill',           cost: 5000000,  effect: 'x2.5 Drill Speed (multiplies all speed)', prereq: 'H2', minDepth: 21000, bonus: { drillSpeedFinalMult: 2.5 } },
+        'I3': { name: 'Autonomous Operations', cost: 5000000,  effect: 'automate any 2 systems at once',        prereq: 'H3', minDepth: 21000, bonus: { autoOps: true } },
+        // Tier J — Singularity
+        'J1': { name: 'Singularity Compressor',cost: 8000000, effect: '+400% Ore Value, +1%/100m Depth',       prereq: 'I1', minDepth: 32000, bonus: { oreValueMultiplier: 4.0, depthValueBonus: 0.0001 } },
+        'J2': { name: 'Chrono Drill',          cost: 8000000, effect: 'x2 Drill Speed (multiplies again)',    prereq: 'I2', minDepth: 32000, bonus: { drillSpeedFinalMult: 2.0 } },
+        'J3': { name: 'Adamantine Chassis',    cost: 8000000, effect: '-65% bit wear, -50% event damage',      prereq: 'I3', minDepth: 32000, bonus: { integrityWearFactor: 0.35, eventResist: 0.5, failureReduction: 0.2 } },
     };
 
     const SKILL_TIERS = {
@@ -1093,9 +1095,9 @@
         'E': { title: 'Tier 5: Mastery',               color: 'red'     },
         'F': { title: 'Tier 6: Scrap',                 color: 'purple'  },
         'G': { title: 'Tier 7: Foundations of Magic',  color: 'pink'    },
-        'H': { title: 'Tier 8: Deep Core Engineering', color: 'sky'     },
-        'I': { title: 'Tier 9: Singularity',           color: 'fuchsia' },
-		'J': { title: 'Tier 10: Ill choose a name later', color: 'teal' },
+        'H': { title: 'Tier 8: Run Building',          color: 'teal'    },
+        'I': { title: 'Tier 9: Deep Core Engineering', color: 'sky'     },
+        'J': { title: 'Tier 10: Singularity',          color: 'fuchsia' },
     };
 
     const MODULE_SLOTS = {
@@ -1537,7 +1539,7 @@
         { id: 'ore_baron',     icon: '🏦', name: 'Ore Baron',          desc: 'Hold 1,000,000 Ore at once.',                 check: gs => gs.ore >= 1e6 },
         { id: 'tier5_skill',   icon: '🎓', name: 'Mastery',            desc: 'Own a Tier 5 skill.',                         check: gs => gs.unlockedSkills.some(s => s[0] === 'E') },
         { id: 'all_skills',    icon: '🌳', name: 'Full Canopy',        desc: 'Own every skill in the skill tree in one run.', check: gs => Object.keys(SKILLS).every(id => gs.unlockedSkills.includes(id)) },
-        { id: 'automation',    icon: '🤖', name: 'Hands Free',         desc: 'Install Autonomous Operations.',              check: gs => gs.unlockedSkills.includes('H3') },
+        { id: 'automation',    icon: '🤖', name: 'Hands Free',         desc: 'Install Autonomous Operations.',              check: gs => gs.unlockedSkills.includes('I3') },
         { id: 'speed_demon',   icon: '🏎️', name: 'Speed Demon',        desc: 'Drill at 25 m/s or faster (after rock hardness).', check: gs => getEffectiveDrillSpeed() >= 25 },
         { id: 'scan_boost',    icon: '📡', name: 'Ping!',              desc: 'Use Scan Boost.',                             check: gs => gs.boostTimeRemaining > 0 },
 		{ id: 'first_alloy',   icon: '🔧', name: 'Refining!',          desc: 'Get your first alloy',						check: gs => gs.alloys >= 1 },
@@ -1556,7 +1558,7 @@
         // --- Shops & modules ---
         { id: 'regular',       icon: '🗺️', name: 'Regular Customer',   desc: 'Find 5 shops in one run.',                    check: gs => gs.shopLog.length >= 5 },
         { id: 'shopaholic',    icon: '🛍️', name: 'Shopaholic',         desc: 'Buy 10 shop items in one run.',               check: gs => gs.run.shopPurchases >= 10 },
-        { id: 'favorites',     icon: '⭐', name: 'Picky Buyer',        desc: 'Favorite a workshop upgrade and a module slot.', check: gs => !!(gs.favoriteWorkshop && gs.favoriteSlot) },
+        { id: 'favorites',     icon: '⭐', name: 'Picky Buyer',        desc: 'Favorite a workshop upgrade and a module slot.', check: gs => gs.favoriteWorkshops.length >= 1 && gs.favoriteSlots.length >= 1 },
         { id: 'full_bay',      icon: '🧩', name: 'Fully Loaded',       desc: 'Install all six module slots in one run.',    check: gs => Object.keys(MODULE_SLOTS).every(s => gs.unlockedModuleSlots[s]) },
         { id: 'mk2',           icon: '⬆️', name: 'Tuned Up',           desc: 'Upgrade a module to Mk II.',                  check: gs => Object.values(gs.moduleMk).some(m => m >= 2) },
         { id: 'mk3',           icon: '🔧', name: 'Overengineered',     desc: 'Upgrade a module to Mk III.',                 check: gs => Object.values(gs.moduleMk).some(m => m >= 3) },
@@ -1596,7 +1598,7 @@
         { id: 'golden_age',    icon: '🌅', name: 'Golden Age',         desc: 'Trigger a Golden Age.',     hidden: true,    check: gs => gs.activeEffects.some(e => e.id === 'golden') },
 
         // --- Late game ---
-        { id: 'singularity',   icon: '🕳️', name: 'Singularity',        desc: 'Install Singularity Compressor.', hidden: true, check: gs => gs.unlockedSkills.includes('I1') },
+        { id: 'singularity',   icon: '🕳️', name: 'Singularity',        desc: 'Install Singularity Compressor.', hidden: true, check: gs => gs.unlockedSkills.includes('J1') },
     ];
 
     // One "reach this ore" achievement is made automatically for every resource in RESOURCES
@@ -1668,7 +1670,7 @@
 
         // --- Skill tree ---
         r_tier_i:    { name: 'Singularity Theory',       icon: '🕳️', group: 'Skill tree',        cost: 15, time: 1800, prereq: null,
-                       unlocks: { type: 'skillTier', tier: 'I' } },
+                       unlocks: { type: 'skillTier', tier: 'J' } },
     };
 
     // ============================================================
@@ -1694,6 +1696,8 @@
         totalChoicesMade: 0,      // crossroads + event choices picked, across all runs
         deepEventsSurvived: 0,    // Deep Events finished successfully, across all runs
         totalAlloysMade: 0,       // Alloys the refinery has ever produced, across all runs
+		favoriteWorkshops: [],   // ids of starred workshop upgrades (up to mods.favoriteLimit)
+        favoriteSlots: [],       // ids of starred module slots
         // --- Laboratory (all of this survives ascension, and will be part of the save file later) ---
         labPoints: 0,             // Lab Points you can spend right now (earned from achievements)
         labPointsEarned: 0,       // every Lab Point you have ever earned (only for display)
@@ -1874,6 +1878,9 @@
         grantOwnedSpecialModules();
         applyPermanentBonuses();
         recalculateMods();
+		
+		gameState.favoriteWorkshops = gameState.favoriteWorkshops.slice(0, gameState.mods.favoriteLimit);
+		gameState.favoriteSlots     = gameState.favoriteSlots.slice(0, gameState.mods.favoriteLimit);			
 
         // Ascension perks that shape the START of a run
         const tiers = 'ABCDEFGHI';
@@ -1938,6 +1945,7 @@
             compoundInterest: 0, deepEventBonus: 0, goldenAge: false, deepDrop: 0, secondWind: false,
             recordDepthBonus: 0, startTier: 0, sampleBonusPrp: 0, sampleDiscount: 0,
             droneStart: false, droneScrapRefund: 0, refineryStartTier: 0,   // Swarm path
+			favoriteLimit: 1, trueBanish: false, freeItemChance: 0,
         };
         for (const skillId of gameState.unlockedSkills) {
             if (SKILLS[skillId]?.bonus) applyBonusToMods(SKILLS[skillId].bonus);
@@ -2518,23 +2526,21 @@
     // Favorites: only one workshop upgrade and one module slot can be starred at a time.
     // Because each is a single variable, starring a new one automatically replaces the old one.
     // Something can't be favorited and banished at once, so each one clears the other.
-    function toggleFavoriteWorkshop(id) {
-        gameState.favoriteWorkshop = (gameState.favoriteWorkshop === id) ? null : id;
-        if (gameState.favoriteWorkshop) gameState.banishedWorkshop = gameState.banishedWorkshop.filter(b => b !== id);
-        gameState.message = gameState.favoriteWorkshop
-            ? `${WORKSHOP_UPGRADES[id].name} is now your favorite upgrade. It will show up in shops more often.`
-            : 'Favorite workshop upgrade cleared.';
-        updateUI();
+function toggleFavorite(listKey, banKey, id, name) {
+    const list = gameState[listKey];
+    if (list.includes(id)) {
+        gameState[listKey] = list.filter(f => f !== id);   // already starred, so un-star it
+        gameState.message = `${name} is no longer a favorite.`;
+    } else {
+        // add it, then keep only the newest few. slice(-2) means "the last 2 items"
+        gameState[listKey] = [...list, id].slice(-gameState.mods.favoriteLimit);
+        gameState[banKey] = gameState[banKey].filter(b => b !== id);   // can't be favorited and banished
+        gameState.message = `${name} is now a favorite. It will show up in shops more often.`;
     }
-
-    function toggleFavoriteSlot(slotId) {
-        gameState.favoriteSlot = (gameState.favoriteSlot === slotId) ? null : slotId;
-        if (gameState.favoriteSlot) gameState.banishedSlots = gameState.banishedSlots.filter(b => b !== slotId);
-        gameState.message = gameState.favoriteSlot
-            ? `${MODULE_SLOTS[slotId].name} is now your favorite slot. Its modules will show up in shops more often.`
-            : 'Favorite module slot cleared.';
-        updateUI();
-    }
+    updateUI();
+}
+function toggleFavoriteWorkshop(id) { toggleFavorite('favoriteWorkshops', 'banishedWorkshop', id, WORKSHOP_UPGRADES[id].name); }
+function toggleFavoriteSlot(slotId) { toggleFavorite('favoriteSlots', 'banishedSlots', slotId, `The ${MODULE_SLOTS[slotId].name} slot`); }
 
     // Banishing: the opposite of favoriting. Up to BANISH_LIMIT workshop upgrades and BANISH_LIMIT
     // module slots can be banished, and they show up in shops much less often (see BANISH_WEIGHT).
@@ -2548,14 +2554,14 @@
             gameState.message = `You can only banish ${BANISH_LIMIT} at a time. Un-banish one first (click its 🚫 again).`;
         } else {
             list.push(id);
-            if (gameState[favKey] === id) gameState[favKey] = null;
+			gameState[favKey] = gameState[favKey].filter(f => f !== id);
             gameState.message = `${name} is banished. It will show up in shops much less often.`;
         }
         updateUI();
     }
-    function toggleBanishWorkshop(id)  { toggleBanish('banishedWorkshop', 'favoriteWorkshop', id, WORKSHOP_UPGRADES[id].name); }
-    function toggleBanishSlot(slotId)  { toggleBanish('banishedSlots', 'favoriteSlot', slotId, `The ${MODULE_SLOTS[slotId].name} slot`);
-    }
+	
+	function toggleBanishWorkshop(id) { toggleBanish('banishedWorkshop', 'favoriteWorkshops', id, WORKSHOP_UPGRADES[id].name); }
+	function toggleBanishSlot(slotId) { toggleBanish('banishedSlots', 'favoriteSlots', slotId, `The ${MODULE_SLOTS[slotId].name} slot`); }
 
     // --- Module upgrades (Mk II / Mk III) ---
     // Bonus keys that work as "multiply by this" (below 1 = good, e.g. 0.6 = -40%). Every other number key is "add this".
@@ -2664,17 +2670,17 @@
     function rollNextShopDepth(fromDepth) {
         return fromDepth + rollNextGap(fromDepth, SHOP_BASE_INTERVAL, SHOP_DEPTH_SCALE);
     }
+	
+	function isFavoriteItem(item) {
+    if (item.type === 'workshop') return gameState.favoriteWorkshops.includes(item.id);
+    return gameState.favoriteSlots.includes(item.slotId);   // 'slot' and 'module' items both have a slotId
+}
 
     // How likely is this item to be picked? Normal items have weight 1.
-    // Items matching your favorite workshop upgrade or favorite module slot get FAVORITE_WEIGHT.
-    function isFavoriteItem(item) {
-        if (item.type === 'workshop') return item.id === gameState.favoriteWorkshop;
-        return item.slotId === gameState.favoriteSlot;   // 'slot' and 'module' items both have a slotId
-    }
-    function isBanishedItem(item) {
-        if (item.type === 'workshop') return gameState.banishedWorkshop.includes(item.id);
-        return gameState.banishedSlots.includes(item.slotId);
-    }
+function isBanishedItem(item) {
+    if (item.type === 'workshop') return gameState.banishedWorkshop.includes(item.id);
+    return gameState.banishedSlots.includes(item.slotId);
+}
     function getShopItemWeight(item) {
         if (isFavoriteItem(item)) return FAVORITE_WEIGHT;
         if (isBanishedItem(item)) return BANISH_WEIGHT;
@@ -2715,7 +2721,8 @@
                 if (!owned[optId] && !opt.special && !getModuleLock(slotId, optId) && gameState.depth >= opt.unlockDepth) pool.push({ type: 'module', slotId, optId });
             }
         }
-        return pool;
+        if (gameState.mods.trueBanish) return pool.filter(item => !isBanishedItem(item));
+		return pool;
     }
 
     // Turns a shop item into the name / description / price shown on its card
@@ -2760,7 +2767,7 @@
         const takenKeys = new Set(keep.map(shopItemKey));
         const candidates = pool.filter(item => !takenKeys.has(shopItemKey(item)));
         const fresh = pickWeighted(candidates, swapsNeeded)
-            .map(item => ({ ...item, sold: false }));
+            .map(item => ({ ...item, sold: false, free: rollFree() }));
 
         // Rebuild the card info (prices and tiers may have changed since the first visit)
         const result = [...keep, ...fresh];
@@ -2799,7 +2806,7 @@
 
             // Pick the stock and remember each item's card info at this moment
             gameState.shopStock = pickWeighted(pool, SHOP_ITEM_COUNT)
-                .map(item => ({ ...item, info: getShopItemInfo(item), sold: false, favorite: isFavoriteItem(item), banished: isBanishedItem(item) }));
+                .map(item => ({ ...item, info: getShopItemInfo(item), sold: false, favorite: isFavoriteItem(item), banished: isBanishedItem(item), free: rollFree() }));
 
             // Write this shop in the log. The log and gameState.shopStock share the SAME list,
             // so when you buy something (item.sold = true) the log remembers it automatically.
@@ -2830,69 +2837,70 @@
     const SHOP_CARD_COLORS = { yellow: 'border-yellow-600 text-yellow-300', cyan: 'border-cyan-600 text-cyan-300', purple: 'border-purple-600 text-purple-300' };
 
     function renderShop() {
-        document.getElementById('shop-ore').innerText = `${fmt(gameState.ore)} Ore`;
-        document.getElementById('shop-items').innerHTML = gameState.shopStock.map((item, i) => {
-            const info = item.info;
-            if (item.sold) {
-                return `<div class="bg-gray-900 p-4 rounded-xl border border-gray-700 opacity-50 flex flex-col justify-center text-center">
-                    <h3 class="font-bold text-gray-400">${info.name}</h3>
-                    <p class="text-sm text-gray-500 mt-1">SOLD</p></div>`;
-            }
-            const afford = gameState.ore >= info.price;
-            // Modules install straight away, so tell the player what they are replacing
-            const note = item.type === 'module'
-                ? `<p class="text-xs text-gray-500 mt-2">Installs now, replacing ${MODULE_SLOTS[item.slotId].options[gameState.modules[item.slotId]].name} (which you keep in the Module Bay).</p>`
-                : '';
-            return `<div class="bg-gray-800 p-4 rounded-xl border ${SHOP_CARD_COLORS[info.color]} flex flex-col justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide opacity-80">${info.tag}${item.favorite ? ' <span class="text-amber-300">⭐ Favorite</span>' : ''}${item.banished ? ' <span class="text-red-400">🚫 Banished</span>' : ''}</p>
-                    <h3 class="text-lg font-bold mt-1">${info.name}</h3>
-                    <p class="text-sm text-gray-300 mt-1">${info.desc}</p>
-                    ${note}
-                </div>
-                <button onclick="buyShopItem(${i})" ${afford ? '' : 'disabled'}
-                    class="mt-4 p-3 rounded-xl text-white font-semibold shadow-md transition duration-150 ${afford ? 'bg-green-700 hover:bg-green-500 cursor-pointer' : 'bg-red-900 opacity-70 cursor-not-allowed'}">
-                    ${afford ? `Buy (${fmt(info.price)} Ore)` : `Needs ${fmt(info.price)} Ore`}
-                </button></div>`;
-        }).join('');
-    }
+    document.getElementById('shop-ore').innerText = `${fmt(gameState.ore)} Ore`;
+    document.getElementById('shop-items').innerHTML = gameState.shopStock.map((item, i) => {
+        const info = item.info;
+        if (item.sold) {
+            return `<div class="bg-gray-900 p-4 rounded-xl border border-gray-700 opacity-50 flex flex-col justify-center text-center">
+                <h3 class="font-bold text-gray-400">${info.name}</h3>
+                <p class="text-sm text-gray-500 mt-1">SOLD</p></div>`;
+        }
+        const price  = getShopItemPrice(item);   // 0 if this item is free
+        const afford = gameState.ore >= price;
+        const note = item.type === 'module'
+            ? `<p class="text-xs text-gray-500 mt-2">Installs now, replacing ${MODULE_SLOTS[item.slotId].options[gameState.modules[item.slotId]].name} (which you keep in the Module Bay).</p>`
+            : '';
+        return `<div class="bg-gray-800 p-4 rounded-xl border ${SHOP_CARD_COLORS[info.color]} flex flex-col justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wide opacity-80">${info.tag}${item.favorite ? ' <span class="text-amber-300">⭐ Favorite</span>' : ''}${item.banished ? ' <span class="text-red-400">🚫 Banished</span>' : ''}${item.free ? ' <span class="text-green-300">🎁 FREE</span>' : ''}</p>
+                <h3 class="text-lg font-bold mt-1">${info.name}</h3>
+                <p class="text-sm text-gray-300 mt-1">${info.desc}</p>
+                ${note}
+            </div>
+            <button onclick="buyShopItem(${i})" ${afford ? '' : 'disabled'}
+                class="mt-4 p-3 rounded-xl text-white font-semibold shadow-md transition duration-150 ${afford ? 'bg-green-700 hover:bg-green-500 cursor-pointer' : 'bg-red-900 opacity-70 cursor-not-allowed'}">
+                ${afford ? (item.free ? 'Take it (FREE)' : `Buy (${fmt(price)} Ore)`) : `Needs ${fmt(price)} Ore`}
+            </button></div>`;
+    }).join('');
+}
 
     function buyShopItem(index) {
-        if (!gameState.inShop) return;
-        const item = gameState.shopStock[index];
-        if (!item || item.sold) return;
-        const info = item.info;
-        if (gameState.ore < info.price) { setShopMessage(`Not enough Ore. ${info.name} costs ${fmt(info.price)}.`); return; }
+    if (!gameState.inShop) return;
+    const item = gameState.shopStock[index];
+    if (!item || item.sold) return;
+    const info  = item.info;
+    const price = getShopItemPrice(item);   // 0 if free
+    if (gameState.ore < price) { setShopMessage(`Not enough Ore. ${info.name} costs ${fmt(price)}.`); return; }
 
-        gameState.ore -= info.price;
-        item.sold = true;
-        gameState.run.shopPurchases++;
-        gameState.shopTimeLeft = SHOP_TIME_LIMIT;   // buying something gives you the full time again
+    gameState.ore -= price;
+    item.sold = true;
+    gameState.run.shopPurchases++;
+    gameState.shopTimeLeft = SHOP_TIME_LIMIT;   // buying something gives you the full time again
 
-        if (item.type === 'workshop') {
-            gameState.workshopTiers[item.id]++;
-            gameState.run.workshopBought++;
-            applyPermanentBonuses();
-        } else if (item.type === 'slot') {
-            const slot = MODULE_SLOTS[item.slotId];
-            const firstOptId = Object.keys(slot.options)[0];   // the plain "no bonus" module comes with the slot
-            gameState.unlockedModuleSlots[item.slotId] = true;
-            gameState.unlockedModuleOptions[item.slotId] = { ...(gameState.unlockedModuleOptions[item.slotId] || {}), [firstOptId]: true };
-            gameState.modules[item.slotId] = firstOptId;
-            gameState.run.modulesBought++;
-            grantOwnedSpecialModules();   // challenge modules you have earned for this slot come with it
-        } else {
-            gameState.unlockedModuleOptions[item.slotId][item.optId] = true;
-            gameState.modules[item.slotId] = item.optId;       // install it straight away
-            gameState.run.modulesBought++;
-        }
-        recalculateMods();
-
-        setShopMessage(`Bought ${info.name}.`);
-        gameState.message = `Bought ${info.name} from the shop.`;
-        renderShop();
-        updateUI();   // keeps the page behind the shop (workshop panel, module bay) up to date
+    if (item.type === 'workshop') {
+        gameState.workshopTiers[item.id]++;
+        gameState.run.workshopBought++;
+        applyPermanentBonuses();
+    } else if (item.type === 'slot') {
+        const slot = MODULE_SLOTS[item.slotId];
+        const firstOptId = Object.keys(slot.options)[0];
+        gameState.unlockedModuleSlots[item.slotId] = true;
+        gameState.unlockedModuleOptions[item.slotId] = { ...(gameState.unlockedModuleOptions[item.slotId] || {}), [firstOptId]: true };
+        gameState.modules[item.slotId] = firstOptId;
+        gameState.run.modulesBought++;
+        grantOwnedSpecialModules();
+    } else {
+        gameState.unlockedModuleOptions[item.slotId][item.optId] = true;
+        gameState.modules[item.slotId] = item.optId;
+        gameState.run.modulesBought++;
     }
+    recalculateMods();
+
+    setShopMessage(`Bought ${info.name}.`);
+    gameState.message = `Bought ${info.name} from the shop.`;
+    renderShop();
+    updateUI();
+}
 
     function leaveShop() {
         if (!gameState.inShop) return;
@@ -3951,7 +3959,7 @@
 
         const bayKey = JSON.stringify({
             slots: gameState.unlockedModuleSlots, options: gameState.unlockedModuleOptions,
-            modules: gameState.modules, swapCost, canAffordSwap, fav: gameState.favoriteSlot, ban: gameState.banishedSlots,
+            modules: gameState.modules, swapCost, canAffordSwap, fav: gameState.favoriteSlots, ban: gameState.banishedSlots,
             mk: gameState.moduleMk, upgradesOpen, upgrades, lab: gameState.labResearched.length,
         });
         if (bayKey === _lastModuleBayKey) return;
@@ -3961,7 +3969,7 @@
         for (const slotId in MODULE_SLOTS) {
             const slot = MODULE_SLOTS[slotId];
             const card = document.createElement('div');
-            const isFav   = gameState.favoriteSlot === slotId;
+            const isFav   = gameState.favoriteSlots.includes(slotId);
             const isBan   = gameState.banishedSlots.includes(slotId);
             const starBtn = `<span class="flex items-center gap-2">
                 <button onclick="toggleFavoriteSlot('${slotId}')" class="text-2xl leading-none ${isFav ? 'text-amber-300' : 'text-gray-500 hover:text-amber-200'}"
@@ -4078,7 +4086,7 @@
             const currentTier = gameState.workshopTiers[id] || 0;
             nodes.tier.textContent    = currentTier >= upgrade.maxTier ? `Tier ${currentTier} of ${upgrade.maxTier} (maxed)` : `Tier ${currentTier} of ${upgrade.maxTier}`;
             nodes.current.textContent = `Current: ${typeof gameState[upgrade.stat] === 'number' ? gameState[upgrade.stat].toFixed(2) : 'N/A'}`;
-            const isFav = gameState.favoriteWorkshop === id;
+            const isFav = gameState.favoriteWorkshops.includes(id);
             nodes.fav.textContent = isFav ? '★' : '☆';
             nodes.fav.className   = `fav-btn text-2xl leading-none ${isFav ? 'text-amber-300' : 'text-gray-500 hover:text-amber-200'}`;
             nodes.fav.title       = isFav ? 'Remove favorite' : 'Favorite this upgrade: it appears in shops more often';
