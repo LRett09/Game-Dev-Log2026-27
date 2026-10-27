@@ -29,10 +29,13 @@
 
 <input type=button value="Test your might!" onClick="{
     if (myHero.strength >= 5) { myHero.comment = 'You beat the strength test!' } else { myHero.comment = 'You need to train more!' }
+    document.getElementById('myDiv01').innerHTML = myHero.comment
   }"><br>
 
 <input type=button value="Rest up!" onClick="{
   myHero.power = myHero.power + 30
+  myHero.comment = 'The hero has rested a bit! Gained +30 power!'
+  document.getElementById('myDiv01').innerHTML = myHero.comment
   }"><br><br>
 
 <div id="myDiv01">Press the button to train your hero!</div>
