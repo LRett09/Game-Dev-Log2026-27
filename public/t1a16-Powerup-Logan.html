@@ -18,9 +18,9 @@
 <input type=button value="Train the hero!" onClick="{
   myHero.power = -10
   if (myHero.power > 50) { myHero.comment = 'Trained! Feeling Good!' } else
-     (myHero.power =< 50 && > 20) { myHero.comment = 'Trained! Slowing down...' } else
-     (myHero.power =< 20 && > 0) { myHero.comment = 'Trained! Getting Exhausted.' } else
-     (myHero.power =< 0) { deadHero() }
+  if (myHero.power =< 50 && > 20) { myHero.comment = 'Trained! Slowing down...' } else
+  if (myHero.power =< 20 && > 0) { myHero.comment = 'Trained! Getting Exhausted.' } else
+  if (myHero.power =< 0) { deadHero() }
   document.getElementById('myDiv01').innerHTML = myHero.comment + '<br>' + 'The hero has ' + myHero.power + ' power left!'
   }"><br><br>
 
