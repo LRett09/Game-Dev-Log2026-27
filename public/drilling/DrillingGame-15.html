@@ -1251,7 +1251,7 @@
                 basic:    { name: 'Basic Sensors',  desc: 'No bonus, no penalty.',                        bonus: {},                                                   unlockCost: 0,     unlockDepth: 2500 },
                 geo:      { name: 'Geo-Scanner',    desc: '+20% Ore Value (reads the rock strata)',        bonus: { oreValueMultiplier: 0.20 },                         unlockCost: 3000,   unlockDepth: 2500 },
                 pressure: { name: 'Pressure Gauge', desc: '+20% Pressure Resistance',                     bonus: { pressureResist: 0.20 },                             unlockCost: 4500,   unlockDepth: 4000 },
-                scouting: { name: 'Scouting Array', desc: '+5 sec scan boost, -10% Power/sec',            bonus: { SCAN_BOOST_DURATION: 5, powerConsumptionFactor: 1.1 },           unlockCost: 7000,   unlockDepth: 5200},
+                scouting: { name: 'Scouting Array', desc: '+5 sec scan boost, -10% Power/sec',            bonus: { scanDurationBonus: 5, powerConsumptionFactor: 0.9 },           unlockCost: 7000,   unlockDepth: 5200},
                 deepScan: { name: 'Deep-Scan Array',desc: '+40% Ore Value, +10% Event Resistance',        bonus: { oreValueMultiplier: 0.40, eventResist: 0.10 },      unlockCost: 13000,  unlockDepth: 6500 },
                 oracle:   { name: 'Oracle Array',   desc: '+80% Ore Value, +25% Pressure Resistance',     bonus: { oreValueMultiplier: 0.80, pressureResist: 0.25 },   unlockCost: 42000, unlockDepth: 8000 },
                 prospector:{ name: "Prospector's Lens", desc: '+60% Ore Value, +15% Pressure Resistance', bonus: { oreValueMultiplier: 0.60, pressureResist: 0.15 },   unlockCost: 0, unlockDepth: 0, special: true },
@@ -1488,7 +1488,7 @@
                        `• If it catches you: +35% Heat and -20 integrity.\n\n` +
                        `Reward: a big Ore haul and 60s of -30% Heat gain.`,
           start: ev => {
-              const boost = gameState.boostTimeRemaining > 0 ? SCAN_BOOST_SPEED_MULTIPLIER : 1;   // don't punish a Scan Boost
+              const boost = gameState.boostTimeRemaining > 0 ? getScanBoostMultiplier() : 1;   // don't punish a Scan Boost
               ev.magmaSpeed = Math.max(1.5, 0.45 * getEffectiveDrillSpeed() / boost);
               ev.magmaDepth = gameState.depth - 150;
               addTimedEffect('deep_magma', 'Magma Heat', true, ev.def.duration, { heatMult: 1.15 });
@@ -1910,7 +1910,7 @@
     function getRawDrillSpeed() {
         let speed = (gameState.baseDrillSpeed + gameState.mods.drillSpeed + getDroneDrillSpeed()) * Math.max(0.2, gameState.mods.drillSpeedMultiplier);
         speed *= gameState.mods.drillSpeedFinalMult;   // Phase Drill / Chrono Drill: true multipliers on top of everything
-        if (gameState.boostTimeRemaining > 0) speed *= SCAN_BOOST_SPEED_MULTIPLIER;
+		if (gameState.boostTimeRemaining > 0) speed *= getScanBoostMultiplier();
         speed *= getEffectMods().speedMult;
         speed *= getIntegritySpeedFactor();
         return speed;
@@ -1923,6 +1923,10 @@
         return BROKEN_BIT_SPEED + (1 - BROKEN_BIT_SPEED) * (pct / WORN_BIT_THRESHOLD);
     }
     function getEffectiveDrillSpeed() { return getRawDrillSpeed() / getHardness(); }
+		// The base numbers (constants) plus whatever upgrades add on top
+function getScanBoostDuration()   { return SCAN_BOOST_DURATION + gameState.mods.scanDurationBonus; }
+function getScanBoostMultiplier() { return SCAN_BOOST_SPEED_MULTIPLIER + gameState.mods.scanSpeedBonus; }
+function getScanBoostOreCost()    { return Math.ceil(SCAN_BOOST_ORE_COST * Math.max(0.1, 1 - gameState.mods.scanCostReduction)); }
     function getOreMultiplier() {
         const m = gameState.mods;
         const compound = Math.min(1, gameState.totalAscensions * m.compoundInterest);
@@ -2045,7 +2049,10 @@
             recordDepthBonus: 0, startTier: 0, sampleBonusPrp: 0, sampleDiscount: 0,
             droneStart: false, droneScrapRefund: 0, refineryStartTier: 0,   // Swarm path
 			favoriteLimit: 1, trueBanish: false, freeItemChance: 0,
-        };
+			scanDurationBonus: 0,   // extra seconds of Scan Boost
+			scanSpeedBonus: 0,      // extra speed multiplier (2.5x becomes 3.0x with +0.5)
+			scanCostReduction: 0,   // 0.2 = Scan Boost costs 20% less Ore
+		};
         for (const skillId of gameState.unlockedSkills) {
             if (SKILLS[skillId]?.bonus) applyBonusToMods(SKILLS[skillId].bonus);
         }
@@ -2530,15 +2537,16 @@
         if (gameState.gameOver || gameState.isPaused || !gameState.mods.scanner) return;
         if (gameState.boostCooldownRemaining > 0) { gameState.message = `Scan Boost recharging (${gameState.boostCooldownRemaining.toFixed(0)}s left).`; return updateUI(); }
         if (gameState.boostTimeRemaining > 0) return;
-        if (gameState.power < SCAN_BOOST_POWER_COST || gameState.ore < SCAN_BOOST_ORE_COST) {
-            gameState.message = `Need ${SCAN_BOOST_POWER_COST} Power and ${SCAN_BOOST_ORE_COST} Ore to Scan Boost.`;
+        const oreCost = getScanBoostOreCost();
+        if (gameState.power < SCAN_BOOST_POWER_COST || gameState.ore < oreCost) {
+            gameState.message = `Need ${SCAN_BOOST_POWER_COST} Power and ${oreCost} Ore to Scan Boost.`;
             return updateUI();
         }
-        gameState.power              -= SCAN_BOOST_POWER_COST;
-        gameState.ore                -= SCAN_BOOST_ORE_COST;
-        gameState.boostTimeRemaining  = SCAN_BOOST_DURATION;
+        gameState.power                 -= SCAN_BOOST_POWER_COST;
+        gameState.ore                   -= oreCost;
+        gameState.boostTimeRemaining     = getScanBoostDuration();
         gameState.boostCooldownRemaining = SCAN_BOOST_COOLDOWN;
-        gameState.message             = `Scan Boost active. Drilling at ${SCAN_BOOST_SPEED_MULTIPLIER}x speed.`;
+        gameState.message                = `Scan Boost active. Drilling at ${getScanBoostMultiplier()}x speed.`;
         updateUI();
     }
 
@@ -2695,6 +2703,9 @@ function toggleFavoriteSlot(slotId) { toggleFavorite('favoriteSlots', 'banishedS
         eventResist: ['pct', 'Event Resistance'],     pressureResist: ['pct', 'Pressure Resistance'],
         powerRate: ['flat', 'Power/sec'],             heatRateBonus: ['flat', 'Heat/sec'],
         powerConsumptionFactor: ['factor', 'Power Consumption'], heatFactor: ['factor', 'Heat gain'], integrityWearFactor: ['factor', 'Bit Wear'],
+		scanDurationBonus: ['flat', 'sec Scan Boost'],
+		scanSpeedBonus:    ['flat', 'Scan Boost speed'],
+		scanCostReduction: ['pct',  'Scan Boost Ore cost'],
     };
     function bonusText(bonus) {
         const sign = n => (n >= 0 ? '+' : '');   // negative numbers already carry their own "-"
@@ -3857,7 +3868,7 @@ function isBanishedItem(item) {
         // Hint text
         const nextRes = getNextResource(gameState.depth);
         if (gameState.boostTimeRemaining > 0) {
-            hint.innerText = `Scan Boost active (${gameState.boostTimeRemaining.toFixed(0)}s) — ${SCAN_BOOST_SPEED_MULTIPLIER}x speed`;
+            hint.innerText = `Scan Boost active (${gameState.boostTimeRemaining.toFixed(0)}s) — ${getScanBoostMultiplier()}x speed`;
             hint.className = 'text-sm mt-1 text-cyan-300 font-bold';
         } else {
             hint.innerText = nextRes
@@ -3877,11 +3888,11 @@ function isBanishedItem(item) {
         } else if (gameState.boostCooldownRemaining > 0) {
             label   = `Recharging (${gameState.boostCooldownRemaining.toFixed(0)}s)`;
             colours = 'bg-gray-700 opacity-70 cursor-not-allowed';
-        } else if (gameState.power < SCAN_BOOST_POWER_COST || gameState.ore < SCAN_BOOST_ORE_COST) {
-            label   = `Scan Boost (needs ${SCAN_BOOST_POWER_COST} Power, ${SCAN_BOOST_ORE_COST} Ore)`;
+        } else if (gameState.power < SCAN_BOOST_POWER_COST || gameState.ore < getScanBoostOreCost()) {
+            label   = `Scan Boost (needs ${SCAN_BOOST_POWER_COST} Power, ${getScanBoostOreCost()} Ore)`;
             colours = 'bg-red-900 opacity-70 cursor-not-allowed';
         } else {
-            label    = `Scan Boost (${SCAN_BOOST_POWER_COST} Power, ${SCAN_BOOST_ORE_COST} Ore)`;
+            label    = `Scan Boost (${SCAN_BOOST_POWER_COST} Power, ${getScanBoostOreCost()} Ore)`;
             colours  = 'bg-cyan-700 hover:bg-cyan-500 cursor-pointer transition duration-150';
             disabled = false;
         }
@@ -4973,7 +4984,7 @@ function isBanishedItem(item) {
             row('Drone speed bonus', `+${num(getDroneDrillSpeed())}`) +
             row('Speed multiplier (modules)', mult(Math.max(0.2, m.drillSpeedMultiplier))) +
             row('Phase / Chrono multiplier', mult(m.drillSpeedFinalMult)) +
-            row('Scan Boost', gs.boostTimeRemaining > 0 ? `${mult(SCAN_BOOST_SPEED_MULTIPLIER)} (${num(gs.boostTimeRemaining, 1)}s)` : 'off') +
+            row('Scan Boost', gs.boostTimeRemaining > 0 ? `${mult(getScanBoostMultiplier())} (${num(gs.boostTimeRemaining, 1)}s)` : 'off') +
             row('Active effect speed', mult(fx.speedMult)) +
             row('Worn-bit speed', mult(getIntegritySpeedFactor())) +
             row('Raw speed', `${num(getRawDrillSpeed())} m/s`) +
