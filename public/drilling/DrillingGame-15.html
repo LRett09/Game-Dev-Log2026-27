@@ -74,6 +74,9 @@
         #drones-toggle-btn:hover { background-color: #14b8a6; }
         #lab-toggle-btn { top: calc(50% - 270px); background-color: #be185d; }
         #lab-toggle-btn:hover { background-color: #db2777; }
+        #drill-toggle-btn { top: calc(50% - 400px); background-color: #b45309; }
+        #drill-toggle-btn:hover { background-color: #d97706; }
+        /* (layoutLeftTabs() in the script stacks whichever left tabs are visible, so these "top" values are only a fallback) */
         /* a tab glows when something in its panel can be bought */
         .side-tab.has-buyable { box-shadow: 0 0 14px rgba(250, 204, 21, 0.75); }
         body.sidebar-open-left .side-tab.left { left: 800px; }
@@ -287,7 +290,7 @@
                 <p class="text-xs text-gray-500">Version 1.5: The Laboratory</p>
             </div>
             <div id="permanent-stats-display" class="px-4 py-1.5 rounded-full bg-purple-950 border border-purple-600 text-purple-300 font-bold text-sm">🔮 0 PRP</div>
-            <button id="lab-points-display" onclick="togglePanel('lab-sidebar')" class="px-4 py-1.5 rounded-full bg-pink-950 border border-pink-600 text-pink-300 hover:bg-pink-900 font-bold text-sm transition duration-150" title="Lab Points: earned from achievements, spent in the Laboratory">🧪 0 LP</button>
+            <button id="lab-points-display" onclick="togglePanel('lab-sidebar')" class="hidden px-4 py-1.5 rounded-full bg-pink-950 border border-pink-600 text-pink-300 hover:bg-pink-900 font-bold text-sm transition duration-150" title="Lab Points: earned from achievements, spent in the Laboratory">🧪 0 LP</button>
             <div id="alloy-display" class="hidden px-4 py-1.5 rounded-full bg-slate-800 border border-slate-500 text-slate-200 font-bold text-sm">🔩 0 Alloys</div>
             <div class="flex flex-wrap gap-2">
                 <button onclick="openGoals('achievements')" id="achievements-btn" class="px-3 py-1.5 rounded-lg bg-yellow-700 hover:bg-yellow-600 text-white text-sm font-semibold transition duration-150 border border-yellow-500">
@@ -518,7 +521,18 @@
         <div id="lab-container" class="flex flex-col gap-3"></div>
     </div>
 
-    <button id="lab-toggle-btn"       class="side-tab left" onclick="togglePanel('lab-sidebar')"       title="Open Laboratory">🧪 Lab</button>
+    <!-- Drill panel: drill upgrades and rooms, paid with Salvage. Its contents are drawn by updateDrillPanel() in the script. -->
+    <div id="drill-sidebar" class="side-panel left">
+        <div class="flex items-center justify-between border-b border-gray-700 pb-3 mb-2">
+            <h2 class="text-2xl font-bold text-amber-400">🛠 Drill</h2>
+            <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
+        </div>
+        <p class="text-sm text-gray-400 mb-4">Every skill you buy in a run gives Salvage when you ascend. Spend Salvage to upgrade the drill for more Space, then install rooms in that Space. You can have one of each room and level it up with Salvage. Drill levels, room levels and Salvage are permanent. Once you start drilling, installed rooms are locked in until your next run.</p>
+        <div id="drill-container" class="flex flex-col gap-4"></div>
+    </div>
+
+    <button id="drill-toggle-btn"     class="side-tab left hidden" onclick="togglePanel('drill-sidebar')" title="Open Drill upgrades">🛠 Drill</button>
+    <button id="lab-toggle-btn"       class="side-tab left hidden" onclick="togglePanel('lab-sidebar')"       title="Open Laboratory">🧪 Lab</button>
     <button id="skills-toggle-btn"    class="side-tab left" onclick="togglePanel('skills-sidebar')"    title="Open Skill Tree">🌳 Skills</button>
     <button id="ascension-toggle-btn" class="side-tab left" onclick="togglePanel('ascension-sidebar')" title="Open Ascension Tree">✨ Ascension</button>
 	<button id="drones-toggle-btn" class="side-tab left hidden" onclick="togglePanel('drones-sidebar')" title="Open Drones">🤖 Drones</button>
@@ -758,6 +772,20 @@
         </details>
 
         <details class="dev-section">
+            <summary>🛠 Drill &amp; Rooms</summary>
+            <div class="dev-section-body">
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn purple" onclick="devGiveSalvage()">+25 Salvage</button>
+                    <button class="dev-mini-btn" onclick="devMaxDrill()">Max drill &amp; rooms</button>
+                </div>
+                <div class="dev-mini-row">
+                    <button class="dev-mini-btn" onclick="devUnlockRooms()">Unlock rooms this run</button>
+                    <button class="dev-mini-btn" onclick="devResetDrill()">Reset drill</button>
+                </div>
+            </div>
+        </details>
+
+        <details class="dev-section">
             <summary>🧪 Laboratory</summary>
             <div class="dev-section-body">
                 <div class="dev-mini-row">
@@ -836,7 +864,7 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.5', date: '2026-10-22',
+			version: 'v1.5', date: '2026-10-29',
 			changes: [
 				'Added the Laboratory! Click the new 🧪 Lab tab on the left edge. Achievements now give Lab Points (2 each, 4 for hidden ones), which you spend on research.',
 				'Research takes real time, and only one project can run at a time. It keeps going while the game is paused, in a shop or in a pop-up, but stops while you are on the main menu. Longer and more powerful research takes longer.',
@@ -845,6 +873,8 @@
 				'Dev Mode: new Laboratory section to add Lab Points, finish research instantly, research everything, or reset.',
 				'Added a new tier 8, pushing the old tier 8 and tier 9 down to tier 9 and 10. Its placement may be adjusted later',
 				'Added in 6 new modules (1 for each slot) and put them into laboratory',
+				'Added the scouter drone',
+				'Added drill upgrades where you can add in rooms to the drill including the laboratory, mini refinery, and drone bay',
 				]
 			},
 		{
@@ -1069,6 +1099,11 @@
             { id: 'casing',  name: 'Hardened Casing',    kind: 'wear',    value: 0.6, cost: 14, desc: '-40% wear' },
             { id: 'drive',   name: 'Resonant Drive',     kind: 'power',   value: 2,   cost: 28, desc: 'x2 Drill Speed bonus' },
         ],
+        scouter: [
+            { id: 'antenna', name: 'Wide-Band Antenna',  kind: 'power',   value: 1.5, cost: 12, desc: '+50% Scan Boost time added' },
+            { id: 'casing',  name: 'Hardened Casing',    kind: 'wear',    value: 0.6, cost: 16, desc: '-40% wear' },
+            { id: 'sonar',   name: 'Deep Sonar',         kind: 'power',   value: 2,   cost: 30, desc: 'x2 Scan Boost time added' },
+        ],
         sampler: [
             { id: 'winch',   name: 'Fast Winch',         kind: 'power',   value: 1.5, cost: 25, desc: '+50% faster surface trips' },
             { id: 'bearing', name: 'Sealed Bearings',    kind: 'wear',    value: 0.6, cost: 30, desc: '-40% wear' },
@@ -1088,10 +1123,53 @@
                     desc: t => `Cools the drill by ${t.coolPerSec} Heat per second, even while drilling.` },
         driller:  { name: 'Drill Speed Drone', icon: '🌀', space: 3, cost: 12, wear: 0.4,  serviceOre: 3000, speedPerDrone: 4,
                     desc: t => `Adds +${t.speedPerDrone} to your base Drill Speed while it works. Stacks with more drones.` },
+        scouter:  { name: 'Scouter Drone',  icon: '🛰️', space: 2, cost: 15, wear: 0.4,  serviceOre: 2500, scanSecPerDrone: 1,
+                    desc: t => `Scouts ahead of the drill: your Scan Boost lasts +${t.scanSecPerDrone}s longer while it works. Stacks with more drones.` },
         mechanic: { name: 'Mechanic Drone', icon: '🔧', space: 4, cost: 25, wear: 0.15, serviceOre: 8000, interval: 8, serviceBelow: 60,
                     desc: t => `Services your other drones for free: the most worn one below ${t.serviceBelow}% (or any broken one) every ${t.interval}s. Cannot service itself.` },
         sampler:  { name: 'Sampler Drone',  icon: '🧪', space: 6, cost: 35, wear: 0.35, serviceOre: 4000, cycle: 120, prp: 1,
                     desc: t => `Travels to the surface and back every ${t.cycle}s, bringing ${t.prp} PRP each trip.` },
+    };
+
+    // ============================================================
+    //  DRILL UPGRADES & ROOMS (permanent, paid with Salvage)
+    //  Salvage is earned when you ascend: SALVAGE_PER_SKILL for every skill you BOUGHT that run
+    //  (free starting skills from Ascension perks do not count).
+    //  Upgrading the drill gives Space. Rooms are installed into that Space.
+    //  Change these numbers to balance the system.
+    // ============================================================
+    const SALVAGE_PER_SKILL = 1;
+    // One line per drill level: space it gives, and the Salvage to upgrade TO that level. Level 1 is the first line.
+    const DRILL_LEVELS = [
+        { space: 0,  cost: 0   },
+        { space: 3,  cost: 5   },
+        { space: 5,  cost: 12  },
+        { space: 8,  cost: 25  },
+        { space: 11, cost: 45  },
+        { space: 15, cost: 75  },
+    ];
+    // Rooms: you can have one of each. Installing level 1 is free (it only needs Space).
+    // Higher levels cost Salvage and take more Space. Room levels are kept forever, even when the room is not installed.
+    // Installed rooms are locked in once you start drilling: you can only remove rooms at the start of a run.
+    //   lab:      researchSpeed multiplies how fast Laboratory research runs
+    //   refinery: one Alloy every "interval" seconds, from 0m, with no Ore or Power cost
+    //   droneBay: extra drone housing space
+    const ROOMS = {
+        lab:      { name: 'Laboratory',    icon: '🧪', color: 'pink',
+                    levels: [ { space: 3, cost: 0,  researchSpeed: 1    },
+                              { space: 4, cost: 10, researchSpeed: 1.25 },
+                              { space: 5, cost: 25, researchSpeed: 1.5  } ],
+                    desc: l => l.researchSpeed === 1 ? 'Opens the Laboratory, so you can research.' : `Opens the Laboratory. Research runs ${Math.round((l.researchSpeed - 1) * 100)}% faster.` },
+        refinery: { name: 'Mini Refinery', icon: '🏭', color: 'slate',
+                    levels: [ { space: 2, cost: 0,  interval: 60 },
+                              { space: 3, cost: 8,  interval: 40 },
+                              { space: 4, cost: 20, interval: 25 } ],
+                    desc: l => `Makes 1 Alloy every ${l.interval}s from the start of each run. Uses no Ore or Power.` },
+        droneBay: { name: 'Drone Bay',     icon: '🛸', color: 'teal',
+                    levels: [ { space: 2, cost: 0,  housing: 2 },
+                              { space: 3, cost: 8,  housing: 4 },
+                              { space: 4, cost: 20, housing: 6 } ],
+                    desc: l => `+${l.housing} drone housing space.` },
     };
 
 
@@ -1750,9 +1828,9 @@
                        unlocks: { type: 'moduleMk', mk: 3 } },
 
         // --- Drone programs ---
-        r_mechanic:  { name: 'Mechanic Drone Program',   icon: '🔧', group: 'Drone programs',    cost: 4,  time: 300,  prereq: null,
-                       unlocks: { type: 'drone', id: 'mechanic' } },
-        r_sampler:   { name: 'Sampler Drone Program',    icon: '🧪', group: 'Drone programs',    cost: 6,  time: 600,  prereq: 'r_mechanic',
+        r_scouter:   { name: 'Scouter Drone Program',    icon: '🛰️', group: 'Drone programs',    cost: 4,  time: 300,  prereq: null,
+                       unlocks: { type: 'drone', id: 'scouter' } },
+        r_sampler:   { name: 'Sampler Drone Program',    icon: '🧪', group: 'Drone programs',    cost: 6,  time: 600,  prereq: 'r_scouter',
                        unlocks: { type: 'drone', id: 'sampler' } },
 
         // --- Drone upgrades ---
@@ -1762,8 +1840,10 @@
                        unlocks: { type: 'droneUpgrade', drone: 'coolant',  id: 'cryo' } },
         r_drive:     { name: 'Resonant Drive Research',  icon: '🌀', group: 'Drone upgrades',    cost: 5,  time: 420,  prereq: null,
                        unlocks: { type: 'droneUpgrade', drone: 'driller',  id: 'drive' } },
-        r_tools:     { name: 'Precision Tools Research', icon: '🛠️', group: 'Drone upgrades',    cost: 6,  time: 540,  prereq: 'r_mechanic',
+        r_tools:     { name: 'Precision Tools Research', icon: '🛠️', group: 'Drone upgrades',    cost: 6,  time: 540,  prereq: null,
                        unlocks: { type: 'droneUpgrade', drone: 'mechanic', id: 'tools' } },
+        r_sonar:     { name: 'Deep Sonar Research',      icon: '📡', group: 'Drone upgrades',    cost: 5,  time: 420,  prereq: 'r_scouter',
+                       unlocks: { type: 'droneUpgrade', drone: 'scouter',  id: 'sonar' } },
         r_rocket:    { name: 'Rocket Lift Research',     icon: '🚀', group: 'Drone upgrades',    cost: 7,  time: 660,  prereq: 'r_sampler',
                        unlocks: { type: 'droneUpgrade', drone: 'sampler',  id: 'rocket' } },
 
@@ -1802,6 +1882,12 @@
         labPointsEarned: 0,       // every Lab Point you have ever earned (only for display)
         labResearched: [],        // ids of finished research, from LAB_RESEARCH
         labActive: null,          // research in progress, as { id, timeLeft } (or null). Only one at a time.
+        // --- Drill upgrades & rooms (survive ascension) ---
+        salvage: 0,               // Salvage you can spend right now (earned by ascending)
+        salvageEarned: 0,         // every Salvage you have ever earned (only for display)
+        drillLevel: 1,            // index into DRILL_LEVELS, starting at 1
+        roomLevels: {},           // level of each room you own, as { lab: 2 } (missing = level 1)
+        roomsInstalled: [],       // ids of rooms installed in the drill right now
     };
 
     // Cached DOM element references
@@ -1924,7 +2010,7 @@
     }
     function getEffectiveDrillSpeed() { return getRawDrillSpeed() / getHardness(); }
 		// The base numbers (constants) plus whatever upgrades add on top
-function getScanBoostDuration()   { return SCAN_BOOST_DURATION + gameState.mods.scanDurationBonus; }
+function getScanBoostDuration()   { return SCAN_BOOST_DURATION + gameState.mods.scanDurationBonus + getDroneScanBonus(); }
 function getScanBoostMultiplier() { return SCAN_BOOST_SPEED_MULTIPLIER + gameState.mods.scanSpeedBonus; }
 function getScanBoostOreCost()    { return Math.ceil(SCAN_BOOST_ORE_COST * Math.max(0.1, 1 - gameState.mods.scanCostReduction)); }
     function getOreMultiplier() {
@@ -1974,6 +2060,8 @@ function getScanBoostOreCost()    { return Math.ceil(SCAN_BOOST_ORE_COST * Math.
             startDepth: 0,                           // depth this run began at (Deep Drop), used to work out PRP
             alloys: 0, refinery: newRefineryState(), // Alloys and the refinery both reset every run
             drones: newDroneState(),                 // drones reset every run too
+            roomsLocked: false,                      // true once you start drilling: installed rooms can't be removed until the next run
+            miniRefineryTimer: 0,                    // seconds toward the Mini Refinery's next Alloy
         };
 
         // Free tiers earned from challenges are installed at the start of every run
@@ -2123,7 +2211,9 @@ function getScanBoostOreCost()    { return Math.ceil(SCAN_BOOST_ORE_COST * Math.
         if (gameState.inChoice) return;   // an event asked for a choice: everything freezes until you pick
         tickDeepEvent(dt);
         tickRefinery(dt);
+        tickMiniRefinery(dt);
         tickDrones(dt);
+        if (gameState.drilling) gameState.roomsLocked = true;   // installed rooms are locked in once the run gets going
         if (gameState.mods.autoOps) handleAutoOps();
         gameState.run.maxHeat = Math.max(gameState.run.maxHeat, gameState.temperature);
         checkChallenges();   // every frame, so "before you pass Xm" goals are judged exactly
@@ -3077,9 +3167,16 @@ function isBanishedItem(item) {
         if (gameState.gameOver || gameState.isPaused) return;
         const prpGained = getAscendGain(gameState.depth);
         if (prpGained <= 0) { gameState.message = gameState.depth >= 500 ? 'Drill deeper first: the depth Deep Drop skipped does not earn PRP.' : 'You must reach at least 500m to ascend.'; return updateUI(); }
+        const salvageGained = getSalvageGain();
         gameState.permanentResearchPoints += prpGained;
+        gameState.salvage       += salvageGained;
+        gameState.salvageEarned += salvageGained;
         gameState.totalAscensions++;
         initializeGame(); startGameLoop();
+        if (salvageGained > 0) {
+            gameState.message = `Ascended for ${prpGained} PRP and ${salvageGained} Salvage. Spend Salvage in the 🛠 Drill tab.` + (gameState.message !== 'Ready to drill!' ? ` ${gameState.message}` : '');
+            updateUI();
+        }
     }
 
 
@@ -3218,12 +3315,12 @@ function isBanishedItem(item) {
         const panel = document.getElementById('refinery-panel');
         const pill  = document.getElementById('alloy-display');
         const r     = gameState.refinery;
-        if (!r.unlocked) { panel.classList.add('hidden'); pill.classList.add('hidden'); return; }
-        panel.classList.remove('hidden');
-        pill.classList.remove('hidden');
-
         const alloyText = `🔩 ${Math.floor(gameState.alloys).toLocaleString()} Alloys`;
         pill.innerText = alloyText;
+        pill.classList.toggle('hidden', !r.unlocked && !hasRoom('refinery'));   // the Mini Refinery room makes Alloys before the big refinery is found
+        if (!r.unlocked) { panel.classList.add('hidden'); return; }
+        panel.classList.remove('hidden');
+
         document.getElementById('refinery-alloys').innerText = alloyText;
 
         const cycle = getRefineryCycleTime(), made = getRefineryYield();
@@ -3288,7 +3385,7 @@ function isBanishedItem(item) {
             .reduce((product, u) => product * u.value, 1);
     }
 
-    function getDroneHousing()   { return DRONE_START_HOUSING + gameState.drones.housingTier * DRONE_HOUSING_STEP; }
+    function getDroneHousing()   { return DRONE_START_HOUSING + gameState.drones.housingTier * DRONE_HOUSING_STEP + (hasRoom('droneBay') ? getRoomLevelData('droneBay').housing : 0); }
     function getDroneSpaceUsed() { return gameState.drones.list.reduce((sum, d) => sum + DRONE_TYPES[d.type].space, 0); }
     function getHousingUpgradeCost() {
         const tier = gameState.drones.housingTier;
@@ -3306,6 +3403,8 @@ function isBanishedItem(item) {
     function getDroneCooling()      { return getWorkingDrones('coolant').length * DRONE_TYPES.coolant.coolPerSec * getDroneUpgradeMult('coolant', 'power'); }
     // Bonus to base drill speed from working Drill Speed Drones (used in getRawDrillSpeed)
     function getDroneDrillSpeed()   { return getWorkingDrones('driller').length * DRONE_TYPES.driller.speedPerDrone * getDroneUpgradeMult('driller', 'power'); }
+    // Extra seconds of Scan Boost from working Scouter Drones (used in getScanBoostDuration)
+    function getDroneScanBonus()    { return getWorkingDrones('scouter').length * DRONE_TYPES.scouter.scanSecPerDrone * getDroneUpgradeMult('scouter', 'power'); }
     function getDroneOrePerSec()    { return getWorkingDrones('miner').length * oreWorth(DRONE_TYPES.miner.metresPerSec) * getEffectMods().oreMult * getDroneUpgradeMult('miner', 'power'); }
 
     // quiet = true skips the pop-up and log line (used by Dev Mode)
@@ -3481,6 +3580,7 @@ function isBanishedItem(item) {
         if (d.type === 'miner')    return `Mining about ${fmt(oreWorth(t.metresPerSec) * getDroneUpgradeMult('miner', 'power'))} Ore/s`;
         if (d.type === 'coolant')  return `Cooling the drill by ${+(t.coolPerSec * getDroneUpgradeMult('coolant', 'power')).toFixed(1)} Heat/s`;
         if (d.type === 'driller')  return `Adding +${+(t.speedPerDrone * getDroneUpgradeMult('driller', 'power')).toFixed(1)} base Drill Speed`;
+        if (d.type === 'scouter')  return `Adding +${+(t.scanSecPerDrone * getDroneUpgradeMult('scouter', 'power')).toFixed(1)}s to Scan Boost`;
         if (d.type === 'sampler')  return `Surface trip ${Math.floor(d.timer / t.cycle * 100)}% done (+${t.prp} PRP when it returns)`;
         if (d.type === 'mechanic') {
             const interval = t.interval / getDroneUpgradeMult('mechanic', 'power');
@@ -3593,7 +3693,7 @@ function isBanishedItem(item) {
         setText('drone-alloys',  `🔩 ${Math.floor(gameState.alloys).toLocaleString()} Alloys`);
         setText('drone-housing', `Housing: ${getDroneSpaceUsed()} / ${getDroneHousing()} space used`);
         const cooling = getDroneCooling();
-        setText('drone-income',  `Fleet: ${fmt(getDroneOrePerSec())} Ore/s from mining` + (cooling > 0 ? `, -${cooling.toFixed(1)} Heat/s cooling` : '') + (getDroneDrillSpeed() > 0 ? `, +${getDroneDrillSpeed()} base Drill Speed` : ''));
+        setText('drone-income',  `Fleet: ${fmt(getDroneOrePerSec())} Ore/s from mining` + (cooling > 0 ? `, -${cooling.toFixed(1)} Heat/s cooling` : '') + (getDroneDrillSpeed() > 0 ? `, +${getDroneDrillSpeed()} base Drill Speed` : '') + (getDroneScanBonus() > 0 ? `, +${+getDroneScanBonus().toFixed(1)}s Scan Boost` : ''));
         setText('drone-svc-all', fmtPrice(allCost));
         for (const d of ds.list) {
             setText(`drone-pct-${d.id}`,    `${Math.floor(d.condition)}% condition`);
@@ -3718,9 +3818,9 @@ function isBanishedItem(item) {
             if (gameState.shopTimeLeft <= 0) autoCloseShop();
             else updateShopTimer();
         }
-        // 2) the research timer
-        if (gameState.labActive) {
-            gameState.labActive.timeLeft -= dt;
+        // 2) the research timer (only runs while a Laboratory room is installed in the drill)
+        if (gameState.labActive && hasRoom('lab')) {
+            gameState.labActive.timeLeft -= dt * getResearchSpeed();
             if (gameState.labActive.timeLeft <= 0) finishResearch();   // finishResearch() redraws everything
             else updateLabPanel();                                     // otherwise just refresh the open panel
         }
@@ -3793,8 +3893,167 @@ function isBanishedItem(item) {
             const r   = LAB_RESEARCH[active.id];
             const bar = document.getElementById('lab-active-bar'), txt = document.getElementById('lab-active-text');
             if (bar) bar.style.width = `${Math.max(0, Math.min(100, (1 - active.timeLeft / r.time) * 100))}%`;
-            if (txt) txt.textContent = `${fmtDuration(active.timeLeft)} left of ${fmtDuration(r.time)}`;
+            const speed = getResearchSpeed();
+            if (txt) txt.textContent = `${fmtDuration(active.timeLeft / speed)} left of ${fmtDuration(r.time / speed)}` + (speed > 1 ? ` (Lab room: ${Math.round((speed - 1) * 100)}% faster)` : '');
         }
+    }
+
+    // ============================================================
+    //  DRILL UPGRADES & ROOMS
+    //  Permanent: gameState.salvage, drillLevel, roomLevels and roomsInstalled survive ascension.
+    //  gameState.roomsLocked (reset every run) turns on once you start drilling. After that, installed
+    //  rooms can't be removed until the next run. Installing and levelling up are allowed any time.
+    // ============================================================
+
+    function hasRoom(id)          { return gameState.roomsInstalled.includes(id); }
+    function getRoomLevel(id)     { return gameState.roomLevels[id] || 1; }
+    function getRoomLevelData(id, level = getRoomLevel(id)) { return ROOMS[id].levels[level - 1]; }
+    function getDrillSpace()      { return DRILL_LEVELS[gameState.drillLevel - 1].space; }
+    function getRoomSpaceUsed()   { return gameState.roomsInstalled.reduce((sum, id) => sum + getRoomLevelData(id).space, 0); }
+    function getResearchSpeed()   { return hasRoom('lab') ? getRoomLevelData('lab').researchSpeed : 0; }
+    // Salvage you would get for ascending right now: only skills BOUGHT this run count
+    function getSalvageGain()     { return gameState.run.skillsBought * SALVAGE_PER_SKILL; }
+    function getMiniRefineryInterval() { return getRoomLevelData('refinery').interval; }
+
+    // Runs every frame from the game loop (so it stops during pauses, shops and pop-ups, like the big refinery)
+    function tickMiniRefinery(dt) {
+        if (!hasRoom('refinery')) return;
+        gameState.miniRefineryTimer += dt;
+        const interval = getMiniRefineryInterval();
+        while (gameState.miniRefineryTimer >= interval) {
+            gameState.miniRefineryTimer -= interval;
+            gameState.alloys++;
+            gameState.totalAlloysMade++;
+        }
+    }
+
+    // --- Buttons ---
+    function upgradeDrill() {
+        const next = DRILL_LEVELS[gameState.drillLevel];   // the line after the current level
+        if (!next) return;
+        if (gameState.salvage < next.cost) gameState.message = `Need ${next.cost} Salvage to upgrade the drill.`;
+        else {
+            gameState.salvage -= next.cost;
+            gameState.drillLevel++;
+            gameState.message = `Drill upgraded to level ${gameState.drillLevel}: ${getDrillSpace()} Space for rooms.`;
+        }
+        updateUI();
+    }
+
+    function installRoom(id) {
+        if (hasRoom(id)) return;
+        const room = ROOMS[id], need = getRoomLevelData(id).space, free = getDrillSpace() - getRoomSpaceUsed();
+        if (free < need) gameState.message = `Not enough Space for the ${room.name} (needs ${need}, ${free} free). Upgrade the drill first.`;
+        else {
+            gameState.roomsInstalled.push(id);
+            gameState.message = `${room.name} installed.` + (gameState.roomsLocked ? ' It stays installed until your next run.' : '');
+        }
+        updateUI();
+    }
+
+    function removeRoom(id) {
+        if (!hasRoom(id)) return;
+        if (gameState.roomsLocked) { gameState.message = 'Rooms are locked in once you start drilling. You can remove rooms at the start of your next run.'; return updateUI(); }
+        gameState.roomsInstalled = gameState.roomsInstalled.filter(r => r !== id);
+        gameState.message = `${ROOMS[id].name} removed.`;
+        updateUI();
+    }
+
+    function upgradeRoom(id) {
+        const room = ROOMS[id], level = getRoomLevel(id), next = room.levels[level];
+        if (!next) return;
+        const extraSpace = next.space - getRoomLevelData(id).space;
+        if (gameState.salvage < next.cost) gameState.message = `Need ${next.cost} Salvage to upgrade the ${room.name}.`;
+        else if (hasRoom(id) && getDrillSpace() - getRoomSpaceUsed() < extraSpace) gameState.message = `Not enough Space: the next ${room.name} level needs ${extraSpace} more.`;
+        else {
+            gameState.salvage -= next.cost;
+            gameState.roomLevels[id] = level + 1;
+            gameState.message = `${room.name} upgraded to level ${level + 1}: ${room.desc(next)}`;
+        }
+        updateUI();
+    }
+
+    // --- Drill panel ---
+    let _lastDrillKey = null;
+    function isDrillPanelOpen() { return document.getElementById('drill-sidebar').classList.contains('open'); }
+
+    function updateDrillPanel() {
+        // The tab shows once you have ascended (that is when Salvage starts coming in)
+        const tab = document.getElementById('drill-toggle-btn');
+        tab.classList.toggle('hidden', gameState.totalAscensions === 0 && gameState.salvageEarned === 0 && gameState.drillLevel === 1);
+        // The Laboratory only exists while its room is installed
+        ui['lab-toggle-btn'].classList.toggle('hidden', !hasRoom('lab'));
+        ui['lab-points-display'].classList.toggle('hidden', !hasRoom('lab'));
+        if (!hasRoom('lab') && isLabPanelOpen()) closeSidebar();
+        if (!isDrillPanelOpen()) return;
+
+        const gs = gameState, free = getDrillSpace() - getRoomSpaceUsed(), nextDrill = DRILL_LEVELS[gs.drillLevel];
+        const roomIds = Object.keys(ROOMS);
+        const key = JSON.stringify({ s: gs.salvage, l: gs.drillLevel, r: gs.roomsInstalled, lv: gs.roomLevels, lock: gs.roomsLocked, gain: getSalvageGain() });
+
+        if (key !== _lastDrillKey) {
+            _lastDrillKey = key;
+            const btnClass = ok => ok ? 'bg-amber-700 hover:bg-amber-500 cursor-pointer' : 'bg-gray-700 opacity-60 cursor-not-allowed';
+            const canDrill = nextDrill && gs.salvage >= nextDrill.cost;
+
+            const drillBox = `
+                <div class="bg-gray-800 p-4 rounded-xl border border-amber-700">
+                    <div class="flex flex-wrap justify-between gap-2">
+                        <p class="font-bold text-amber-300">🔧 ${gs.salvage} Salvage <span class="text-xs text-gray-400 font-normal">(${gs.salvageEarned} earned in total)</span></p>
+                        <p class="font-bold text-white">Drill level ${gs.drillLevel} · Space: ${getRoomSpaceUsed()} / ${getDrillSpace()} used</p>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-1">This run: ${gs.run.skillsBought} skill${gs.run.skillsBought === 1 ? '' : 's'} bought, worth ${getSalvageGain()} Salvage when you ascend.</p>
+                    ${gs.roomsLocked ? '<p class="text-xs text-red-300 mt-1">🔒 Rooms are locked in for this run. You can still install new rooms and level them up.</p>'
+                                     : '<p class="text-xs text-green-300 mt-1">🔓 You have not started drilling yet, so you can still remove rooms.</p>'}
+                    <button onclick="upgradeDrill()" ${canDrill ? '' : 'disabled'}
+                        class="mt-3 w-full p-2 rounded-lg text-white text-sm font-bold transition duration-150 ${btnClass(canDrill)}">
+                        ${nextDrill ? `⬆ Upgrade drill to level ${gs.drillLevel + 1}: ${nextDrill.space} Space (${nextDrill.cost} Salvage)` : 'Drill fully upgraded'}</button>
+                </div>`;
+
+            const roomCards = roomIds.map(id => {
+                const room = ROOMS[id], level = getRoomLevel(id), cur = getRoomLevelData(id), next = room.levels[level];
+                const installed = hasRoom(id);
+                const canInstall = !installed && free >= cur.space;
+                const canRemove  = installed && !gs.roomsLocked;
+                const extra      = next ? next.space - cur.space : 0;
+                const canLevel   = next && gs.salvage >= next.cost && (!installed || free >= extra);
+                const installBtn = installed
+                    ? `<button onclick="removeRoom('${id}')" ${canRemove ? '' : 'disabled'} class="w-full p-2 rounded-lg text-white text-sm font-bold transition duration-150 ${canRemove ? 'bg-gray-600 hover:bg-gray-500 cursor-pointer' : 'bg-gray-700 opacity-60 cursor-not-allowed'}">${canRemove ? 'Remove' : '🔒 Installed (locked this run)'}</button>`
+                    : `<button onclick="installRoom('${id}')" ${canInstall ? '' : 'disabled'} class="w-full p-2 rounded-lg text-white text-sm font-bold transition duration-150 ${canInstall ? 'bg-green-700 hover:bg-green-500 cursor-pointer' : 'bg-red-900 opacity-70 cursor-not-allowed'}">${canInstall ? `Install (${cur.space} Space)` : `Needs ${cur.space} Space (${free} free)`}</button>`;
+                const levelBtn = next
+                    ? `<button onclick="upgradeRoom('${id}')" ${canLevel ? '' : 'disabled'} class="w-full p-2 rounded-lg text-white text-xs font-bold transition duration-150 ${canLevel ? 'bg-sky-700 hover:bg-sky-500 cursor-pointer' : 'bg-gray-700 opacity-60 cursor-not-allowed'}">⬆ Level ${level + 1}: ${room.desc(next)} (${next.space} Space, ${next.cost} Salvage)</button>`
+                    : '<p class="text-xs text-green-400 font-bold">✔ Max level</p>';
+                return `<div class="bg-gray-800 p-3 rounded-xl border-2 ${installed ? 'border-green-600' : 'border-gray-700'} flex flex-col justify-between gap-2">
+                    <div>
+                        <div class="flex justify-between items-center"><p class="font-bold text-white">${room.icon} ${room.name}</p><span class="text-xs text-gray-400">Level ${level} / ${room.levels.length}</span></div>
+                        <p class="text-xs text-gray-400">Takes ${cur.space} Space${installed ? ' · <span class="text-green-400 font-bold">Installed</span>' : ''}</p>
+                        <p class="text-sm text-gray-300 mt-1">${room.desc(cur)}</p>
+                        ${id === 'refinery' && installed ? '<p id="mini-refinery-status" class="text-xs text-slate-300 mt-1"></p>' : ''}
+                    </div>
+                    <div class="flex flex-col gap-2">${levelBtn}${installBtn}</div></div>`;
+            }).join('');
+
+            document.getElementById('drill-container').innerHTML = drillBox +
+                `<h3 class="text-lg font-bold text-amber-300">Rooms</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${roomCards}</div>`;
+        }
+
+        const status = document.getElementById('mini-refinery-status');
+        if (status) status.textContent = `Next Alloy in ${Math.ceil(getMiniRefineryInterval() - gs.miniRefineryTimer)}s`;
+    }
+
+    // Stacks the visible left-edge tabs in a centred column (tabs appear and disappear, e.g. the Lab and Drones)
+    let _lastLeftTabKey = null;
+    function layoutLeftTabs() {
+        const tabs = ['drill-toggle-btn', 'lab-toggle-btn', 'skills-toggle-btn', 'ascension-toggle-btn', 'drones-toggle-btn']
+            .map(id => document.getElementById(id)).filter(t => !t.classList.contains('hidden'));
+        const key = tabs.map(t => t.id + t.textContent).join('|');
+        if (key === _lastLeftTabKey) return;
+        _lastLeftTabKey = key;
+        const GAP = 16;
+        const heights = tabs.map(t => t.offsetHeight);
+        const total = heights.reduce((a, b) => a + b, 0) + GAP * (tabs.length - 1);
+        let y = -total / 2;
+        tabs.forEach((t, i) => { t.style.top = `calc(50% + ${y + heights[i] / 2}px)`; y += heights[i] + GAP; });
     }
 
     // ============================================================
@@ -3827,7 +4086,9 @@ function isBanishedItem(item) {
         refreshModuleBay();
         refreshGoalsPanel();
         updateLabPanel();
+        updateDrillPanel();
         updateSideTabBadges();
+        layoutLeftTabs();
     }
 
     // The five boxes at the top: ore, depth, record, drill speed, resource
@@ -3962,7 +4223,8 @@ function isBanishedItem(item) {
         const btn       = ui['ascend-button'];
         const prpGained = getAscendGain(gameState.depth);
         if (prpGained > 0) {
-            btn.innerText = `Ascend for ${prpGained} PRP (${gameState.depth.toFixed(0)}m)`;
+            const salvage = getSalvageGain();
+            btn.innerText = `Ascend for ${prpGained} PRP` + (salvage > 0 ? ` + ${salvage} Salvage` : '') + ` (${gameState.depth.toFixed(0)}m)`;
             btn.disabled  = gameState.gameOver || gameState.isPaused;
             btn.className = 'px-6 py-3 rounded-xl bg-purple-700 hover:bg-purple-500 text-white font-bold shadow-md transition duration-150';
         } else {
@@ -4626,6 +4888,7 @@ function isBanishedItem(item) {
         if (panelId === 'goals-sidebar')  refreshGoalsPanel();
         if (panelId === 'drones-sidebar') { _lastDroneKey = null; updateDronePanel(); }
         if (panelId === 'lab-sidebar')    { _lastLabKey = null;   updateLabPanel(); }
+        if (panelId === 'drill-sidebar')  { _lastDrillKey = null; updateDrillPanel(); }
     }
     function closeSidebar() {
         document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('open'));
@@ -4650,6 +4913,11 @@ function isBanishedItem(item) {
         // The Lab tab shows how many research projects you could start right now, and glows when there are some
         const labCount = Object.keys(LAB_RESEARCH).filter(id => getLabState(id) === 'ready').length;
         setTabBadge(ui['lab-toggle-btn'], '🧪 Lab', labCount);
+        // The Drill tab counts the drill and room upgrades you can afford with Salvage
+        const nextDrill  = DRILL_LEVELS[gameState.drillLevel];
+        const drillCount = (nextDrill && gameState.salvage >= nextDrill.cost ? 1 : 0)
+            + Object.keys(ROOMS).filter(id => { const n = ROOMS[id].levels[getRoomLevel(id)]; return n && gameState.salvage >= n.cost; }).length;
+        setTabBadge(document.getElementById('drill-toggle-btn'), '🛠 Drill', drillCount);
     }
     function setTabBadge(btn, label, count) {
         const text = count > 0 ? `${label} (${count})` : label;
@@ -4927,6 +5195,29 @@ function isBanishedItem(item) {
         devDone('reset all research. Every Lab Point was refunded.');
     }
 
+    // --- Drill & rooms ---
+    function devGiveSalvage() {
+        gameState.salvage       += 25;
+        gameState.salvageEarned += 25;
+        devDone('gave 25 Salvage.');
+    }
+    function devMaxDrill() {
+        gameState.drillLevel = DRILL_LEVELS.length;
+        for (const id in ROOMS) gameState.roomLevels[id] = ROOMS[id].levels.length;
+        devDone('maxed the drill and every room level. Install rooms from the 🛠 Drill tab.');
+    }
+    function devUnlockRooms() {   // lets you remove rooms again this run
+        gameState.roomsLocked = false;
+        devDone('unlocked the rooms for this run (they lock again when you drill).');
+    }
+    function devResetDrill() {   // back to a level 1 drill with no rooms; every Salvage ever earned is given back
+        gameState.drillLevel     = 1;
+        gameState.roomLevels     = {};
+        gameState.roomsInstalled = [];
+        gameState.salvage        = gameState.salvageEarned;
+        devDone('reset the drill and rooms. Every Salvage was refunded.');
+    }
+
     // --- Dev panel sections ---
     function devExpandAll(open) {
         document.querySelectorAll('#dev-panel details.dev-section').forEach(d => d.open = open);
@@ -5029,6 +5320,7 @@ function isBanishedItem(item) {
             row('Cooling from drones', `${num(getDroneCooling())} Heat/s`) +
             row('Drill speed from drones', `+${num(getDroneDrillSpeed())}`) +
             row('Alloys', `${Math.floor(gs.alloys)}`) +
+            row('Drill', `level ${gs.drillLevel}, ${getRoomSpaceUsed()}/${getDrillSpace()} space, ${gs.salvage} Salvage, rooms: ${gs.roomsInstalled.join(', ') || 'none'}${gs.roomsLocked ? ' (locked)' : ''}`) +
             row('Scrap refund', pct(Math.min(0.9, DRONE_SCRAP_REFUND + m.droneScrapRefund)));
         droneHTML += `<p class="dev-section-label">Per type (working / broken / upgrades)</p>`;
         for (const id in DRONE_TYPES) {
