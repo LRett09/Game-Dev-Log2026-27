@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Browser Hack</title>
+<style>
+  body { background-color: #81F7F3; font-family: Arial, sans-serif; margin: 20px; }
+  textarea { max-width: 100%; }
+  .button-grid { display: flex; flex-wrap: wrap; gap: 6px; max-width: 950px; }
+  input[type="button"] { padding: 5px 8px; cursor: pointer; }
+  #move1 {
+    display: block;
+    position: static;
+    width: min(400px, 100%);
+    height: auto;
+    margin: 16px 0;
+  }
+  .button-grid input[type="button"] {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+  }
+</style>
+</head>
+<body id="myBack">
+<h1>Browser Hack by Logan</h1>
+<p><strong>Object Sort base</strong></p>
+
+<h3>Instructions: t2a17-Hackbrowser</h3>
+<p>Use the first 15 buttons to explore browser objects, then try the last 5. Results may differ between Chrome, Safari, Internet Explorer, and mobile browsers. Some older browser-specific objects may not exist.</p>
+
+<img id="move1" src="myWhale.jpg" alt="This should be an image I swear">
+
+<p><a href="https://github.com/LRett09/Game-Dev-Log2026-27" id="myLink">GitHub repository</a></p>
+
+<table id="myTable" border="1">
+  <tr><td>A</td><td>B</td></tr>
+  <tr><td>1</td><td>2</td></tr>
+</table>
+
+<ol id="myList">
+  <li>Cool</li><li>Awesome</li><li>Neat</li><li>Awesomesauce</li><li>Loganlicious</li>
+</ol>
+
+<div id="myDiv01">This is a div</div>
+<p><input type="button" id="myChange" value="Change background colour"></p>
+
+<form name="myForm2">
+  <textarea name="myTextarea" rows="3" cols="40">this is some cool and original text</textarea><br>
+  <input type="text" name="myText1" id="myText2" size="50" value="">
+</form>
+
+<h3>Explore browser object properties</h3>
+<p>Click a button to list the object's accessible properties and methods. Refresh the page to reset.</p>
+<form name="myForm">
+  <input type="text" name="myText1" size="50" value="" aria-label="Selected object"><br>
+  <div class="button-grid">
+    <input type="button" value="1 window" onclick="myObjectData(window, 'window')">
+    <input type="button" value="2 document" onclick="myObjectData(document, 'document')">
+    <input type="button" value="3 document.myForm2" onclick="myObjectData(document.myForm2, 'document.myForm2')">
+    <input type="button" value="4 textarea" onclick="myObjectData(document.myForm2.myTextarea, 'document.myForm2.myTextarea')">
+    <input type="button" value="5 window.location" onclick="myObjectData(window.location, 'window.location')">
+    <input type="button" value="6 window.parent" onclick="myObjectData(window.parent, 'window.parent')">
+    <input type="button" value="7 window.chrome" onclick="myObjectData(window.chrome, 'window.chrome')">
+    <input type="button" value="8 image.style" onclick="myObjectData(document.getElementById('move1').style, 'image.style')">
+    <input type="button" value="9 style" onclick="myObjectData(document.body.style, 'document.body.style')">
+    <input type="button" value="10 image element" onclick="myObjectData(document.getElementById('move1'), 'image element')">
+    <input type="button" value="11 window.localStorage" onclick="myObjectData(window.localStorage, 'window.localStorage')">
+    <input type="button" value="12 image.style (getElementById)" onclick="myObjectData(document.getElementById('move1').style, 'image.style')">
+    <input type="button" value="13 text input" onclick="myObjectData(document.myForm2.myText1, 'document.myForm2.myText1')">
+    <input type="button" value="14 myText2 element" onclick="myObjectData(document.getElementById('myText2'), 'myText2 element')">
+    <input type="button" value="15 myLink element" onclick="myObjectData(document.getElementById('myLink'), 'myLink element')">
+    <input type="button" value="16 myTable element" onclick="myObjectData(document.getElementById('myTable'), 'myTable element')">
+    <input type="button" value="17 myList element" onclick="myObjectData(document.getElementById('myList'), 'myList element')">
+    <input type="button" value="18 myBack (body) element" onclick="myObjectData(document.getElementById('myBack'), 'myBack body element')">
+    <input type="button" value="19 myChange button" onclick="myObjectData(document.getElementById('myChange'), 'myChange button')">
+    <input type="button" value="20 myDiv01 element" onclick="myObjectData(document.getElementById('myDiv01'), 'myDiv01 element')">
+  </div>
+  <p><textarea name="myTextarea" id="myOutput" rows="20" cols="70" wrap="soft" aria-label="Object properties output"></textarea></p>
+</form>
+
+<p><input type="button" value="Back" style="font-size:25px" onclick="window.history.back()"></p>
+
+<script>
+"use strict";
+
+const myOriginalBackground = "#81F7F3";
+let myBackgroundChanged = false;
+
+function myObjectData(myObject, myObjectName) {
+  const myOutput = document.getElementById("myOutput");
+  const myNameField = document.forms.myForm.elements.myText1;
+  myNameField.value = myObjectName;
+  myOutput.value = "";
+
+  if (myObject == null) {
+    myOutput.value = myObjectName + " is not available in this browser.";
+    return;
+  }
+
+  const myLines = [];
+  for (const myProp in myObject) {
+    try {
+      const myValue = myObject[myProp];
+      myLines.push(myObjectName + "." + myProp + " = " +
+        (typeof myValue === "function" ? "[function]" : String(myValue)));
+    } catch (myError) {
+      myLines.push(myObjectName + "." + myProp + " = [unavailable]");
+    }
+  }
+
+  myLines.sort((myA, myB) => myA.toLowerCase().localeCompare(myB.toLowerCase()));
+  myOutput.value = myLines.length ? myLines.join("\n") : "No enumerable properties found.";
+}
+
+document.getElementById("myChange").onclick = function () {
+  myBackgroundChanged = !myBackgroundChanged;
+  document.getElementById("myBack").style.backgroundColor =
+    myBackgroundChanged ? "#F7B2E6" : myOriginalBackground;
+  this.value = myBackgroundChanged ? "Restore background colour" : "Change background colour";
+};
+</script>
+</body>
+</html>
