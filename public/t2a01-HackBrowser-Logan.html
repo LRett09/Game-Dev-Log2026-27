@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Browser Hack</title>
 <style>
-  body { background-color: #81F7F3; font-family: Arial, sans-serif; margin: 20px; }
+  body { background-color: #00897B; font-family: Arial, sans-serif; margin: 20px; }
   textarea { max-width: 100%; }
   .button-grid { display: flex; flex-wrap: wrap; gap: 6px; max-width: 950px; }
   input[type="button"] { padding: 5px 8px; cursor: pointer; }
@@ -24,11 +24,9 @@
 </style>
 </head>
 <body id="myBack">
-<h1>Browser Hack by Logan</h1>
-<p><strong>Object Sort base</strong></p>
+<h1 align=center>Browser Hack by Logan</h1>
 
-<h3>Instructions: t2a17-Hackbrowser</h3>
-<p>Use the first 15 buttons to explore browser objects, then try the last 5. Results may differ between Chrome, Safari, Internet Explorer, and mobile browsers. Some older browser-specific objects may not exist.</p>
+<p><strong>Object Sort base</strong></p>
 
 <img id="move1" src="myWhale.jpg" alt="This should be an image I swear">
 
@@ -85,7 +83,7 @@
 <script>
 "use strict";
 
-const myOriginalBackground = "#81F7F3";
+const myOriginalBackground = "#00897B";
 let myBackgroundChanged = false;
 
 function myObjectData(myObject, myObjectName) {
@@ -117,7 +115,7 @@ function myObjectData(myObject, myObjectName) {
 document.getElementById("myChange").onclick = function () {
   myBackgroundChanged = !myBackgroundChanged;
   document.getElementById("myBack").style.backgroundColor =
-    myBackgroundChanged ? "#F7B2E6" : myOriginalBackground;
+    myBackgroundChanged ? "#33691E" : myOriginalBackground;
   this.value = myBackgroundChanged ? "Restore background colour" : "Change background colour";
 };
 </script>
