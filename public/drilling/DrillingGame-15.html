@@ -864,7 +864,7 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.5', date: '2026-10-29',
+			version: 'v1.5', date: '2026-11-01',
 			changes: [
 				'Added the Laboratory! Click the new 🧪 Lab tab on the left edge. Achievements now give Lab Points (2 each, 4 for hidden ones), which you spend on research.',
 				'Research takes real time, and only one project can run at a time. It keeps going while the game is paused, in a shop or in a pop-up, but stops while you are on the main menu. Longer and more powerful research takes longer.',
@@ -875,6 +875,8 @@
 				'Added in 6 new modules (1 for each slot) and put them into laboratory',
 				'Added the scouter drone',
 				'Added drill upgrades where you can add in rooms to the drill including the laboratory, mini refinery, and drone bay',
+				'Fixed bug where Foundry Memory would auto unlock tier 1 and 10 upgrades',
+				'Added 2 new achievments',
 				]
 			},
 		{
@@ -1205,7 +1207,7 @@
         VOY1: { branch: 'Voyager',  name: 'Deep Drop',          cost: 1,  prereq: null,   effect: 'Each new run starts at 10% of your record depth (max 1500m). The skipped depth only earns 25% of its PRP when you ascend', bonus: { deepDrop: 0.10 } },
         VOY2: { branch: 'Voyager',  name: 'Second Wind',        cost: 12, prereq: 'VOY1', effect: 'Once per run, a fatal overheat or suffocation is cancelled', bonus: { secondWind: true } },
         VOY3: { branch: 'Voyager',  name: 'Abyssal Attunement', cost: 24, prereq: 'VOY2', effect: '+1% Ore Value per 500m of your record depth',                bonus: { recordDepthBonus: 0.00002 } },
-        ENG1: { branch: 'Engineer', name: 'Foundry Memory',     cost: 1,  prereq: null,   effect: 'Each new run starts with all Tier 1 skills installed',       bonus: { startTier: 1 } },
+        ENG1: { branch: 'Engineer', name: 'Foundry Memory',     cost: 1,  prereq: null,   effect: 'Each new run starts with all Tier 1 skills installed',       bonus: { startTier: 01 } },
         ENG2: { branch: 'Engineer', name: 'Core Resonance',     cost: 8, prereq: 'ENG1', effect: 'Surface Sample gives +1 PRP and costs 200m less',            bonus: { sampleBonusPrp: 1, sampleDiscount: 200 } },
         ENG3: { branch: 'Engineer', name: 'Master Blueprints',  cost: 26, prereq: 'ENG2', effect: 'Each new run starts with Tier 1, 2 and 3 skills installed',  bonus: { startTier: 2 } },
         // Swarm: these matter from 5,500m (refinery) and 6,500m (drones), so they cost a bit more than the paths above.
@@ -1718,6 +1720,7 @@
         { id: 'all_skills',    icon: '🌳', name: 'Full Canopy',        desc: 'Own every skill in the skill tree in one run.', check: gs => Object.keys(SKILLS).every(id => gs.unlockedSkills.includes(id)) },
         { id: 'automation',    icon: '🤖', name: 'Hands Free',         desc: 'Install Autonomous Operations.',              check: gs => gs.unlockedSkills.includes('I3') },
         { id: 'speed_demon',   icon: '🏎️', name: 'Speed Demon',        desc: 'Drill at 25 m/s or faster (after rock hardness).', check: gs => getEffectiveDrillSpeed() >= 25 },
+		{ id: 'speed_king',    icon: '🏎️', name: 'Speed King',        desc: 'Drill at 40 m/s or faster (after rock hardness).', check: gs => getEffectiveDrillSpeed() >= 40 },
         { id: 'scan_boost',    icon: '📡', name: 'Ping!',              desc: 'Use Scan Boost.',                             check: gs => gs.boostTimeRemaining > 0 },
 		{ id: 'first_alloy',   icon: '🔧', name: 'Refining!',          desc: 'Get your first alloy',						check: gs => gs.alloys >= 1 },
 		{ id: 'many_alloys',   icon: '🔧', name: 'Forge Master',       desc: 'Hold 150 alloys at once',						check: gs => gs.alloys >= 150 },
@@ -1760,6 +1763,7 @@
         { id: 'ten_ascend',    icon: '♾️', name: 'Frequent Flyer',     desc: 'Ascend 10 times.',                            check: gs => gs.totalAscensions >= 10 },
         { id: 'prp_hoard',     icon: '🔮', name: 'Research Hoard',     desc: 'Hold 25 PRP at once.',                        check: gs => gs.permanentResearchPoints >= 25 },
         { id: 'all_perks',     icon: '👑', name: 'Ascended Master',    desc: 'Own every Ascension perk.',                   check: gs => Object.keys(ASCENSION_UPGRADES).every(id => gs.ascensionOwned.includes(id)) },
+		{ id: 'some_salvage',  icon: '⚙️', name: 'Plenty o Salvage',   desc: 'Get 50 salvage in one Ascention.',			check: gs => gs.salvageGained >= 50 },
 
         // --- Danger & luck ---
         { id: 'hot',           icon: '🔥', name: 'Playing With Fire',  desc: 'Let the heat reach 95%.',                     check: gs => gs.temperature >= 95 },
@@ -2074,7 +2078,7 @@ function getScanBoostOreCost()    { return Math.ceil(SCAN_BOOST_ORE_COST * Math.
 		gameState.favoriteSlots     = gameState.favoriteSlots.slice(0, gameState.mods.favoriteLimit);			
 
         // Ascension perks that shape the START of a run
-        const tiers = 'ABCDEFGHI';
+        const tiers = 'ABCDEFGHIJ';
         if (gameState.mods.startTier > 0) {   // Foundry Memory / Master Blueprints
             gameState.unlockedSkills = Object.keys(SKILLS).filter(id => tiers.indexOf(id[0]) < gameState.mods.startTier);
             recalculateMods();
