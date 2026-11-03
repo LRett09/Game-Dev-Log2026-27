@@ -33,12 +33,14 @@ function myCheckHit(){
    if ( myHitOther('myImg01','myImg02') ){
        alert('you lose')  
        document.getElementById('myImg01').style.left = '20px'
+      document.getElementById('myImg01').style.top = '0px'
        //location = 't2a13-keydown.html' will go to the next level once its made
    }
 
    if ( myHitOther('myImg01','myImg03') ){
       alert('you win')
-      document.getElementById('myImg01').style.left= '50px'
+      document.getElementById('myImg01').style.left= '20px'
+      document.getElementById('myImg01').style.top= '0px'
    }
    
 }  // end of myCheckHit()
