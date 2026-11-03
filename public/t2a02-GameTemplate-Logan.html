@@ -36,11 +36,11 @@ function myCheckHit(){
        //location = 't2a13-keydown.html' will go to the next level once its made
    }
 
-
-   // more if statements here like the above
-
-
-
+   if ( myHitOther('myImg01','myImg03') ){
+      alert('you win')
+      document.getElementById('myImg01').style.left= '50px'
+   }
+   
 }  // end of myCheckHit()
 
 
