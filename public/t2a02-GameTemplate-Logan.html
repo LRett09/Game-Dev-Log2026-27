@@ -68,7 +68,7 @@ function myCheckHit(){
 }"><br><br>
 
 <input type=button value="Go Down" onTouchStart="{this.click(); event.preventDefault();}" onclick="{
-  document.getElementById('myImg01').style.up = parseInt(document.getElementById('myImg01').style.up) + 10 + 'px'
+  document.getElementById('myImg01').style.up = parseInt(document.getElementById('myImg01').style.up) - 10 + 'px'
   myCheckHit()     // checks for all collisions
 }"><br><br>
 
