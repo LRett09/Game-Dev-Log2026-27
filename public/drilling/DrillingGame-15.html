@@ -68,17 +68,13 @@
         .side-tab.left { right: auto; left: 0; border-radius: 0 8px 8px 0; transition: background-color 0.2s, left 0.3s; }
         #skills-toggle-btn    { top: calc(50% - 90px); background-color: #15803d; }
         #skills-toggle-btn:hover    { background-color: #16a34a; }
-        #ascension-toggle-btn { top: calc(50% + 90px); background-color: #7e22ce; }
-        #ascension-toggle-btn:hover { background-color: #9333ea; }
 		#drones-toggle-btn { top: calc(50% + 270px); background-color: #0f766e; }
         #drones-toggle-btn:hover { background-color: #14b8a6; }
-        #lab-toggle-btn { top: calc(50% - 270px); background-color: #be185d; }
-        #lab-toggle-btn:hover { background-color: #db2777; }
         #drill-toggle-btn { top: calc(50% - 400px); background-color: #b45309; }
         #drill-toggle-btn:hover { background-color: #d97706; }
         /* (layoutLeftTabs() in the script stacks whichever left tabs are visible, so these "top" values are only a fallback) */
         /* a tab glows when something in its panel can be bought */
-        .side-tab.has-buyable { box-shadow: 0 0 14px rgba(250, 204, 21, 0.75); }
+        .has-buyable { box-shadow: 0 0 14px rgba(250, 204, 21, 0.75); }
         body.sidebar-open-left .side-tab.left { left: 800px; }
         @media (max-width: 842px) {
             body.sidebar-open-left .side-tab.left { left: 95vw; }
@@ -283,15 +279,12 @@
          ============================ -->
     <div class="max-w-6xl mx-auto bg-gray-900 rounded-xl shadow-2xl p-4 md:p-6">
 
-        <!-- Top bar: title, PRP and the small menu buttons in one slim row -->
+        <!-- Top bar: title and the small menu buttons in one slim row -->
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-700 pb-3 mb-4">
             <div>
                 <h1 class="text-2xl md:text-3xl font-bold text-yellow-500 leading-tight">⛏️ The Deep Mine</h1>
                 <p class="text-xs text-gray-500">Version 1.5: The Laboratory</p>
             </div>
-            <div id="permanent-stats-display" class="px-4 py-1.5 rounded-full bg-purple-950 border border-purple-600 text-purple-300 font-bold text-sm">🔮 0 PRP</div>
-            <button id="lab-points-display" onclick="togglePanel('lab-sidebar')" class="hidden px-4 py-1.5 rounded-full bg-pink-950 border border-pink-600 text-pink-300 hover:bg-pink-900 font-bold text-sm transition duration-150" title="Lab Points: earned from achievements, spent in the Laboratory">🧪 0 LP</button>
-            <div id="alloy-display" class="hidden px-4 py-1.5 rounded-full bg-slate-800 border border-slate-500 text-slate-200 font-bold text-sm">🔩 0 Alloys</div>
             <div class="flex flex-wrap gap-2">
                 <button onclick="openGoals('achievements')" id="achievements-btn" class="px-3 py-1.5 rounded-lg bg-yellow-700 hover:bg-yellow-600 text-white text-sm font-semibold transition duration-150 border border-yellow-500">
                     🏆 Achievements
@@ -303,6 +296,15 @@
                     🛠 Dev
                 </button>
             </div>
+        </div>
+
+        <!-- Wallet: every currency in one slim row. Each chip opens the panel where you spend it.
+             Chips with class "hidden" are shown later by the script, once that currency matters. -->
+        <div id="wallet-row" class="flex flex-wrap gap-2 mb-4">
+            <button id="permanent-stats-display" onclick="openPanel('ascension-sidebar')" class="px-3 py-1 rounded-full bg-purple-950 border border-purple-600 text-purple-300 hover:bg-purple-900 font-bold text-sm transition duration-150" title="Permanent Research Points: spend them in the Ascension tree">🔮 0 PRP</button>
+            <button id="salvage-display" onclick="openPanel('drill-sidebar')" class="hidden px-3 py-1 rounded-full bg-amber-950 border border-amber-600 text-amber-300 hover:bg-amber-900 font-bold text-sm transition duration-150" title="Salvage: earned when you ascend, spent in the Drill menu">🔧 0 Salvage</button>
+            <button id="lab-points-display" onclick="openPanel('lab-sidebar')" class="hidden px-3 py-1 rounded-full bg-pink-950 border border-pink-600 text-pink-300 hover:bg-pink-900 font-bold text-sm transition duration-150" title="Lab Points: earned from achievements, spent in the Laboratory">🧪 0 LP</button>
+            <div id="alloy-display" class="hidden px-3 py-1 rounded-full bg-slate-800 border border-slate-500 text-slate-200 font-bold text-sm" title="Alloys: made by the refineries, spent on drones">🔩 0 Alloys</div>
         </div>
 
         <!-- Stats Panel -->
@@ -485,6 +487,7 @@
             <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
         </div>
         <p class="text-sm text-gray-400 mb-1">Spend Ore on skills for this run. Each one needs the skill above it, and deeper tiers need you to be deep enough.</p>
+        <button id="skills-to-ascension-btn" onclick="openPanel('ascension-sidebar')" class="w-full mb-3 px-4 py-2 rounded-lg bg-purple-800 hover:bg-purple-600 border border-purple-400 text-white font-bold transition duration-150" title="Open the Ascension Tree">✨ Ascension Tree</button>
         <p id="skills-ore" class="text-lg font-bold text-yellow-500 mb-3">0.0 Ore</p>
         <div id="skill-tree-container" class="bg-gray-800 p-4 rounded-xl shadow-inner"></div>
     </div>
@@ -496,6 +499,7 @@
             <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
         </div>
         <p class="text-sm text-gray-400 mb-1">Spend PRP on permanent perks that change how every future run plays. Each path unlocks from top to bottom.</p>
+        <button onclick="openPanel('skills-sidebar')" class="mb-3 px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-bold transition duration-150">← Back to Skill Tree</button>
         <p id="ascension-prp" class="text-lg font-bold text-purple-300 mb-3">0 PRP</p>
         <div id="ascension-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </div>
@@ -517,6 +521,7 @@
             <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
         </div>
         <p class="text-sm text-gray-400 mb-1">Earn Lab Points from achievements, then spend them here to research new modules, drones and upgrades. Only one project can run at a time. Research and your Lab Points are permanent: they are not lost when you ascend.</p>
+        <button onclick="openPanel('drill-sidebar')" class="mb-3 px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-bold transition duration-150">← Back to Drill rooms</button>
         <p id="lab-lp" class="text-lg font-bold text-pink-300 mb-3"></p>
         <div id="lab-container" class="flex flex-col gap-3"></div>
     </div>
@@ -527,14 +532,12 @@
             <h2 class="text-2xl font-bold text-amber-400">🛠 Drill</h2>
             <button onclick="closeSidebar()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
         </div>
-        <p class="text-sm text-gray-400 mb-4">Every skill you buy in a run gives Salvage when you ascend. Spend Salvage to upgrade the drill for more Space, then install rooms in that Space. You can have one of each room and level it up with Salvage. Drill levels, room levels and Salvage are permanent. Once you start drilling, installed rooms are locked in until your next run.</p>
+        <p class="text-sm text-gray-400 mb-4">Every skill you buy in a run gives Salvage when you ascend. Spend Salvage to upgrade the drill for more Space, then install rooms in that Space. You can have one of each room and level it up with Salvage. Drill levels, room levels and Salvage are permanent. Once you start drilling, installed rooms are locked in until your next run. Each installed room has its own menu (the Laboratory, the Drones) that you open with a button on its card.</p>
         <div id="drill-container" class="flex flex-col gap-4"></div>
     </div>
 
     <button id="drill-toggle-btn"     class="side-tab left hidden" onclick="togglePanel('drill-sidebar')" title="Open Drill upgrades">🛠 Drill</button>
-    <button id="lab-toggle-btn"       class="side-tab left hidden" onclick="togglePanel('lab-sidebar')"       title="Open Laboratory">🧪 Lab</button>
     <button id="skills-toggle-btn"    class="side-tab left" onclick="togglePanel('skills-sidebar')"    title="Open Skill Tree">🌳 Skills</button>
-    <button id="ascension-toggle-btn" class="side-tab left" onclick="togglePanel('ascension-sidebar')" title="Open Ascension Tree">✨ Ascension</button>
 	<button id="drones-toggle-btn" class="side-tab left hidden" onclick="togglePanel('drones-sidebar')" title="Open Drones">🤖 Drones</button>
 
     <button id="module-toggle-btn"   class="side-tab" onclick="togglePanel('module-sidebar')"   title="Open Module Bay">⚙ Module Bay</button>
@@ -557,7 +560,7 @@
                     <p class="font-bold text-yellow-400 mb-1">⛏️ About The Deep Mine</p>
                     <p class="text-sm text-gray-300">Drill deep, but be warned: the lower you go the more dangerous the caves get. Upgrade your drill with new skills,
                         modules, and research permanent upgrades. Can you reach the bottom?</p>
-                    <p class="text-xs text-gray-500 mt-2">Skills and Ascension are on the left edge of the screen. Module Bay, Workshop and Challenges are on the right.</p>
+                    <p class="text-xs text-gray-500 mt-2">Skills (the Ascension tree is a button inside it) and Drill (rooms such as the Laboratory are inside it) are on the left edge of the screen. Module Bay, Workshop and Challenges are on the right.</p>
                 </div>
                 <div id="patch-notes-body"></div>
             </div>
@@ -677,6 +680,7 @@
                 <div class="dev-row"><label>Ore</label>      <input type="number" id="dev-ore"       placeholder="e.g. 50000" min="0"></div>
                 <div class="dev-row"><label>Depth (m)</label> <input type="number" id="dev-depth"     placeholder="e.g. 2000"  min="0"></div>
                 <div class="dev-row"><label>PRP</label>       <input type="number" id="dev-prp"       placeholder="e.g. 10"    min="0"></div>
+                <div class="dev-row"><label>Salvage</label>   <input type="number" id="dev-salvage" placeholder="e.g. 25"    min="0"></div>
                 <div class="dev-row"><label>Power</label>     <input type="number" id="dev-power"     placeholder="e.g. 100"   min="0"></div>
                 <div class="dev-row"><label>Oxygen</label>    <input type="number" id="dev-oxygen"    placeholder="e.g. 100"   min="0"></div>
                 <div class="dev-row"><label>Integrity</label> <input type="number" id="dev-integrity" placeholder="e.g. 100"   min="0"></div>
@@ -864,7 +868,7 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.5', date: '2026-11-01',
+			version: 'v1.5', date: '2026-11-03',
 			changes: [
 				'Added the Laboratory! Click the new 🧪 Lab tab on the left edge. Achievements now give Lab Points (2 each, 4 for hidden ones), which you spend on research.',
 				'Research takes real time, and only one project can run at a time. It keeps going while the game is paused, in a shop or in a pop-up, but stops while you are on the main menu. Longer and more powerful research takes longer.',
@@ -877,6 +881,7 @@
 				'Added drill upgrades where you can add in rooms to the drill including the laboratory, mini refinery, and drone bay',
 				'Fixed bug where Foundry Memory would auto unlock tier 1 and 10 upgrades',
 				'Added 2 new achievments',
+				'Moved ascention into skill tree, and laboratory into drill rooms menus',
 				]
 			},
 		{
@@ -1763,7 +1768,7 @@
         { id: 'ten_ascend',    icon: '♾️', name: 'Frequent Flyer',     desc: 'Ascend 10 times.',                            check: gs => gs.totalAscensions >= 10 },
         { id: 'prp_hoard',     icon: '🔮', name: 'Research Hoard',     desc: 'Hold 25 PRP at once.',                        check: gs => gs.permanentResearchPoints >= 25 },
         { id: 'all_perks',     icon: '👑', name: 'Ascended Master',    desc: 'Own every Ascension perk.',                   check: gs => Object.keys(ASCENSION_UPGRADES).every(id => gs.ascensionOwned.includes(id)) },
-		{ id: 'some_salvage',  icon: '⚙️', name: 'Plenty o Salvage',   desc: 'Get 50 salvage in one Ascention.',			check: gs => gs.salvageGained >= 50 },
+		{ id: 'some_salvage',  icon: '⚙️', name: 'Plenty o Salvage',   desc: 'Get 20 salvage in one Ascention.',			check: gs => gs.salvageGained >= 20 },
 
         // --- Danger & luck ---
         { id: 'hot',           icon: '🔥', name: 'Playing With Fire',  desc: 'Let the heat reach 95%.',                     check: gs => gs.temperature >= 95 },
@@ -1906,8 +1911,8 @@
             'refill-oxygen-button', 'repair-button', 'pause-button', 'message-box', 'ascend-button',
             'workshop-container', 'module-bay-container', 'skill-tree-container', 'surface-sample-button',
             'auto-ops-panel', 'ascension-container', 'workshop-ore', 'challenge-status', 'deep-event-panel',
-            'skills-ore', 'ascension-prp', 'skills-toggle-btn', 'ascension-toggle-btn',
-            'lab-points-display', 'lab-toggle-btn',
+            'skills-ore', 'ascension-prp', 'skills-toggle-btn', 'skills-to-ascension-btn', 'salvage-display',
+            'lab-points-display',
         ];
         ids.forEach(id => ui[id] = document.getElementById(id));
     }
@@ -3826,7 +3831,7 @@ function isBanishedItem(item) {
         if (gameState.labActive && hasRoom('lab')) {
             gameState.labActive.timeLeft -= dt * getResearchSpeed();
             if (gameState.labActive.timeLeft <= 0) finishResearch();   // finishResearch() redraws everything
-            else updateLabPanel();                                     // otherwise just refresh the open panel
+            else { updateLabPanel(); updateDrillPanel(); }                                     // otherwise just refresh the open panel
         }
     }
 
@@ -3984,16 +3989,17 @@ function isBanishedItem(item) {
     function updateDrillPanel() {
         // The tab shows once you have ascended (that is when Salvage starts coming in)
         const tab = document.getElementById('drill-toggle-btn');
-        tab.classList.toggle('hidden', gameState.totalAscensions === 0 && gameState.salvageEarned === 0 && gameState.drillLevel === 1);
+        const drillKnown = gameState.totalAscensions > 0 || gameState.salvageEarned > 0 || gameState.drillLevel > 1;
+        tab.classList.toggle('hidden', !drillKnown);
+        ui['salvage-display'].classList.toggle('hidden', !drillKnown);   // the Salvage chip appears with the Drill tab
         // The Laboratory only exists while its room is installed
-        ui['lab-toggle-btn'].classList.toggle('hidden', !hasRoom('lab'));
         ui['lab-points-display'].classList.toggle('hidden', !hasRoom('lab'));
         if (!hasRoom('lab') && isLabPanelOpen()) closeSidebar();
         if (!isDrillPanelOpen()) return;
 
         const gs = gameState, free = getDrillSpace() - getRoomSpaceUsed(), nextDrill = DRILL_LEVELS[gs.drillLevel];
         const roomIds = Object.keys(ROOMS);
-        const key = JSON.stringify({ s: gs.salvage, l: gs.drillLevel, r: gs.roomsInstalled, lv: gs.roomLevels, lock: gs.roomsLocked, gain: getSalvageGain() });
+        const key = JSON.stringify({ s: gs.salvage, l: gs.drillLevel, r: gs.roomsInstalled, lv: gs.roomLevels, lock: gs.roomsLocked, gain: getSalvageGain(), du: gs.drones.unlocked });
 
         if (key !== _lastDrillKey) {
             _lastDrillKey = key;
@@ -4027,28 +4033,52 @@ function isBanishedItem(item) {
                 const levelBtn = next
                     ? `<button onclick="upgradeRoom('${id}')" ${canLevel ? '' : 'disabled'} class="w-full p-2 rounded-lg text-white text-xs font-bold transition duration-150 ${canLevel ? 'bg-sky-700 hover:bg-sky-500 cursor-pointer' : 'bg-gray-700 opacity-60 cursor-not-allowed'}">⬆ Level ${level + 1}: ${room.desc(next)} (${next.space} Space, ${next.cost} Salvage)</button>`
                     : '<p class="text-xs text-green-400 font-bold">✔ Max level</p>';
+                // Each installed room can have an "Open" button for its own menu
+                let openBtn = '';
+                if (installed && id === 'lab')
+                    openBtn = `<button onclick="openPanel('lab-sidebar')" class="w-full p-2 rounded-lg bg-pink-700 hover:bg-pink-500 text-white text-sm font-bold transition duration-150 cursor-pointer">🧪 Open Laboratory</button>`;
+                if (installed && id === 'droneBay' && gs.drones.unlocked)
+                    openBtn = `<button onclick="openPanel('drones-sidebar')" class="w-full p-2 rounded-lg bg-teal-700 hover:bg-teal-500 text-white text-sm font-bold transition duration-150 cursor-pointer">🤖 Open Drones</button>`;
                 return `<div class="bg-gray-800 p-3 rounded-xl border-2 ${installed ? 'border-green-600' : 'border-gray-700'} flex flex-col justify-between gap-2">
                     <div>
                         <div class="flex justify-between items-center"><p class="font-bold text-white">${room.icon} ${room.name}</p><span class="text-xs text-gray-400">Level ${level} / ${room.levels.length}</span></div>
                         <p class="text-xs text-gray-400">Takes ${cur.space} Space${installed ? ' · <span class="text-green-400 font-bold">Installed</span>' : ''}</p>
                         <p class="text-sm text-gray-300 mt-1">${room.desc(cur)}</p>
-                        ${id === 'refinery' && installed ? '<p id="mini-refinery-status" class="text-xs text-slate-300 mt-1"></p>' : ''}
                     </div>
-                    <div class="flex flex-col gap-2">${levelBtn}${installBtn}</div></div>`;
+                    <div class="flex flex-col gap-2">${openBtn}${levelBtn}${installBtn}</div></div>`;
             }).join('');
 
+            // One info row per room. The text inside is filled in below by roomInfoText(), every tick.
+            const overviewRows = roomIds.map(id => `<div class="bg-gray-800 p-3 rounded-lg border ${hasRoom(id) ? 'border-green-700' : 'border-gray-700'}">
+                <p class="font-bold text-white text-sm">${ROOMS[id].icon} ${ROOMS[id].name} <span class="text-xs text-gray-400 font-normal">Level ${getRoomLevel(id)}</span></p>
+                <p id="room-info-${id}" class="text-xs text-gray-300 mt-1"></p></div>`).join('');
             document.getElementById('drill-container').innerHTML = drillBox +
-                `<h3 class="text-lg font-bold text-amber-300">Rooms</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${roomCards}</div>`;
+                `<h3 class="text-lg font-bold text-amber-300">Rooms</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${roomCards}</div>` +
+                `<h3 class="text-lg font-bold text-amber-300">Room overview</h3><div class="flex flex-col gap-2">${overviewRows}</div>`;
         }
 
-        const status = document.getElementById('mini-refinery-status');
-        if (status) status.textContent = `Next Alloy in ${Math.ceil(getMiniRefineryInterval() - gs.miniRefineryTimer)}s`;
+        // Live room info: only the text changes, so buttons are never rebuilt under the mouse
+        for (const id of roomIds) { const el = document.getElementById(`room-info-${id}`); if (el) el.textContent = roomInfoText(id); }
     }
 
     // Stacks the visible left-edge tabs in a centred column (tabs appear and disappear, e.g. the Lab and Drones)
+    // One line of live info for the Room overview (Drill panel)
+    function roomInfoText(id) {
+        const gs = gameState, cur = getRoomLevelData(id);
+        if (!hasRoom(id)) return `Not installed. At level ${getRoomLevel(id)} it would take ${cur.space} Space.`;
+        if (id === 'lab') {
+            const a = gs.labActive;
+            return a ? `Researching ${LAB_RESEARCH[a.id].name}: ${fmtDuration(a.timeLeft / getResearchSpeed())} left. Research speed x${cur.researchSpeed}.`
+                     : `Idle. Research speed x${cur.researchSpeed}. You have ${gs.labPoints} Lab Points to spend.`;
+        }
+        if (id === 'refinery') return `Makes 1 Alloy every ${cur.interval}s. Next Alloy in ${Math.ceil(cur.interval - gs.miniRefineryTimer)}s.`;
+        if (id === 'droneBay')  return `Adds ${cur.housing} drone housing. Housing used: ${getDroneSpaceUsed()} / ${getDroneHousing()}.`;
+        return '';
+    }
+
     let _lastLeftTabKey = null;
     function layoutLeftTabs() {
-        const tabs = ['drill-toggle-btn', 'lab-toggle-btn', 'skills-toggle-btn', 'ascension-toggle-btn', 'drones-toggle-btn']
+        const tabs = ['drill-toggle-btn', 'skills-toggle-btn', 'drones-toggle-btn']
             .map(id => document.getElementById(id)).filter(t => !t.classList.contains('hidden'));
         const key = tabs.map(t => t.id + t.textContent).join('|');
         if (key === _lastLeftTabKey) return;
@@ -4112,6 +4142,7 @@ function isBanishedItem(item) {
         ui['permanent-stats-display'].innerText = `🔮 ${gameState.permanentResearchPoints} PRP`;
         ui['permanent-stats-display'].title     = 'Permanent Research Points: spend them in the Ascension tree';
         ui['lab-points-display'].innerText      = `🧪 ${gameState.labPoints} LP` + (gameState.labActive ? ' · researching' : '');
+        ui['salvage-display'].innerText         = `🔧 ${gameState.salvage} Salvage`;
         ui['drill-speed-display'].innerText     = `${getEffectiveDrillSpeed().toFixed(2)} m/s`;
         ui['hardness-display'].innerText        = `Rock hardness x${getHardness().toFixed(2)} (raw ${getRawDrillSpeed().toFixed(1)} m/s)`;
         ui['pressure-display'].innerText        = gameState.depth < GRACE_DEPTH
@@ -4912,15 +4943,16 @@ function isBanishedItem(item) {
             return !gameState.ascensionOwned.includes(id) && (!u.prereq || gameState.ascensionOwned.includes(u.prereq))
                 && gameState.permanentResearchPoints >= u.cost;
         }).length;
-        setTabBadge(ui['skills-toggle-btn'],    '🌳 Skills',    skillCount);
-        setTabBadge(ui['ascension-toggle-btn'], '✨ Ascension', perkCount);
+        setTabBadge(ui['skills-toggle-btn'],        '🌳 Skills',          skillCount);
+        setTabBadge(ui['skills-to-ascension-btn'], '✨ Ascension Tree', perkCount);   // the button inside the Skills panel
+        ui['skills-toggle-btn'].classList.toggle('has-buyable', skillCount + perkCount > 0);   // the Skills tab also glows for affordable perks
         // The Lab tab shows how many research projects you could start right now, and glows when there are some
         const labCount = Object.keys(LAB_RESEARCH).filter(id => getLabState(id) === 'ready').length;
-        setTabBadge(ui['lab-toggle-btn'], '🧪 Lab', labCount);
         // The Drill tab counts the drill and room upgrades you can afford with Salvage
         const nextDrill  = DRILL_LEVELS[gameState.drillLevel];
         const drillCount = (nextDrill && gameState.salvage >= nextDrill.cost ? 1 : 0)
-            + Object.keys(ROOMS).filter(id => { const n = ROOMS[id].levels[getRoomLevel(id)]; return n && gameState.salvage >= n.cost; }).length;
+            + Object.keys(ROOMS).filter(id => { const n = ROOMS[id].levels[getRoomLevel(id)]; return n && gameState.salvage >= n.cost; }).length
+            + (hasRoom('lab') ? labCount : 0);   // research you can start also lights up the Drill tab
         setTabBadge(document.getElementById('drill-toggle-btn'), '🛠 Drill', drillCount);
     }
     function setTabBadge(btn, label, count) {
@@ -5031,6 +5063,7 @@ function isBanishedItem(item) {
         if (gameState.unlockedSkills.includes(id)) return;
         if (SKILLS[id].prereq) devAddSkill(SKILLS[id].prereq);
         gameState.unlockedSkills.push(id);
+        gameState.run.skillsBought++;   // Salvage on ascending is 1 per skill bought, so dev skills count too
     }
     function devGiveSkill() {
         const id = devSelected('dev-skill-select');
@@ -5055,13 +5088,14 @@ function isBanishedItem(item) {
             }
         }
         gameState.unlockedSkills = gameState.unlockedSkills.filter(sid => !toRemove.has(sid));
+        gameState.run.skillsBought = Math.max(0, gameState.run.skillsBought - toRemove.size);   // removed skills stop counting
         recalculateMods();
         if (!gameState.mods.autoOps) gameState.autoActive = [];   // Autonomous Operations is gone, so switch its routines off
         const extra = toRemove.size - 1;
         devDone(`removed ${SKILLS[id].name}` + (extra > 0 ? ` and ${extra} skill${extra === 1 ? '' : 's'} that needed it.` : '.'));
     }
     function devClearSkills() {
-        gameState.unlockedSkills = []; gameState.autoActive = []; recalculateMods();
+        gameState.unlockedSkills = []; gameState.autoActive = []; gameState.run.skillsBought = 0; recalculateMods();
         devDone('removed every skill.');
     }
 
@@ -5408,6 +5442,7 @@ function isBanishedItem(item) {
         document.getElementById('dev-ore').value       = Math.floor(gameState.ore);
         document.getElementById('dev-depth').value     = Math.floor(gameState.depth);
         document.getElementById('dev-prp').value       = gameState.permanentResearchPoints;
+        document.getElementById('dev-salvage').value   = gameState.salvage;
         document.getElementById('dev-power').value     = Math.floor(gameState.power);
         document.getElementById('dev-oxygen').value    = Math.floor(gameState.oxygen);
         document.getElementById('dev-integrity').value = Math.floor(gameState.integrity);
@@ -5419,6 +5454,7 @@ function isBanishedItem(item) {
         const ore       = get('dev-ore');
         const depth     = get('dev-depth');
         const prp       = parseInt(document.getElementById('dev-prp').value);
+        const salvage   = parseInt(document.getElementById('dev-salvage').value);
         const power     = get('dev-power');
         const oxygen    = get('dev-oxygen');
         const integrity = get('dev-integrity');
@@ -5433,6 +5469,11 @@ function isBanishedItem(item) {
             gameState.nextDeepEventDepth  = rollNextDeepEventDepth(gameState.depth);    // and Deep Events
         }
         if (!isNaN(prp))       gameState.permanentResearchPoints = Math.max(0, prp);
+        if (!isNaN(salvage)) {   // raising Salvage also counts toward 'earned in total', like a real ascension would
+            const change = Math.max(0, salvage) - gameState.salvage;
+            gameState.salvage += change;
+            if (change > 0) gameState.salvageEarned += change;
+        }
         if (!isNaN(power))     gameState.power     = Math.max(0, Math.min(gameState.maxPower,     power));
         if (!isNaN(oxygen))    gameState.oxygen    = Math.max(0, Math.min(gameState.maxOxygen,    oxygen));
         if (!isNaN(integrity)) gameState.integrity = Math.max(0, Math.min(gameState.maxIntegrity, integrity));
