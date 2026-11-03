@@ -62,8 +62,13 @@ function myCheckHit(){
 }">
 
 
-<input type=button value="Image Right Fast Button" onTouchStart="{this.click(); event.preventDefault();}" onclick="{
+<input type=button value="Go Right" onTouchStart="{this.click(); event.preventDefault();}" onclick="{
   document.getElementById('myImg01').style.left = parseInt(document.getElementById('myImg01').style.left) + 10 + 'px'
+  myCheckHit()     // checks for all collisions
+}"><br><br>
+
+<input type=button value="Go Down" onTouchStart="{this.click(); event.preventDefault();}" onclick="{
+  document.getElementById('myImg01').style.up = parseInt(document.getElementById('myImg01').style.up) + 10 + 'px'
   myCheckHit()     // checks for all collisions
 }"><br><br>
 
