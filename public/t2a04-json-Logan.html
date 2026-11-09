@@ -3,6 +3,13 @@
 <script>
   //writing/scripting at top, research json formatting and why it's useful and write below
   //json = Javascript Object Notation
+
+  function myRandomColour() {
+  let myColour = '#' + Math.floor(Math.random()*16777215).toString(16);
+
+  document.getElementById('myColourDiv').style.backgroundColor = myColour;
+  document.getElementById('myColourDiv').innerHTML = myColour;
+}
   
 async function fetchData(url){
   try {
@@ -53,7 +60,7 @@ JSON is widely used for data exchange, configuration, and communication between 
   <option value="https://randomfox.ca/floof/">random fox</option>
   <option value="https://random.dog/woof.json">random dog</option>
   <option value="https://api.thecatapi.com/v1/images/search">random cat</option>
-  <option value="https://random.imagecdn.app/v1/image?width=700&height=450&category=nature&provider=loremflickr&format=json">random nature</option>
   <option value="https://foodish-api.com/api/">random food</option>
+  <option value="myRandomColour">random colour</option>
 </select>
 <div id="myDiv01">...</div>
