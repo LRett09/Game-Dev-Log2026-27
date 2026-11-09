@@ -4,17 +4,32 @@
   //writing/scripting at top, research json formatting and why it's useful and write below
   //json = Javascript Object Notation
   
-  async function fetchData(url){
+async function fetchData(url){
+  try {
     const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Website returned an error: ' + response.status);
+    }
+
     const data = await response.json();
     console.log(data);
-
     const myJson = JSON.stringify(data, null, 2);
     document.getElementById('myDiv01').innerHTML = `<pre>${myJson}</pre>`;
 
-    document.getElementById('myDiv01').innerHTML += `<img src="${data.image}" alt="Random Image" style="max-width : 100%; height: auto;">`;
+    let myImage = data.image || data.url;
 
+    if (myImage) {
+      document.getElementById('myDiv01').innerHTML +=
+        `<img src="${myImage}" alt="Random Image" style="max-width:100%; height:auto;">`;
+    }
+
+  } catch (error) {
+    document.getElementById('myDiv01').innerHTML =
+      'Could not load image: ' + error.message;
+    console.log(error);
   }
+}
 
 </script>
 
