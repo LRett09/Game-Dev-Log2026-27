@@ -1,10 +1,21 @@
 <h1 align=center>T2A03 Json</h1>
 
 <script>
-
-//writing/scripting at top, research json formatting and why it's useful and write below
-//json = Javascript Object Notation
+  //writing/scripting at top, research json formatting and why it's useful and write below
+  //json = Javascript Object Notation
   
+  async function fetchData(url){
+    const response = await fetch(url);
+    const data = await response.json();
+    console.log(data);
+
+    const myJson = JSON.stringify(data, null, 2);
+    document.getElementById('myDiv01').innerHTML = `<pre>${myJson}</pre>`;
+
+    document.getElementById('myDiv01').innerHTML += `<img src="${data.image}" alt="Random Image" style="max-width : 100%; height: auto;">`;
+
+  }
+
 </script>
 
 <h3>JSON is used for/because:</h3><br>
@@ -18,4 +29,13 @@
 </ol><br>
 
 Explained in a paragraph: <br>
-<b JSON is widely used for data exchange, configuration, and communication between applications due to its lightweight, human-readable, and language-independent format.>
+JSON is widely used for data exchange, configuration, and communication between applications due to its lightweight, human-readable, and language-independent format.
+
+<h3>Working Code</h3>
+
+<select id="mySelect" size="1" onchange="fetchData(this.value)">
+  <option ></option>
+  <option value="https://randomfox.ca/floof/">random fox</option>
+</select><br><br>
+
+<div id="myDiv01">...</div>
