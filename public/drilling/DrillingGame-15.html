@@ -102,6 +102,29 @@
             margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #1f2937;
         }
 
+        /* --- DEV BLOG MODAL ---
+           Same idea as the Patch Notes window, but wider and with a higher z-index (2100 vs 2000),
+           so it opens ON TOP of Patch Notes. Closing it drops you back into Patch Notes. */
+        #dev-blog-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 2100; align-items: center; justify-content: center;
+        }
+        #dev-blog-overlay.open { display: flex; }
+        #dev-blog-modal {
+            background-color: #111827; border: 2px solid #0891b2;
+            border-radius: 12px; width: 760px; max-width: 95vw; max-height: 88vh;
+            display: flex; flex-direction: column;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        }
+        #dev-blog-modal .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1.25rem 1.5rem; border-bottom: 1px solid #374151; flex-shrink: 0;
+        }
+        #dev-blog-modal .modal-body { overflow-y: auto; padding: 1.25rem 1.5rem; flex: 1; }
+        .blog-post + .blog-post { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #1f2937; }
+        .blog-post p, .blog-post li { line-height: 1.6; }
+
         /* --- DEV MODE PANEL --- */
         #dev-panel {
             display: none; position: fixed; bottom: 1.5rem; left: 1.5rem;
@@ -552,7 +575,10 @@
         <div id="patch-notes-modal" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h2 class="text-xl font-bold text-yellow-400">📋 Patch Notes</h2>
-                <button onclick="closePatchNotes()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
+                <div class="flex items-center gap-3">
+                    <button onclick="openDevBlog()" class="px-3 py-1.5 rounded-lg bg-cyan-800 hover:bg-cyan-600 text-white text-sm font-bold transition duration-150 border border-cyan-500" title="Read the in-depth dev blog">📰 Dev Blog</button>
+                    <button onclick="closePatchNotes()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
+                </div>
             </div>
             <div class="modal-body">
                 <!-- About the game (used to sit at the top of the main page) -->
@@ -563,6 +589,23 @@
                     <p class="text-xs text-gray-500 mt-2">Skills (the Ascension tree is a button inside it) and Drill (rooms such as the Laboratory are inside it) are on the left edge of the screen. Module Bay, Workshop and Challenges are on the right.</p>
                 </div>
                 <div id="patch-notes-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================
+         DEV BLOG MODAL
+         Opened by the "Dev Blog" button inside Patch Notes. The posts live in the DEV_BLOG list in the script
+         (search for "DEV BLOG"), and buildDevBlog() draws them into #dev-blog-body.
+         ============================ -->
+    <div id="dev-blog-overlay" onclick="closeDevBlog()">
+        <div id="dev-blog-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 class="text-xl font-bold text-cyan-400">📰 Dev Blog</h2>
+                <button onclick="closeDevBlog()" class="text-gray-400 hover:text-white text-2xl font-bold leading-none" title="Close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="dev-blog-body"></div>
             </div>
         </div>
     </div>
@@ -803,6 +846,17 @@
             </div>
         </details>
 
+        <!-- Preloads: jump straight to a depth with a ready-made set of upgrades (the list is DEV_PRELOADS in the script) -->
+        <details class="dev-section">
+            <summary>🎯 Preloads (test an area fast)</summary>
+            <div class="dev-section-body">
+                <div class="dev-row"><select id="dev-preload-select" onchange="devPreloadChanged()"></select></div>
+                <p id="dev-preload-desc" class="dev-ins-note" style="margin-bottom:0.5rem"></p>
+                <button class="dev-apply-btn" style="background:#0e7490; margin-top:0" onclick="devLoadPreload()">🚀 Load preload (restarts the run)</button>
+                <p class="dev-ins-note">Starts a fresh run, then drops you at that depth with the skills, workshop tiers, modules, refinery and drones listed. Your permanent stuff (PRP, perks, research, rooms) is kept.</p>
+            </div>
+        </details>
+
         <details class="dev-section">
             <summary>✨ Ascension perks (free)</summary>
             <div class="dev-section-body">
@@ -868,7 +922,7 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.5', date: '2026-11-03',
+			version: 'v1.5', date: '2026-11-09',
 			changes: [
 				'Added the Laboratory! Click the new 🧪 Lab tab on the left edge. Achievements now give Lab Points (2 each, 4 for hidden ones), which you spend on research.',
 				'Research takes real time, and only one project can run at a time. It keeps going while the game is paused, in a shop or in a pop-up, but stops while you are on the main menu. Longer and more powerful research takes longer.',
@@ -883,6 +937,9 @@
 				'Added 2 new achievments',
 				'Moved ascention into skill tree, and laboratory into drill rooms menus',
 				'Changed resource names and added new, deeper resources',
+				'Fixed the drones menu not showing up without buying the room upgrade',
+				'Added dev mode preloads',
+				'Added dev blog',
 				]
 			},
 		{
@@ -3605,7 +3662,8 @@ function isBanishedItem(item) {
     function updateDronePanel() {
         const ds  = gameState.drones;
         const tab = document.getElementById('drones-toggle-btn');
-        tab.classList.toggle('hidden', !ds.unlocked);   // the tab only shows once drones are unlocked
+        if (!ds.unlocked && gameState.depth >= DRONE_UNLOCK_DEPTH) unlockDrones(true);   // safety net: past the unlock depth always means unlocked
+        tab.classList.toggle('hidden', !ds.unlocked);   // the tab shows as soon as drones are unlocked (depth only, no room needed)
         if (!ds.unlocked || !isDronePanelOpen()) return;
 
         const canAct     = !gameState.gameOver && !gameState.isPaused;
@@ -4041,7 +4099,7 @@ function isBanishedItem(item) {
                 let openBtn = '';
                 if (installed && id === 'lab')
                     openBtn = `<button onclick="openPanel('lab-sidebar')" class="w-full p-2 rounded-lg bg-pink-700 hover:bg-pink-500 text-white text-sm font-bold transition duration-150 cursor-pointer">🧪 Open Laboratory</button>`;
-                if (installed && id === 'droneBay' && gs.drones.unlocked)
+                if (id === 'droneBay' && gs.drones.unlocked)   // no need to have the room installed: the Drones menu only needs the depth
                     openBtn = `<button onclick="openPanel('drones-sidebar')" class="w-full p-2 rounded-lg bg-teal-700 hover:bg-teal-500 text-white text-sm font-bold transition duration-150 cursor-pointer">🤖 Open Drones</button>`;
                 return `<div class="bg-gray-800 p-3 rounded-xl border-2 ${installed ? 'border-green-600' : 'border-gray-700'} flex flex-col justify-between gap-2">
                     <div>
@@ -4977,6 +5035,72 @@ function isBanishedItem(item) {
     function openPatchNotes()  { document.getElementById('patch-notes-overlay').classList.add('open'); }
     function closePatchNotes() { document.getElementById('patch-notes-overlay').classList.remove('open'); }
 
+    // ============================================================
+    //  DEV BLOG
+    //  Longer, more personal posts than the Patch Notes: the "why" behind changes, plans, behind-the-scenes.
+    //  Open it with the "Dev Blog" button inside the Patch Notes window.
+    //
+    //  HOW TO ADD A POST: add a new { ... } block at the TOP of the DEV_BLOG list below (newest first).
+    //    title : the big heading of the post
+    //    date  : any text you like, e.g. '2026-11-09'
+    //    tag   : a small label next to the date, e.g. 'Announcement', 'Design', 'Behind the scenes'
+    //    body  : a list of "blocks" that are shown top to bottom. Each block is ONE of these:
+    //              'Some text'                a normal paragraph
+    //              { heading: 'Some title' }  a sub-heading
+    //              ['one', 'two', 'three']    a bullet list (a list inside the list)
+    //  Remember the commas between blocks and between posts. You can use simple HTML inside the text,
+    //  like <b>bold</b> or <i>italic</i>.
+    // ============================================================
+    const DEV_BLOG = [
+        {
+            title: 'Dev tools: Preloads, and the Drones menu fix',
+            date: '2026-11-09', tag: 'Dev update',
+            body: [
+                'Two small things this time, one for testing and one bug fix.',
+                { heading: 'Preloads' },
+                'Testing the deep parts of the game used to mean playing for ages or setting up skills, modules and workshop tiers by hand in Dev Mode. Preloads do that in one click: pick a depth, and the game starts a fresh run there with a matching set of upgrades.',
+                [
+                    'Open <b>🛠 Dev</b>, then <b>🎯 Preloads</b>, pick one and press Load.',
+                    'Your permanent progress (PRP, Ascension perks, research, rooms) is kept.',
+                    'Ascending straight after a preload only earns a quarter of the PRP for the skipped depth, the same rule as Deep Drop.',
+                ],
+                { heading: 'Drones menu' },
+                'The Drones menu is now tied only to depth, not to the Drone Bay room. The room still adds extra housing space, but you no longer need it to reach the menu.',
+				{ heading: 'Update release' },
+				'There are not many features left in this update. A few small tweaks and a save system should be coming soon with this update, then thats all!',
+				'I plan to release the update sometime next week!',
+            ],
+        },
+        // Copy the block above and paste it here (above this line) to write your next post.
+    ];
+
+    function openDevBlog()  { document.getElementById('dev-blog-overlay').classList.add('open'); }
+    function closeDevBlog() { document.getElementById('dev-blog-overlay').classList.remove('open'); }
+
+    // Turns the DEV_BLOG list into HTML. Each kind of block (text, heading, list) gets its own look.
+    function buildDevBlog() {
+        const renderBlock = block => {
+            if (typeof block === 'string') return `<p class="text-sm text-gray-300 mb-3">${block}</p>`;
+            if (Array.isArray(block)) {
+                return `<ul class="mb-3 space-y-1">${block.map(item => `
+                    <li class="flex gap-2 text-sm text-gray-300"><span class="text-cyan-600 flex-shrink-0">•</span><span>${item}</span></li>`).join('')}</ul>`;
+            }
+            if (block.heading) return `<h4 class="text-lg font-bold text-cyan-300 mt-4 mb-2">${block.heading}</h4>`;
+            return '';
+        };
+        document.getElementById('dev-blog-body').innerHTML = DEV_BLOG.length
+            ? DEV_BLOG.map(post => `
+                <article class="blog-post">
+                    <div class="flex items-baseline flex-wrap gap-3 mb-3">
+                        <h3 class="text-2xl font-bold text-white">${post.title}</h3>
+                        <span class="text-xs text-gray-500">${post.date}</span>
+                        ${post.tag ? `<span class="text-xs font-bold text-cyan-300 border border-cyan-700 rounded px-2 py-0.5">${post.tag}</span>` : ''}
+                    </div>
+                    ${post.body.map(renderBlock).join('')}
+                </article>`).join('')
+            : '<p class="text-sm text-gray-500">No posts yet.</p>';
+    }
+
     function buildPatchNotesModal() {
         document.getElementById('patch-notes-body').innerHTML = PATCH_NOTES.map(entry => `
             <div class="patch-entry">
@@ -5038,8 +5162,142 @@ function isBanishedItem(item) {
         document.getElementById('dev-pause').checked ? devPause() : devUnpause();
     }
 
+    // ============================================================
+    //  DEV PRELOADS
+    //  One-click starting points for testing an area. Each line in DEV_PRELOADS becomes an entry in the
+    //  Dev panel's "Preloads" dropdown. HOW TO ADD ONE: copy a line, change the id (must be unique) and the numbers.
+    //  Every field except id, name, desc and depth is optional:
+    //    id, name, desc : the id is just a unique label, name and desc are shown in the dropdown
+    //    depth          : the depth (m) the run starts at
+    //    skillTier      : a letter 'A' to 'J'. You get EVERY skill up to and including that tier (free)
+    //    skills         : extra single skills to add, e.g. ['F1']
+    //    workshop       : a number (every workshop upgrade to that tier), 'max', or { W_DS: 3, W_MP: 2 } for specific ones
+    //    modules        : which module to install in each slot, e.g. { drillHead: 'precision' }
+    //    moduleMk       : makes every module you own this Mk level (1 to 3)
+    //    refineryTier   : every refinery upgrade to this tier (only matters from 5,500m)
+    //    drones         : a list of drone types to hand out, e.g. ['miner', 'miner', 'coolant']
+    //    alloys, ore    : starting Alloys and Ore
+    //  Valid module ids are the keys inside MODULE_SLOTS. Valid drone ids are the keys inside DRONE_TYPES.
+    // ============================================================
+    const DEV_PRELOADS = [
+        { id: 'early',   name: 'Early game (400m)',
+          desc: 'Tier 1-2 skills, workshop tier 1, 1,500 Ore. For testing the first few shops and crossroads.',
+          depth: 400, skillTier: 'B', workshop: 1, ore: 1500 },
+        { id: 'modules', name: 'Modules & Module Bay (1,000m)',
+          desc: 'Tier 1-3 skills, workshop tier 3, three starter modules, 20,000 Ore. Module upgrades (Mk II) unlock at 1,000m.',
+          depth: 1000, skillTier: 'C', workshop: 3, ore: 20000,
+          modules: { drillHead: 'precision', reactorCore: 'overdrive', hullPlating: 'reinforced' } },
+        { id: 'deepevents', name: 'Deep Events (2,500m)',
+          desc: 'Tier 1-4 skills, workshop tier 5, Mk II modules. Deep Events can start from 2,000m.',
+          depth: 2500, skillTier: 'D', workshop: 5, ore: 100000, moduleMk: 2,
+          modules: { drillHead: 'resonator', reactorCore: 'cryo', hullPlating: 'reinforced', fuelInjector: 'lean' } },
+        { id: 'refinery', name: 'Refinery (5,500m)',
+          desc: 'Tier 1-5 skills, workshop tier 6, 1,000,000 Ore, 20 Alloys. The abandoned refinery is found at 5,500m.',
+          depth: 5500, skillTier: 'E', workshop: 6, ore: 1000000, alloys: 20, moduleMk: 2,
+          modules: { drillHead: 'harvester', reactorCore: 'fusion', hullPlating: 'adaptive', fuelInjector: 'rich', sensorArray: 'geo' } },
+        { id: 'drones', name: 'Drones (6,500m)',
+          desc: 'Tier 1-6 skills, refinery tier 2, five drones, 60 Alloys. The Drones menu unlocks at 6,500m.',
+          depth: 6500, skillTier: 'F', workshop: 8, ore: 3000000, alloys: 60, refineryTier: 2, moduleMk: 2,
+          drones: ['miner', 'miner', 'coolant', 'driller', 'mechanic'],
+          modules: { drillHead: 'harvester', reactorCore: 'fusion', hullPlating: 'adaptive', fuelInjector: 'catalytic', sensorArray: 'deepScan', exhaustVent: 'assisted' } },
+        { id: 'late', name: 'Late game (13,000m)',
+          desc: 'Tier 1-8 skills, every workshop upgrade maxed, Mk III modules, refinery tier 4, a drone fleet.',
+          depth: 13000, skillTier: 'H', workshop: 'max', ore: 500000000, alloys: 200, refineryTier: 4, moduleMk: 3,
+          drones: ['miner', 'miner', 'miner', 'coolant', 'coolant', 'driller', 'scouter', 'mechanic', 'sampler'],
+          modules: { drillHead: 'voidborer', reactorCore: 'darkMatter', hullPlating: 'obsidian', fuelInjector: 'plasma', sensorArray: 'oracle', exhaustVent: 'cryoVent' } },
+        { id: 'endgame', name: 'Endgame (32,000m)',
+          desc: 'Every skill (even the ones that need research), everything maxed. For testing the very deepest content.',
+          depth: 32000, skillTier: 'J', workshop: 'max', ore: 50000000000, alloys: 500, refineryTier: 6, moduleMk: 3,
+          drones: ['miner', 'miner', 'miner', 'miner', 'coolant', 'coolant', 'driller', 'scouter', 'mechanic'],
+          modules: { drillHead: 'voidborer', reactorCore: 'darkMatter', hullPlating: 'obsidian', fuelInjector: 'plasma', sensorArray: 'oracle', exhaustVent: 'voidSink' } },
+    ];
+
+    // Shows the description of the selected preload under the dropdown
+    function devPreloadChanged() {
+        const p = DEV_PRELOADS.find(x => x.id === devSelected('dev-preload-select'));
+        document.getElementById('dev-preload-desc').textContent = p ? p.desc : '';
+    }
+
+    function devLoadPreload() {
+        const p = DEV_PRELOADS.find(x => x.id === devSelected('dev-preload-select'));
+        if (!p) return;
+
+        // Remember whether the game loop is currently stopped, so we know whether we must restart it afterwards.
+        const keepPaused = devPanelOpen && document.getElementById('dev-pause').checked;
+        const loopWasStopped = gameState.isPaused || gameState.gameOver || gameState.inShop || gameState.inChoice;
+
+        // 1) Start from a clean run. Permanent things (PRP, perks, research, rooms...) survive this.
+        initializeGame();
+
+        // 2) Skills: every skill up to the chosen tier (devAddSkill also adds prerequisites and ignores depth/price)
+        const tiers = 'ABCDEFGHIJ';
+        if (p.skillTier) Object.keys(SKILLS).filter(id => tiers.indexOf(id[0]) <= tiers.indexOf(p.skillTier)).forEach(devAddSkill);
+        (p.skills || []).forEach(devAddSkill);
+        gameState.run.skillsBought = 0;   // preload skills are free, so they must not count toward Salvage
+
+        // 3) Workshop tiers (never lowers a tier you already got for free from a challenge)
+        for (const id in WORKSHOP_UPGRADES) {
+            const max = WORKSHOP_UPGRADES[id].maxTier;
+            let tier = 0;
+            if (p.workshop === 'max')                 tier = max;
+            else if (typeof p.workshop === 'number')  tier = p.workshop;
+            else if (p.workshop)                      tier = p.workshop[id] || 0;
+            devSetWorkshopTier(id, Math.max(gameState.workshopTiers[id] || 0, Math.min(max, tier)));
+        }
+        applyPermanentBonuses();
+
+        // 4) Modules: install each chosen module (devUnlockSlot makes sure its slot exists first)
+        for (const slotId in (p.modules || {})) {
+            const optId = p.modules[slotId];
+            if (!MODULE_SLOTS[slotId] || !MODULE_SLOTS[slotId].options[optId]) { console.warn(`Preload "${p.id}": unknown module ${slotId}.${optId}`); continue; }
+            devUnlockSlot(slotId);
+            gameState.unlockedModuleOptions[slotId][optId] = true;
+            gameState.modules[slotId] = optId;
+        }
+        if (p.moduleMk) {
+            for (const slotId in gameState.unlockedModuleOptions)
+                for (const optId in gameState.unlockedModuleOptions[slotId])
+                    if (isUpgradeableModule(slotId, optId)) gameState.moduleMk[`${slotId}.${optId}`] = Math.min(MODULE_MAX_MK, p.moduleMk);
+        }
+        recalculateMods();   // skills and modules are in place, so work out all the bonuses
+
+        // 5) Depth. startDepth works exactly like Deep Drop: the skipped depth only earns 25% of its PRP,
+        //    so you can't farm PRP by loading a preload and ascending straight away.
+        gameState.depth      = p.depth;
+        gameState.maxDepth   = Math.max(gameState.maxDepth, p.depth);
+        gameState.startDepth = p.depth;
+        gameState.nextShopDepth       = rollNextShopDepth(p.depth);
+        gameState.nextCrossroadsDepth = rollNextCrossroadsDepth(p.depth);
+        gameState.nextDeepEventDepth  = rollNextDeepEventDepth(p.depth);
+
+        // 6) Refinery and drones (only if you are deep enough to have found them)
+        if (p.depth >= REFINERY_UNLOCK_DEPTH) {
+            unlockRefinery(true);
+            if (p.refineryTier) for (const id in REFINERY_UPGRADES)
+                gameState.refinery.tiers[id] = Math.max(gameState.refinery.tiers[id] || 0, Math.min(REFINERY_UPGRADES[id].maxTier, p.refineryTier));
+        }
+        if (p.depth >= DRONE_UNLOCK_DEPTH) unlockDrones(true);
+        gameState.alloys = Math.max(gameState.alloys, p.alloys || 0);
+        if (p.drones) { unlockDrones(true); p.drones.forEach(addDrone); }   // free, ignores housing space like the other dev tools
+
+        // 7) Resources: full bars and the Ore you asked for
+        gameState.ore         = p.ore || 0;
+        gameState.power       = gameState.maxPower;
+        gameState.oxygen      = gameState.maxOxygen;
+        gameState.integrity   = gameState.maxIntegrity;
+        gameState.temperature = 0;
+
+        // 8) Put the game back in the state Dev Mode expects
+        if (keepPaused) { gameState.isPaused = true; devPausedGame = true; }   // initializeGame() un-paused it
+        else if (loopWasStopped && gameStarted) startGameLoop();               // the loop had stopped, so start it again
+        _lastModuleBayKey = null;   // makes the Module Bay redraw
+        devDone(`loaded preload "${p.name}". ${keepPaused ? 'The game is paused while the Dev panel is open.' : ''}`);
+    }
+
     // Fills the dropdowns once at startup, straight from the game data, so new skills/modules show up by themselves
     function buildDevPanel() {
+        document.getElementById('dev-preload-select').innerHTML = DEV_PRELOADS.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        devPreloadChanged();   // show the description of the first preload
         const fill = (id, html) => document.getElementById(id).innerHTML = html;
         fill('dev-skill-select', Object.keys(SKILLS).map(id => `<option value="${id}">${id}: ${SKILLS[id].name}</option>`).join(''));
         fill('dev-workshop-select', Object.keys(WORKSHOP_UPGRADES).map(id => `<option value="${id}">${WORKSHOP_UPGRADES[id].name}</option>`).join(''));
@@ -5589,6 +5847,7 @@ function isBanishedItem(item) {
         buildSkillTree();
         buildRefinery();
         buildPatchNotesModal();
+        buildDevBlog();
         buildDevPanel();
         initializeGame();
         // The lab clock runs on its own timer, because research must keep going while the game loop is stopped
