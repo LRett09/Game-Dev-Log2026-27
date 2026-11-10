@@ -14,6 +14,12 @@
             color: #e5e7eb;
         }
         .progress-bar { transition: width 0.3s linear; }
+		
+		#resource-value, #hardness-display { min-height: 2rem; }
+
+		#ore-count, #depth-count, #max-depth-display, #drill-speed-display,
+		#resource-value, #hardness-display, #permanent-stats-display {
+		font-variant-numeric: tabular-nums; }
 
         /* --- SIDE PANELS (slide-out menus) and their tabs --- */
         .side-panel {
@@ -934,12 +940,13 @@
 				'Added the scouter drone',
 				'Added drill upgrades where you can add in rooms to the drill including the laboratory, mini refinery, and drone bay',
 				'Fixed bug where Foundry Memory would auto unlock tier 1 and 10 upgrades',
-				'Added 2 new achievments',
 				'Moved ascention into skill tree, and laboratory into drill rooms menus',
 				'Changed resource names and added new, deeper resources',
 				'Fixed the drones menu not showing up without buying the room upgrade',
 				'Added dev mode preloads',
 				'Added dev blog',
+				'New acheivments concerning the laboratory and drill upgrades',
+				'End game jittering fixed',
 				]
 			},
 		{
@@ -1195,6 +1202,14 @@
         sampler:  { name: 'Sampler Drone',  icon: '🧪', space: 6, cost: 35, wear: 0.35, serviceOre: 4000, cycle: 120, prp: 1,
                     desc: t => `Travels to the surface and back every ${t.cycle}s, bringing ${t.prp} PRP each trip.` },
     };
+
+	// How many room level-ups you have bought in total (a room at level 1 has had 0 upgrades)
+	function getRoomUpgradesBought() {
+    return Object.keys(ROOMS).reduce((sum, id) => sum + (getRoomLevel(id) - 1), 0);
+}
+	function getRoomUpgradesMax() {
+    return Object.keys(ROOMS).reduce((sum, id) => sum + (ROOMS[id].levels.length - 1), 0);
+}
 
     // ============================================================
     //  DRILL UPGRADES & ROOMS (permanent, paid with Salvage)
@@ -1829,7 +1844,18 @@
         { id: 'ten_ascend',    icon: '♾️', name: 'Frequent Flyer',     desc: 'Ascend 10 times.',                            check: gs => gs.totalAscensions >= 10 },
         { id: 'prp_hoard',     icon: '🔮', name: 'Research Hoard',     desc: 'Hold 25 PRP at once.',                        check: gs => gs.permanentResearchPoints >= 25 },
         { id: 'all_perks',     icon: '👑', name: 'Ascended Master',    desc: 'Own every Ascension perk.',                   check: gs => Object.keys(ASCENSION_UPGRADES).every(id => gs.ascensionOwned.includes(id)) },
-		{ id: 'some_salvage',  icon: '⚙️', name: 'Plenty o Salvage',   desc: 'Get 20 salvage in one Ascention.',			check: gs => gs.salvageGained >= 20 },
+		{ id: 'some_salvage',  icon: '⚙️', name: 'Plenty o Salvage',   desc: 'Get 20 salvage in one Ascension.',			check: gs => gs.salvageGained >= 20 },
+		
+				// --- Laboratory & Drill ---
+		{ id: 'first_research',  icon: '🔬', name: 'Eureka!',           desc: 'Finish your first research.',                 check: gs => gs.labResearched.length >= 1 },
+		{ id: 'research_5',      icon: '📚', name: 'Lab Assistant',     desc: 'Finish 5 research projects.',                 check: gs => gs.labResearched.length >= 5 },
+		{ id: 'research_10',     icon: '🧑‍🔬', name: 'Head Researcher',   desc: 'Finish 10 research projects.',                check: gs => gs.labResearched.length >= 10 },
+		{ id: 'research_all',    icon: '🧬', name: 'Nothing Left to Learn', desc: 'Finish every research project.',          check: gs => gs.labResearched.length >= Object.keys(LAB_RESEARCH).length },
+
+		{ id: 'first_drill_up',  icon: '🔩', name: 'Bigger Bit',        desc: 'Upgrade the drill for the first time.',       check: gs => gs.drillLevel >= 2 },
+		{ id: 'drill_max',       icon: '🛠️', name: 'Fully Built',       desc: 'Upgrade the drill to its maximum level.',     check: gs => gs.drillLevel >= DRILL_LEVELS.length },
+		{ id: 'first_room_up',   icon: '⬆️', name: 'Room Service',      desc: 'Level up a room.',                            check: gs => getRoomUpgradesBought() >= 1 },
+		{ id: 'rooms_max',       icon: '🏗️', name: 'Gold-Plated',       desc: 'Max out the level of every room.',            check: gs => getRoomUpgradesBought() >= getRoomUpgradesMax() },
 
         // --- Danger & luck ---
         { id: 'hot',           icon: '🔥', name: 'Playing With Fire',  desc: 'Let the heat reach 95%.',                     check: gs => gs.temperature >= 95 },
@@ -1958,6 +1984,9 @@
         drillLevel: 1,            // index into DRILL_LEVELS, starting at 1
         roomLevels: {},           // level of each room you own, as { lab: 2 } (missing = level 1)
         roomsInstalled: [],       // ids of rooms installed in the drill right now
+		// --- Salvage ---
+		salvageEarned: 0,         // every Salvage you have ever earned (only for display)
+		salvageGained: 0,         // Salvage from your most recent ascension (used by the "Plenty o Salvage" achievement)
     };
 
     // Cached DOM element references
@@ -3238,6 +3267,8 @@ function isBanishedItem(item) {
         const prpGained = getAscendGain(gameState.depth);
         if (prpGained <= 0) { gameState.message = gameState.depth >= 500 ? 'Drill deeper first: the depth Deep Drop skipped does not earn PRP.' : 'You must reach at least 500m to ascend.'; return updateUI(); }
         const salvageGained = getSalvageGain();
+		gameState.salvageGained = salvageGained;   // remember it so the achievement can check it
+		gameState.permanentResearchPoints += prpGained;
         gameState.permanentResearchPoints += prpGained;
         gameState.salvage       += salvageGained;
         gameState.salvageEarned += salvageGained;
@@ -5053,22 +5084,15 @@ function isBanishedItem(item) {
     // ============================================================
     const DEV_BLOG = [
         {
-            title: 'Dev tools: Preloads, and the Drones menu fix',
-            date: '2026-11-09', tag: 'Dev update',
+            title: 'The small things!',
+            date: '2026-11-10', tag: 'Dev update',
             body: [
-                'Two small things this time, one for testing and one bug fix.',
-                { heading: 'Preloads' },
-                'Testing the deep parts of the game used to mean playing for ages or setting up skills, modules and workshop tiers by hand in Dev Mode. Preloads do that in one click: pick a depth, and the game starts a fresh run there with a matching set of upgrades.',
-                [
-                    'Open <b>🛠 Dev</b>, then <b>🎯 Preloads</b>, pick one and press Load.',
-                    'Your permanent progress (PRP, Ascension perks, research, rooms) is kept.',
-                    'Ascending straight after a preload only earns a quarter of the PRP for the skipped depth, the same rule as Deep Drop.',
-                ],
-                { heading: 'Drones menu' },
-                'The Drones menu is now tied only to depth, not to the Drone Bay room. The room still adds extra housing space, but you no longer need it to reach the menu.',
-				{ heading: 'Update release' },
-				'There are not many features left in this update. A few small tweaks and a save system should be coming soon with this update, then thats all!',
-				'I plan to release the update sometime next week!',
+                'New achievments and jittering fixed',
+                { heading: 'Acheivments' },
+                'There are now a total of 79 acheivments (before 71) with new ones added for laboratory upgrades and drill upgrades',
+                { heading: 'Jittering Fix' },
+                'In the late game when you had high drill speed the ore value changes quickly and would cause the screen to jitter up and down,',
+				'however, now the ore value will not do so as the height of the area it takes up was modified! No more annoying jitter!',
             ],
         },
         // Copy the block above and paste it here (above this line) to write your next post.
