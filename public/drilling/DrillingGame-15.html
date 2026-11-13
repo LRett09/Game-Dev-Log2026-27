@@ -928,7 +928,7 @@
     // ============================================================
     const PATCH_NOTES = [
 		{
-			version: 'v1.5', date: '2026-11-09',
+			version: 'v1.5', date: '2026-11-13',
 			changes: [
 				'Added the Laboratory! Click the new 🧪 Lab tab on the left edge. Achievements now give Lab Points (2 each, 4 for hidden ones), which you spend on research.',
 				'Research takes real time, and only one project can run at a time. It keeps going while the game is paused, in a shop or in a pop-up, but stops while you are on the main menu. Longer and more powerful research takes longer.',
@@ -947,6 +947,7 @@
 				'Added dev blog',
 				'New acheivments concerning the laboratory and drill upgrades',
 				'End game jittering fixed',
+				'The game now saves progress every 2 minutes or ascention. Not your ore or depth though.',
 				]
 			},
 		{
@@ -3269,7 +3270,6 @@ function isBanishedItem(item) {
         const salvageGained = getSalvageGain();
 		gameState.salvageGained = salvageGained;   // remember it so the achievement can check it
 		gameState.permanentResearchPoints += prpGained;
-        gameState.permanentResearchPoints += prpGained;
         gameState.salvage       += salvageGained;
         gameState.salvageEarned += salvageGained;
         gameState.totalAscensions++;
@@ -3277,6 +3277,7 @@ function isBanishedItem(item) {
         if (salvageGained > 0) {
             gameState.message = `Ascended for ${prpGained} PRP and ${salvageGained} Salvage. Spend Salvage in the 🛠 Drill tab.` + (gameState.message !== 'Ready to drill!' ? ` ${gameState.message}` : '');
             updateUI();
+			saveGame();
         }
     }
 
@@ -5084,18 +5085,16 @@ function isBanishedItem(item) {
     // ============================================================
     const DEV_BLOG = [
         {
-            title: 'The small things!',
-            date: '2026-11-10', tag: 'Dev update',
+            title: 'The release of 1.5!',
+            date: '2026-11-13', tag: 'Update Release',
             body: [
-                'New achievments and jittering fixed',
-                { heading: 'Acheivments' },
-                'There are now a total of 79 acheivments (before 71) with new ones added for laboratory upgrades and drill upgrades',
-                { heading: 'Jittering Fix' },
-                'In the late game when you had high drill speed the ore value changes quickly and would cause the screen to jitter up and down,',
-				'however, now the ore value will not do so as the height of the area it takes up was modified! No more annoying jitter!',
+                'The update is done!',
+                { heading: 'Main Features' },
+                'The update adds in the laboratory, drill upgrades, and the new run building upgrade tier!',
+                { heading: 'What next?' },
+                'Next up will be another big update with the addition of crew members! I wont spoil too much, but it will allow for new abilities and a better choice of how you want to play!',
             ],
         },
-        // Copy the block above and paste it here (above this line) to write your next post.
     ];
 
     function openDevBlog()  { document.getElementById('dev-blog-overlay').classList.add('open'); }
@@ -5797,8 +5796,63 @@ function isBanishedItem(item) {
         gameState.message      = '🛠 Dev: resources maxed.';
         updateUI();
         devFill();
-    }
+		}
+		
+// ============================================================
+//  SAVING & LOADING
+//  Saves the permanent parts of gameState (the things that survive an ascension)
+//  into the browser's localStorage, as text.
+//  To save a new permanent field, add its name to SAVE_KEYS.
+// ============================================================
 
+	const SAVE_NAME = 'deepMineSave';
+
+	const SAVE_KEYS = [
+		'maxDepth', 'permanentResearchPoints', 'ascensionOwned', 'totalAscensions',
+		'favoriteWorkshops', 'favoriteSlots', 'banishedWorkshop', 'banishedSlots',
+		'achievementsUnlocked', 'challengesCompleted', 'specialModules', 'freeWorkshopTiers',
+		'totalChoicesMade', 'deepEventsSurvived', 'totalAlloysMade',
+		'labPoints', 'labPointsEarned', 'labResearched', 'labActive',
+		'salvage', 'salvageEarned', 'salvageGained',
+		'drillLevel', 'roomLevels', 'roomsInstalled',
+];
+
+// Copies the permanent fields into a plain object, turns it into text, and stores it
+function saveGame() {
+    const data = {};
+    SAVE_KEYS.forEach(key => data[key] = gameState[key]);
+    try {
+        localStorage.setItem(SAVE_NAME, JSON.stringify(data));
+    } catch (e) {
+        console.error('Could not save:', e);
+    }
+}
+
+// Reads the text back, turns it into an object, and copies the values into gameState
+function loadGame() {
+    try {
+        const text = localStorage.getItem(SAVE_NAME);
+        if (!text) return false;               // no save yet
+        const data = JSON.parse(text);
+        SAVE_KEYS.forEach(key => {
+            if (data[key] !== undefined) gameState[key] = data[key];   // skip anything missing
+        });
+        return true;
+    } catch (e) {
+        console.error('Could not load:', e);
+        return false;
+    }
+}
+
+
+function deleteSave() {
+    if (confirm('Delete your save? This cannot be undone.')) {
+        localStorage.removeItem(SAVE_NAME);
+        location.reload();
+    }
+}
+
+window.addEventListener('beforeunload', saveGame);
 
     // ============================================================
     //  STARTUP
@@ -5865,21 +5919,20 @@ function isBanishedItem(item) {
     }
 
     window.onload = function () {
-        cacheUIElements();
-        buildWorkshop();
-        buildAscension();
-        buildSkillTree();
-        buildRefinery();
-        buildPatchNotesModal();
-        buildDevBlog();
-        buildDevPanel();
-        initializeGame();
-        // The lab clock runs on its own timer, because research must keep going while the game loop is stopped
-        // (paused, in a shop, in a pop-up). It does nothing while the title screen is open.
-        setInterval(labClockTick, 250);
-        setInterval(devInspectorTick, 500);   // keeps the Dev Stats Inspector live while it is open
-        // The game loop is NOT started here any more. Pressing "Start Game" on the title screen starts it.
-    };
+    cacheUIElements();
+    buildWorkshop();
+    buildAscension();
+    buildSkillTree();
+    buildRefinery();
+    buildPatchNotesModal();
+    buildDevBlog();
+    buildDevPanel();
+    loadGame();                       
+    initializeGame();
+    setInterval(labClockTick, 250);
+    setInterval(devInspectorTick, 500);
+    setInterval(saveGame, 120000);
+};
 
     </script>
 </body>
