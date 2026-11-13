@@ -3,20 +3,22 @@
 <script>
   let myMax = 3    //52 when working
   let myCards = new Array(myMax)
+
+  function myShow() { 
+      let myTemp = ' '
+  for ( let myLoop = 0; myLoop < myMax; myLoop++){
+    myTemp += myLoop + ' = '+ myCards[myLoop] + '<br>'
+  }
+  document.getElementById('myDiv01').innerHTML = myTemp
+  }
+  
 </script>
 
 <input type=button value="set Random" onClick="{
   for ( let myLoop = 0; myLoop < myMax; myLoop++){
     myCards[myLoop] = Math.floor(Math.random()*10)
   }
-  }">
-
-<input type=button value="Show" onClick="{
-  let myTemp = ' '
-  for ( let myLoop = 0; myLoop < myMax; myLoop++){
-    myTemp += myLoop + ' = '+ myCards[myLoop] + '<br>'
-  }
-  document.getElementById('myDiv01').innerHTML = myTemp
+  myShow()
   }">
 
 <input type="button" value="Sort" onclick="{
@@ -29,6 +31,7 @@
       }
     }
   }
+  myShow()
   }">
 
 <div id=myDiv01>...</div>
