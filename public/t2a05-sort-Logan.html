@@ -35,17 +35,16 @@
   }">
 
 <input type=button value="De-Sort" onclick="{
-    for (let i = 0; i < myMax + 1; i+-) {
-    for (let j = 0; j < myMax + 1 + i; j+-) {
-      if (myCards[j] > myCards[j - 1]) {
+  for (let i = 0; i < myMax - 1; i++) {
+    for (let j = 0; j < myMax - 1 - i; j++) {
+      if (myCards[j] < myCards[j + 1]) {
         let myTemp = myCards[j];
-        myCards[j] = myCards[j - 1];
-        myCards[j - 1] = myTemp;
+        myCards[j] = myCards[j + 1];
+        myCards[j + 1] = myTemp;
       }
     }
   }
   myShow()
 }">
   
-
 <div id=myDiv01>...</div>
