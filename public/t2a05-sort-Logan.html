@@ -3,6 +3,8 @@
 <script>
   let myMax = 50
   let myCards = new Array(myMax)
+  let myScore = 0
+  let myGameOver = false
 
   function myShow() { 
       let myTemp = ' '
@@ -12,14 +14,50 @@
   document.getElementById('myDiv01').innerHTML = myTemp
   }
   
+  function myCheckDuplicates() {
+  let myCounted = []
+
+  for (let myLoop = 0; myLoop < myMax; myLoop++) {
+    for (let myCheck = myLoop + 1; myCheck < myMax; myCheck++) {
+
+      if (myCards[myLoop] == myCards[myCheck]) {
+
+        if (!myCounted.includes(myCards[myLoop])) {
+          myScore++
+          myCounted.push(myCards[myLoop])
+        }
+
+      }
+    }
+  }
+
+  document.getElementById('myScore').innerHTML = 'Score: ' + myScore
+
+  if (myScore >= 10) {
+    myGameOver = true
+    document.body.innerHTML = `
+      <h1 style="color:red; text-align:center;">SYSTEM FAILURE</h1>
+      <h2 style="text-align:center;">TOO MANY DUPLICATES DETECTED</h2>
+      <h1 style="text-align:center;">ERROR 10x</h1>
+    `
+  }
+}
+  
 </script>
 
+<h2>Get points by getting duplicate numbers. Get 10 and you loose! (Because you need to stop pressing random it will take so long you will loose your mind before it happens)</h2>
+<h2 id="myScore">Score: 0</h2>
+
 <input type=button value="set Random" onClick="{
-  for ( let myLoop = 0; myLoop < myMax; myLoop++){
-    myCards[myLoop] = Math.floor(Math.random()*10000)
+  if (!myGameOver) {
+    for (let myLoop = 0; myLoop < myMax; myLoop++) {
+      myCards[myLoop] = Math.floor(Math.random()*100000)
+    }
+
+    myCheckDuplicates()
+    myShow()
   }
-  myShow()
-  }">
+}">
 
 <input type=button value="Sort" onclick="{
   for (let i = 0; i < myMax - 1; i++) {
