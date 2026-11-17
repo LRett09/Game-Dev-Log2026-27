@@ -33,6 +33,7 @@
       if (myString[myLoop] == 'x') {myTemp  = 'y'} 
       if (myString[myLoop] == 'y') {myTemp  = 'z'} 
       if (myString[myLoop] == 'z') {myTemp  = 'a'} 
+      if (myString[myLoop] == ' ') {myTemp = '0'}
      
       myString[myLoop] = myTemp
    }
@@ -42,7 +43,7 @@
 <input type=button value="encrypt to numbers" onclick="{
 
     let myTemp = ''
-   myString = document.getElementById('myArea01').value.toLowerCase().split('')
+   myString = document.getElementById('myArea01').value.toLowerCase().split(' ')
    for (let myLoop=0;   myLoop < myString.length; myLoop++){
       myTemp = myString[myLoop]
       if (myString[myLoop] == 'a') {myTemp  = '1 '} 
@@ -137,7 +138,8 @@
       if (myString[myLoop] == '23') {myTemp = 'w'} 
       if (myString[myLoop] == '24') {myTemp = 'x'} 
       if (myString[myLoop] == '25') {myTemp = 'y'} 
-      if (myString[myLoop] == '26') {myTemp = 'z'} 
+      if (myString[myLoop] == '26') {myTemp = 'z'}
+      if (myTemp == '0') {myTemp = ' '}
      
       myString[myLoop] = myTemp
    }
