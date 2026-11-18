@@ -6,7 +6,8 @@
 
 <textarea id="myArea02" rows=4 cols=70></textarea><br><br>
 
-<input type=button value="decrypt" onclick="decrypt()"><br><br>
+<input type=button value="decrypt" onclick="decrypt()">
+<input type=button value="decrypt numbers" onclick="decryptNumbers()"><br><br>
 
 <textarea id="myArea03" rows=4 cols=70></textarea>
 
@@ -61,8 +62,10 @@ function decrypt() {
       }
       result = myString.join('')
 
-   } else {
+   }
 
+   function decryptNumbers() {
+      
       let myString = secret.split(' ')
       for (let myLoop = 0; myLoop < myString.length; myLoop++) {
          let number = Number(myString[myLoop])
