@@ -85,6 +85,10 @@
   myShow()
 }">
 
+<input type=text value=1000000 id="myMaxNum" onchange="{
+  myCards[myLoop] = parseInt(document.getElementById('myMaxNum').value)
+}">
+
 <input type=text value=50 id="myChooseMax" onchange="{
   myMax = parseInt(document.getElementById('myChooseMax').value)
 }">
