@@ -65,6 +65,9 @@ function decrypt() {
    }
 }
    function decryptNumbers() {
+
+      let secret = document.getElementById('myArea02').value
+      let result = ''
       
       let myString = secret.split(' ')
       for (let myLoop = 0; myLoop < myString.length; myLoop++) {
