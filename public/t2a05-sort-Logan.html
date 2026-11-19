@@ -15,12 +15,6 @@
   document.getElementById('myDiv01').innerHTML = myTemp
   }
   
-  function myCheckDuplicates() {
-  let myCounted = []
-
-  for (let myLoop = 0; myLoop < myMax; myLoop++) {
-    for (let myCheck = myLoop + 1; myCheck < myMax; myCheck++) {
-
       function myCheckDuplicates() {
   let myCounted = []
 
@@ -31,12 +25,22 @@
 
     for (let myCheck = myLoop + 1; myCheck < myMax; myCheck++) {
 
+     function myCheckDuplicates() {
+  let myCounted = []
+
+  for (let myLoop = 0; myLoop < myMax; myLoop++) {
+
+    for (let myCheck = myLoop + 1; myCheck < myMax; myCheck++) {
+
       if (myCards[myLoop] == myCards[myCheck]) {
-        myScore++
-        myCounted.push(myCards[myLoop])
+
+        if (!myCounted.includes(myCards[myLoop])) {
+          myScore++
+          myCounted.push(myCards[myLoop])
+        }
+
         break
       }
-    }
     }
   }
 
@@ -53,6 +57,7 @@
 }
   }
 }
+  }
   
 </script>
 
