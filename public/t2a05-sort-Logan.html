@@ -86,7 +86,7 @@
 }">
 
 <input type=text value=50 id="myChooseMax" onchange="{
-  let myMax = myChooseMax.value
+  let document.getElementById('myMax').value = parseInt (document.getElementById('myChooseMax').value)
 }">
   
 <div id=myDiv01>...</div>
