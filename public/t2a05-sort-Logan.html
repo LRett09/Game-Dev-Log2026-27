@@ -21,14 +21,22 @@
   for (let myLoop = 0; myLoop < myMax; myLoop++) {
     for (let myCheck = myLoop + 1; myCheck < myMax; myCheck++) {
 
+      function myCheckDuplicates() {
+  let myCounted = []
+
+  for (let myLoop = 0; myLoop < myMax; myLoop++) {
+    if (myCounted.includes(myCards[myLoop])) {
+      continue
+    }
+
+    for (let myCheck = myLoop + 1; myCheck < myMax; myCheck++) {
+
       if (myCards[myLoop] == myCards[myCheck]) {
-
-        if (!myCounted.includes(myCards[myLoop])) {
-          myScore++
-          myCounted.push(myCards[myLoop])
-        }
-
+        myScore++
+        myCounted.push(myCards[myLoop])
+        break
       }
+
     }
   }
 
@@ -41,6 +49,8 @@
       <h2 style="text-align:center;">TOO MANY DUPLICATES DETECTED</h2>
       <h1 style="text-align:center;">ERROR 10x</h1>
     `
+  }
+}
   }
 }
   
