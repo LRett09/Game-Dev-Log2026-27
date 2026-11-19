@@ -5,6 +5,7 @@
   let myCards = new Array(myMax)
   let myScore = 0
   let myGameOver = false
+  let myNumMax = 1000000
 
   function myShow() { 
       let myTemp = ' '
@@ -51,7 +52,7 @@
 <input type=button value="set Random" onClick="{
   if (!myGameOver) {
     for (let myLoop = 0; myLoop < myMax; myLoop++) {
-      myCards[myLoop] = Math.floor(Math.random()*myMaxNum)
+      myCards[myLoop] = Math.floor(Math.random()*myNumMax)
     }
 
     myCheckDuplicates()
@@ -86,7 +87,7 @@
 }">
 
 <input type=text value=1000000 id="myMaxNum" onchange="{
-  myCards[myLoop] = parseInt(document.getElementById('myMaxNum').value)
+  myNumMax = parseInt(document.getElementById('myMaxNum').value)
 }">
 
 <input type=text value=50 id="myChooseMax" onchange="{
