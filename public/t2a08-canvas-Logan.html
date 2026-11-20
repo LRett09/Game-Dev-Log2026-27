@@ -1,6 +1,16 @@
 <h1 align=center>T2A07 Canvas</h1>
 Click the button to draw shapes :O<br>
 
+<input type=button value="Draw basic shapes" onclick="{ myDrawShapes() }">
+
+  <input type=button value="rotate canvas?" onclick="{
+   myRotate = !myRotate
+   myDrawShapes()
+  }"><br><br>
+
+<!--Smaller canvas so everything fits on 3/4 of a page -->
+<canvas id="myCanvas" width="1000" height="1000" style="border:1px solid #000000;"></canvas>
+
   <script>
     //Set up global variables
     let myCanvas = document.getElementById('myCanvas')
@@ -41,7 +51,7 @@ Click the button to draw shapes :O<br>
   //Write some text
   myContext.fillStyle = 'red';
   myContext.font = '24px Arial';
-  myContext.fillText('Hello World!', 400, 180);  //('text', x, y)
+  myContext.fillText('You lied. Canvas is not fun. Im in pain', 400, 180);  //('text', x, y)
 
   //Draw a solid dimond
   myContext.rotate(45);
@@ -50,13 +60,3 @@ Click the button to draw shapes :O<br>
   if (myRotate == true) { myContext.rotate(-45); } else { }
     }
   </script>
-
-<input type=button value="Draw basic shapes" onclick="{ myDrawShapes() }">
-
-  <input type=button value="rotate canvas?" onclick="{
-   myRotate = !myRotate
-   myDrawShapes()
-  }"><br><br>
-
-<!--Smaller canvas so everything fits on 3/4 of a page -->
-<canvas id="myCanvas" width="1000" height="1000" style="border:1px solid #000000;"></canvas>
