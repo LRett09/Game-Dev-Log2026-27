@@ -1,9 +1,24 @@
 <h1 align=center>T2A07 Canvas</h1>
 Click the button to draw shapes :O<br>
 
-<input type=button value="Draw basic shapes" onclick="{ myDrawShapes() }
+<input type=button value="Draw basic shapes" onclick="{ myDrawShapes() }">
 
-function myDrawShapes() {
+  <input type=button value="rotate canvas?" onclick="{
+   myRotate = !myRotate
+   myDrawShapes()
+  }"><br><br>
+
+  <!--Smaller canvas so everything fits on 3/4 of a page -->
+  <canvas id="myCanvas" width="1000" height="1000" style="border:1px solid #000000;"></canvas>
+
+  <script>
+    //Set up global variables
+    let myCanvas = document.getElementById('myCanvas')
+    let myContext = myCanvas.getContext('2d')
+    let myRotate = true
+    
+    //Drawing the shapes
+    function myDrawShapes() {
   //Clear the canvas first
   myContext.clearRect(0, 0, myCanvas.width, myCanvas.height);
   
@@ -44,18 +59,4 @@ function myDrawShapes() {
   myContext.fillRect(300, 500, 60, 60);  //(x, y, width, height)
   if (myRotate == true) { myContext.rotate(-45); } else { }
   }">
-
-  <input type=button value="rotate canvas?" onclick="{
-   myRotate = !myRotate
-   myDrawShapes()
-  }"><br><br>
-
-  <!--Smaller canvas so everything fits on 3/4 of a page -->
-  <canvas id="myCanvas" width="1000" height="1000" style="border:1px solid #000000;"></canvas>
-
-  <script>
-    //Set up global variables
-    let myCanvas = document.getElementById('myCanvas')
-    let myContext = myCanvas.getContext('2d')
-    let myRotate = true
   </script>
