@@ -32,7 +32,12 @@ Click the button to draw shapes :O<br>
   //Draw a solid dimond
   myContext.rotate(45);
   myContext.fillStyle = 'purple';
-  myContext.fillRect(300, 300, 60, 60);  //(x, y, width, height)
+  myContext.fillRect(300, 500, 60, 60);  //(x, y, width, height)
+  if (myRotate = true) { myContext.rotate(-45); } else { }
+  }">
+
+  <input type=button value="rotate canvas?" onclick="{
+    document.getElementById('myRotate') = false
   }"><br><br>
 
   <!--Smaller canvas so everything fits on 3/4 of a page -->
@@ -42,4 +47,5 @@ Click the button to draw shapes :O<br>
     //Set up global variables
     let myCanvas = document.getElementById('myCanvas')
     let myContext = myCanvas.getContext('2d')
+    let myRotate = true
   </script>
