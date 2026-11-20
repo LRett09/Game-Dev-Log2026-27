@@ -1,0 +1,40 @@
+<h1 align=center>T2A06 Canvas</h1>
+Click the button to draw shapes :O
+
+<input type=button value="Draw basic shapes" onclick="{
+  //Clear the canvas first
+  myContext.clearRect(0, 0, myCanvas.width, myCanvas.height);
+
+  //Draw a simple line
+  myContext.beginPath();
+  myContext.linewidth = 3;
+  myContext.strokeStyle = 'black';
+  myContext.moveTo(20, 20);  //Start point (x, y)
+  myContext.lineTo(150, 20);  //End point (x, y)
+  myContext.stroke();
+
+  //Draw a solid rectangle
+  myContext.fillStyle = 'blue';
+  myContext.fillRect(30, 50, 100, 60);  //(x, y, width, height
+
+  //Draw a circle
+  myContext.beginPath();
+  myContext.lineWidth = 5;
+  myContext.strokeStyle = 'green';
+  myContext.arc(220, 80, 40, 0, 2 * Math.PI);  //(x, y, radius, start, end)
+  myContext.stroke();
+
+  //Write some text
+  myContext.fillStyle = 'red';
+  myContext.font = '24px Arial';
+  myContext.fillText('Hello World!', 20, 180);  //('text', x, y)
+  }">
+
+  <!--Smaller canvas so everything fits on 3/4 of a page -->
+  <canvas id="myCanvas" width="500" height="300" style="border:1px solid #000000;"></canvas>
+
+  <script>
+    //Set up global variables
+    let myCanvas = document.getElementById('myCanvas')
+    let myContext = myCanvas.getContext('2d')
+  </script>
