@@ -9,30 +9,30 @@ Click the button to draw shapes :O<br>
   myContext.beginPath();
   myContext.linewidth = 3;
   myContext.strokeStyle = 'black';
-  myContext.moveTo(20, 20);  //Start point (x, y)
-  myContext.lineTo(150, 20);  //End point (x, y)
+  myContext.moveTo(500, 500);  //Start point (x, y)
+  myContext.lineTo(450, 500);  //End point (x, y)
   myContext.stroke();
 
   //Draw a solid rectangle
   myContext.fillStyle = 'blue';
-  myContext.fillRect(30, 50, 100, 60);  //(x, y, width, height
+  myContext.fillRect(600, 750, 100, 60);  //(x, y, width, height
 
   //Draw a circle
   myContext.beginPath();
   myContext.lineWidth = 5;
   myContext.strokeStyle = 'green';
-  myContext.arc(220, 80, 40, 0, 2 * Math.PI);  //(x, y, radius, start, end)
+  myContext.arc(220, 600, 40, 0, 2 * Math.PI);  //(x, y, radius, start, end)
   myContext.stroke();
 
   //Write some text
   myContext.fillStyle = 'red';
   myContext.font = '24px Arial';
-  myContext.fillText('Hello World!', 20, 180);  //('text', x, y)
+  myContext.fillText('Hello World!', 400, 180);  //('text', x, y)
 
   //Draw a solid dimond
   myContext.rotate(45);
   myContext.fillStyle = 'purple';
-  myContext.fillRect(0, 50, 60, 60);  //(x, y, width, height)
+  myContext.fillRect(300, 300, 60, 60);  //(x, y, width, height)
   }"><br><br>
 
   <!--Smaller canvas so everything fits on 3/4 of a page -->
