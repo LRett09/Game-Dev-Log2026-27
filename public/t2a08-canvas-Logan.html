@@ -1,7 +1,9 @@
 <h1 align=center>T2A07 Canvas</h1>
 Click the button to draw shapes :O<br>
 
-<input type=button value="Draw basic shapes" onclick="{
+<input type=button value="Draw basic shapes" onclick="{ myDrawShapes() }
+
+function myDrawShapes() {
   //Clear the canvas first
   myContext.clearRect(0, 0, myCanvas.width, myCanvas.height);
   
