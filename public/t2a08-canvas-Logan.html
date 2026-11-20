@@ -4,6 +4,13 @@ Click the button to draw shapes :O<br>
 <input type=button value="Draw basic shapes" onclick="{
   //Clear the canvas first
   myContext.clearRect(0, 0, myCanvas.width, myCanvas.height);
+  
+//rotate canvas around it's center
+  if (myRotate == true) {
+    myContext.translate(500, 500)
+    myContext.rotate(Math.PI / 4)
+    myContext.translate(-500, -500)
+  }
 
   //Draw a simple line
   myContext.beginPath();
@@ -33,11 +40,12 @@ Click the button to draw shapes :O<br>
   myContext.rotate(45);
   myContext.fillStyle = 'purple';
   myContext.fillRect(300, 500, 60, 60);  //(x, y, width, height)
-  if (myRotate = true) { myContext.rotate(-45); } else { }
+  if (myRotate == true) { myContext.rotate(-45); } else { }
   }">
 
   <input type=button value="rotate canvas?" onclick="{
-    let myRotate = false
+   myRotate = !myRotate
+   myDrawShapes()
   }"><br><br>
 
   <!--Smaller canvas so everything fits on 3/4 of a page -->
