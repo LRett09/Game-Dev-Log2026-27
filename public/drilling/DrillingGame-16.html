@@ -312,7 +312,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-700 pb-3 mb-4">
             <div>
                 <h1 class="text-2xl md:text-3xl font-bold text-yellow-500 leading-tight">⛏️ The Deep Mine</h1>
-                <p class="text-xs text-gray-500">Version 1.5: The Laboratory</p>
+                <p class="text-xs text-gray-500">Version 1.6: Recruiting your Crew</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <button onclick="openGoals('achievements')" id="achievements-btn" class="px-3 py-1.5 rounded-lg bg-yellow-700 hover:bg-yellow-600 text-white text-sm font-semibold transition duration-150 border border-yellow-500">
@@ -633,12 +633,13 @@
         <div id="title-menu" class="flex flex-col items-center">
             <div id="title-logo" class="text-7xl mb-4">⛏️</div>
             <h1 class="text-5xl md:text-6xl font-bold text-yellow-500 mb-2">The Deep Mine</h1>
-            <p class="text-sm text-gray-500 mb-1">Version 1.5: The Laboratory</p>
+            <p class="text-sm text-gray-500 mb-1">Version 1.6: Recruiting your Crew</p>
             <p class="text-gray-400 max-w-md mb-8">Drill deep, but be warned: the lower you go the more dangerous the caves get. Can you reach the bottom?</p>
             <div class="flex flex-col gap-3 items-center">
                 <button id="title-start-btn" onclick="startGameFromTitle()" class="title-btn bg-green-600 hover:bg-green-500">▶ Start Game</button>
                 <button onclick="openPatchNotes()" class="title-btn bg-gray-700 hover:bg-gray-600">📋 Patch Notes</button>
                 <button onclick="exitGame()" class="title-btn bg-red-800 hover:bg-red-700">✖ Exit Game</button>
+				<button onclick="resetSave()" class="title-btn bg-gray-800 hover:bg-red-900">Reset your Save</button>
             </div>
         </div>
 
@@ -646,7 +647,7 @@
         <div id="title-goodbye" class="hidden flex-col items-center">
             <div class="text-6xl mb-4">👋</div>
             <h2 class="text-3xl font-bold text-yellow-500 mb-2">Thanks for playing!</h2>
-            <p class="text-gray-400 max-w-md mb-6">You can now close this tab. Your game was not saved, since the game does not have saving yet.</p>
+            <p class="text-gray-400 max-w-md mb-6">You can now close this tab. Your game was saved, so no need to worry!</p>
             <button onclick="backToTitleMenu()" class="title-btn bg-gray-700 hover:bg-gray-600">← Back to title</button>
         </div>
     </div>
@@ -894,31 +895,40 @@
     <script>
 
     // ============================================================
-    //  TABLE OF CONTENTS  (search for a heading's name to jump to it)
+    //  TABLE OF CONTENTS  (search for a heading's name to jump to it, they are in this order in the file)
     //  --- Data: the lists you edit to add content ---
     //   1. PATCH NOTES            - version history shown in the About & Patch Notes window
     //   2. CONSTANTS              - numbers you can tweak to balance the game
+    //        (inside it: DRONES = drone types and upgrades, DRILL UPGRADES & ROOMS = drill levels and rooms)
     //   3. GAME DATA              - workshop, ascension, skills, modules, ores, random events
     //   4. CROSSROADS             - the "pick one" pop-ups (add new ones here!)
     //   5. DEEP EVENTS            - the long, managed events (add new ones here!)
     //   6. AUTOMATION ROUTINES    - the options for the Autonomous Operations skill
     //   7. CHALLENGES             - the list of challenges and their rewards (add new ones here!)
     //   8. ACHIEVEMENTS           - the list of achievements (add new ones here!)
+    //   9. LAB RESEARCH           - what the Laboratory can research (add new ones here!)
     //  --- Logic: how the game works ---
-    //   9. GLOBAL STATE           - gameState, the one object holding the whole game
-    //  10. CALCULATIONS & HELPERS - formulas for speed, costs, drain rates, random picks
-    //  11. STATE MANAGEMENT       - starting a run, applying upgrades to the stats
-    //  12. GAME LOOP              - what happens every frame, random events
-    //  13. CHOICE EVENTS          - opening / answering crossroads and event-response pop-ups
-    //  14. DEEP EVENT LOGIC       - starting, ticking and ending Deep Events
-    //  15. PLAYER CONTROLS        - buttons, skills, favorites/banish, module upgrades
-    //  16. SHOPS                  - the wandering shop
-    //  17. UI RENDERING           - drawing gameState onto the page (incl. Module Bay, trees)
-    //  18. CHALLENGE LOGIC        - starting, tracking, completing and rewarding challenges
-    //  19. ACHIEVEMENT LOGIC      - checking, unlocking and showing achievements
-    //  20. GOALS PANEL            - the Challenges & Achievements side menu
-    //  21. SIDE PANELS            - opening/closing the slide-out panels, tab badges
-    //  22. PATCH NOTES MODAL, DEV MODE, STARTUP
+    //  10. GLOBAL STATE           - gameState, the one object holding the whole game
+    //  11. CALCULATIONS & HELPERS - formulas for speed, costs, drain rates, random picks
+    //  12. STATE MANAGEMENT       - starting a run, applying upgrades to the stats
+    //  13. GAME LOOP              - what happens every frame (only ONE loop may run, see startGameLoop)
+    //  14. CHOICE EVENTS          - opening / answering crossroads and event-response pop-ups
+    //  15. DEEP EVENT LOGIC       - starting, ticking and ending Deep Events
+    //  16. PLAYER CONTROLS        - buttons, skills, favorites/banish, module upgrades, ascending
+    //  17. SHOPS                  - the wandering shop
+    //  18. REFINERY               - the abandoned refinery (Ore into Alloys)
+    //  19. DRONES                 - building, wearing, servicing and upgrading drones
+    //  20. LABORATORY             - Lab Points, research, and the real-time "lab clock"
+    //  21. DRILL UPGRADES & ROOMS - Salvage, drill levels, rooms (Lab, Mini Refinery, Drone Bay)
+    //  22. UI RENDERING           - drawing gameState onto the page (change-only helpers live here too)
+    //  23. CHALLENGE LOGIC        - starting, tracking, completing and rewarding challenges
+    //  24. ACHIEVEMENT LOGIC      - checking, unlocking and showing achievements
+    //  25. GOALS PANEL            - the Challenges & Achievements side menu
+    //  26. SIDE PANELS            - opening/closing the slide-out panels, tab badges
+    //  27. PATCH NOTES MODAL & DEV BLOG
+    //  28. DEV MODE               - the dev panel, DEV PRELOADS, and the DEV STATS INSPECTOR (live numbers + FPS)
+    //  29. SAVING & LOADING       - what is stored in localStorage (add new permanent fields to SAVE_KEYS)
+    //  30. STARTUP & TITLE SCREEN - window.onload and the main menu
     // ============================================================
 
     // ============================================================
@@ -927,6 +937,16 @@
     //  Fields: version (string), date (string), changes (string[])
     // ============================================================
     const PATCH_NOTES = [
+		{
+			version: 'v1.6', date: '2026-11-24',
+			changes: [
+				'Fixed how some modules work, making sure bonuses are applied correctly',
+				'Power loss and heat gain modifiers now stack properly',
+				'Reduced the amount of speed gain you get for upgrading the laboratory',
+				'Reduced the cost to upgrade your drill space',
+				'You can now reset your save data to fully restart with nothing. Yay!',
+				]
+				},
 		{
 			version: 'v1.5', date: '2026-11-13',
 			changes: [
@@ -1223,11 +1243,11 @@
     // One line per drill level: space it gives, and the Salvage to upgrade TO that level. Level 1 is the first line.
     const DRILL_LEVELS = [
         { space: 0,  cost: 0   },
-        { space: 3,  cost: 5   },
-        { space: 5,  cost: 12  },
-        { space: 8,  cost: 25  },
-        { space: 11, cost: 45  },
-        { space: 15, cost: 75  },
+        { space: 3,  cost: 6   },
+        { space: 5,  cost: 9  },
+        { space: 8,  cost: 12  },
+        { space: 11, cost: 21  },
+        { space: 15, cost: 30  },
     ];
     // Rooms: you can have one of each. Installing level 1 is free (it only needs Space).
     // Higher levels cost Salvage and take more Space. Room levels are kept forever, even when the room is not installed.
@@ -1238,8 +1258,8 @@
     const ROOMS = {
         lab:      { name: 'Laboratory',    icon: '🧪', color: 'pink',
                     levels: [ { space: 3, cost: 0,  researchSpeed: 1    },
-                              { space: 4, cost: 10, researchSpeed: 1.25 },
-                              { space: 5, cost: 25, researchSpeed: 1.5  } ],
+                              { space: 4, cost: 10, researchSpeed: 1.15 },
+                              { space: 5, cost: 25, researchSpeed: 1.30  } ],
                     desc: l => l.researchSpeed === 1 ? 'Opens the Laboratory, so you can research.' : `Opens the Laboratory. Research runs ${Math.round((l.researchSpeed - 1) * 100)}% faster.` },
         refinery: { name: 'Mini Refinery', icon: '🏭', color: 'slate',
                     levels: [ { space: 2, cost: 0,  interval: 60 },
@@ -1286,7 +1306,7 @@
         VOY1: { branch: 'Voyager',  name: 'Deep Drop',          cost: 1,  prereq: null,   effect: 'Each new run starts at 10% of your record depth (max 1500m). The skipped depth only earns 25% of its PRP when you ascend', bonus: { deepDrop: 0.10 } },
         VOY2: { branch: 'Voyager',  name: 'Second Wind',        cost: 12, prereq: 'VOY1', effect: 'Once per run, a fatal overheat or suffocation is cancelled', bonus: { secondWind: true } },
         VOY3: { branch: 'Voyager',  name: 'Abyssal Attunement', cost: 24, prereq: 'VOY2', effect: '+1% Ore Value per 500m of your record depth',                bonus: { recordDepthBonus: 0.00002 } },
-        ENG1: { branch: 'Engineer', name: 'Foundry Memory',     cost: 1,  prereq: null,   effect: 'Each new run starts with all Tier 1 skills installed',       bonus: { startTier: 01 } },
+        ENG1: { branch: 'Engineer', name: 'Foundry Memory',     cost: 1,  prereq: null,   effect: 'Each new run starts with all Tier 1 skills installed',       bonus: { startTier: 1 } },
         ENG2: { branch: 'Engineer', name: 'Core Resonance',     cost: 8, prereq: 'ENG1', effect: 'Surface Sample gives +1 PRP and costs 200m less',            bonus: { sampleBonusPrp: 1, sampleDiscount: 200 } },
         ENG3: { branch: 'Engineer', name: 'Master Blueprints',  cost: 26, prereq: 'ENG2', effect: 'Each new run starts with Tier 1, 2 and 3 skills installed',  bonus: { startTier: 2 } },
         // Swarm: these matter from 5,500m (refinery) and 6,500m (drones), so they cost a bit more than the paths above.
@@ -1362,8 +1382,8 @@
                 excavator: { name: 'Excavator Bit',   desc: '+40% Ore Value, -20% Drill Speed',                  bonus: { oreValueMultiplier: 0.40, drillSpeedMultiplier: -0.20 },                    unlockCost: 30,     unlockDepth: 0    },
                 resonator: { name: 'Resonator Bit',   desc: '+60% Drill Speed, -30% Ore Value, +1 Heat/sec',     bonus: { drillSpeedMultiplier: 0.60, oreValueMultiplier: -0.30, heatRateBonus: 1 }, unlockCost: 1000,    unlockDepth: 500  },
                 harvester: { name: 'Harvester Bit',   desc: '+60% Ore Value, -25% Drill Speed',                  bonus: { oreValueMultiplier: 0.60, drillSpeedMultiplier: -0.25 },                    unlockCost: 1000,    unlockDepth: 500  },
-                reclaimer: { name: 'Reclaimer Bit',   desc: '+0.5 power/sec, -10% bit wear, -25% drill speed',   bonus: { powerRate: 0.5, integrityWearFactor: 0.1, drillSpeedMultiplier: -0.25}, unlockCost: 2000, unlockDepth: 1250 },
-                voidborer: { name: 'Voidborer Bit',   desc: '+100% Drill Speed, +30% Ore Value, +1.5 Wear/sec', bonus: { drillSpeedMultiplier: 1.00, oreValueMultiplier: 0.30, integrityWearFactor: 1.5 }, unlockCost: 10000, unlockDepth: 2500 },
+                reclaimer: { name: 'Reclaimer Bit',   desc: '+0.5 power/sec, -10% bit wear, -25% drill speed',   bonus: { powerRate: 0.5, integrityWearFactor: 0.9, drillSpeedMultiplier: -0.25}, unlockCost: 2000, unlockDepth: 1250 },
+                voidborer: { name: 'Voidborer Bit',   desc: '+100% Drill Speed, +30% Ore Value, +50% Wear/sec', bonus: { drillSpeedMultiplier: 1.00, oreValueMultiplier: 0.30, integrityWearFactor: 1.5 }, unlockCost: 10000, unlockDepth: 2500 },
                 pioneer:   { name: 'Pioneer Bit',     desc: '+40% Drill Speed, +25% Ore Value',                  bonus: { drillSpeedMultiplier: 0.40, oreValueMultiplier: 0.25 },                     unlockCost: 0, unlockDepth: 0, special: true },
             },
         },
@@ -1373,7 +1393,7 @@
                 stable:    { name: 'Stable Core',      desc: 'No bonus, no penalty.',                            bonus: {},                                                                  unlockCost: 0,     unlockDepth: 300    },
                 overdrive: { name: 'Overdrive Core',   desc: '+2.0 Power/sec, +3.0 Heat/sec',                   bonus: { powerRate: 2.0, heatRateBonus: 3.0 },                              unlockCost: 400,    unlockDepth: 300    },
                 cryo:      { name: 'Cryo Core',        desc: '-2.0 Heat/sec, -0.8 Power/sec',                   bonus: { heatRateBonus: -2.0, powerRate: -0.8 },                            unlockCost: 650,    unlockDepth: 500  },
-                transference: { name: 'Transference Core', desc: '-2.0 Heat/sec, +1.0 Wear/sec',                bonus: { heatRateBonus: -2.0, integrityWearFactor: +1.0 },                 unlockCost: 800,    unlockDepth: 850  },
+                transference: { name: 'Transference Core', desc: '-2.0 Heat/sec, +20% Wear/sec',                bonus: { heatRateBonus: -2.0, integrityWearFactor: 1.2 },                 unlockCost: 800,    unlockDepth: 850  },
                 fusion:    { name: 'Fusion Core',      desc: '+2.5 Power/sec, +4 Heat/sec',                     bonus: { powerRate: 2.5, heatRateBonus: 4 },                                unlockCost: 1200,   unlockDepth: 1000  },
                 darkMatter:{ name: 'Dark Matter Core', desc: '+4 Power/sec, -15% Power Consumption, +2.5 Heat/sec', bonus: { powerRate: 4, powerConsumptionFactor: 0.85, heatRateBonus: 2.5 }, unlockCost: 12500, unlockDepth: 3000 },
                 frugal:    { name: 'Frugal Core',      desc: '+1.5 Power/sec, -1 Heat/sec',                      bonus: { powerRate: 1.5, heatRateBonus: -1 },                               unlockCost: 0, unlockDepth: 0, special: true },
@@ -1423,7 +1443,7 @@
                 assisted: { name: 'Fan-Assisted Vent',  desc: '+2 Cooling/sec, -0.5 Power/sec',     bonus: { heatRateBonus: -2, powerRate: -0.5 }, unlockCost: 8000,   unlockDepth: 6000  },
                 heat2ore: { name: 'Thermal Converter',  desc: '+15% Ore Value (converts waste heat)',bonus: { oreValueMultiplier: 0.15 },         unlockCost: 15000,  unlockDepth: 8000  },
                 cryoVent: { name: 'Cryo Exhaust',       desc: '+4 Cooling/sec, -0.8 Power/sec',     bonus: { heatRateBonus: -4, powerRate: -0.8 }, unlockCost: 35000,  unlockDepth: 10000 },
-                pressurized: { name: 'Pressurized Vent', desc: '+10% Pressure Resistance, -10% heat/sec, -15% Power/sec', bonus: { pressureResist: 0.10, heatFactor: 0.90, powerConsumptionFactor: 0.15 }, unlockCost: 60000, unlockDepth: 12000},
+                pressurized: { name: 'Pressurized Vent', desc: '+10% Pressure Resistance, -10% heat/sec, -15% Power/sec', bonus: { pressureResist: 0.10, heatFactor: 0.90, powerConsumptionFactor: 0.85 }, unlockCost: 60000, unlockDepth: 12000},
                 voidSink: { name: 'Void Heat Sink',     desc: '+10 Cooling/sec, -1.5 Power/sec',    bonus: { heatRateBonus: -10, powerRate: -1.5 },unlockCost: 100000, unlockDepth: 15000 },
             },
         },
@@ -1961,8 +1981,6 @@
         permanentResearchPoints: 0,
         ascensionOwned: [],
         totalAscensions: 0,
-        favoriteWorkshop: null,   // id of the starred workshop upgrade (or null)
-        favoriteSlot: null,       // id of the starred module slot (or null)
         banishedWorkshop: [],     // ids of banished workshop upgrades (up to BANISH_LIMIT)
         banishedSlots: [],        // ids of banished module slots (up to BANISH_LIMIT)
         achievementsUnlocked: [], // ids of earned achievements (survives ascension, like PRP)
@@ -1972,7 +1990,7 @@
         totalChoicesMade: 0,      // crossroads + event choices picked, across all runs
         deepEventsSurvived: 0,    // Deep Events finished successfully, across all runs
         totalAlloysMade: 0,       // Alloys the refinery has ever produced, across all runs
-		favoriteWorkshops: [],   // ids of starred workshop upgrades (up to mods.favoriteLimit)
+        favoriteWorkshops: [],   // ids of starred workshop upgrades (up to mods.favoriteLimit)
         favoriteSlots: [],       // ids of starred module slots
         // --- Laboratory (all of this survives ascension, and will be part of the save file later) ---
         labPoints: 0,             // Lab Points you can spend right now (earned from achievements)
@@ -1985,9 +2003,7 @@
         drillLevel: 1,            // index into DRILL_LEVELS, starting at 1
         roomLevels: {},           // level of each room you own, as { lab: 2 } (missing = level 1)
         roomsInstalled: [],       // ids of rooms installed in the drill right now
-		// --- Salvage ---
-		salvageEarned: 0,         // every Salvage you have ever earned (only for display)
-		salvageGained: 0,         // Salvage from your most recent ascension (used by the "Plenty o Salvage" achievement)
+        salvageGained: 0,         // Salvage from your most recent ascension (used by the "Plenty o Salvage" achievement)
     };
 
     // Cached DOM element references
@@ -2005,7 +2021,35 @@
             'skills-ore', 'ascension-prp', 'skills-toggle-btn', 'skills-to-ascension-btn', 'salvage-display',
             'lab-points-display',
         ];
-        ids.forEach(id => ui[id] = document.getElementById(id));
+        ids.forEach(id => { ui[id] = document.getElementById(id); makeChangeOnly(ui[id]); });
+    }
+
+    // PERFORMANCE: the page used to re-write the same text and class names into the same elements every
+    // 0.25 seconds. Even when nothing changed, the browser (and the Tailwind script, which watches the page
+    // for changes) has to do work every time. This wraps an element so that writing innerText or className
+    // does NOTHING if the element already shows that exact value. Reading them still works as normal.
+    const _innerTextSetter  = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerText').set;
+    const _classNameSetter  = Object.getOwnPropertyDescriptor(Element.prototype, 'className').set;
+    function makeChangeOnly(el) {
+        if (!el) return;
+        Object.defineProperty(el, 'innerText', {
+            configurable: true,
+            get() { return this.textContent; },
+            set(v) { v = String(v); if (this.textContent !== v) _innerTextSetter.call(this, v); },
+        });
+        Object.defineProperty(el, 'className', {
+            configurable: true,
+            get() { return this.getAttribute('class') || ''; },
+            set(v) { v = String(v); if (this.getAttribute('class') !== v) _classNameSetter.call(this, v); },
+        });
+    }
+    // Same idea for elements that are not in the ui cache: only touch the text if it really changed.
+    function setText(el, text) {
+        if (el && el.textContent !== text) el.textContent = text;
+    }
+    // Same for HTML that gets rebuilt: skips the rebuild if the markup is identical to last time.
+    function setHTML(el, html) {
+        if (el && el._lastHTML !== html) { el._lastHTML = html; el.innerHTML = html; }
     }
 
 
@@ -2216,8 +2260,9 @@ function getScanBoostOreCost()    { return Math.ceil(SCAN_BOOST_ORE_COST * Math.
     function applyBonusToMods(bonus) {
         for (const key in bonus) {
             const v = bonus[key];
-            if (key === 'powerConsumptionFactor' || key === 'heatFactor')    gameState.mods[key] = Math.min(gameState.mods[key], v);
-            else if (key === 'integrityWearFactor' || key === 'drillSpeedFinalMult') gameState.mods[key] *= v;   // these multiply together
+            // "Factor" bonuses are multipliers (0.5 = half, 1.35 = +35%), so they ALL stack by multiplying together.
+            // e.g. Automated Maintenance (x0.5) and Lean Mix (x0.75) give x0.375 Power Consumption.
+            if (key === 'powerConsumptionFactor' || key === 'heatFactor' || key === 'integrityWearFactor' || key === 'drillSpeedFinalMult') gameState.mods[key] *= v; 
             else if (key === 'coolingFactor' || key === 'ScrapValue')        gameState.mods[key] = Math.max(gameState.mods[key], v);
             else if (typeof v === 'number')                                  gameState.mods[key] += v;
             else if (typeof v === 'boolean')                                 gameState.mods[key] = v;
@@ -2261,16 +2306,32 @@ function getScanBoostOreCost()    { return Math.ceil(SCAN_BOOST_ORE_COST * Math.
     //  GAME LOOP
     // ============================================================
 
+    // IMPORTANT: only ONE animation-frame loop may ever run. Before, every ascend / restart / challenge start /
+    // un-pause called requestAnimationFrame again while the old loop was still going, so the game slowly
+    // piled up duplicate loops (all doing the full game update, and all redrawing the page). That was the
+    // main cause of the late-game lag. loopHandle remembers the one pending frame so we can cancel it first.
+    let loopHandle = null;
     function startGameLoop() {
-        if (!gameState.gameOver && !gameState.isPaused) { lastTime = 0; requestAnimationFrame(gameLoop); }
+        if (gameState.gameOver || gameState.isPaused) return;
+        if (loopHandle !== null) cancelAnimationFrame(loopHandle);   // never keep two loops alive
+        lastTime = 0;
+        loopHandle = requestAnimationFrame(gameLoop);
     }
 
     // Safety net: if anything inside the loop ever throws an error, the game keeps running
     // (instead of freezing for good) and the error is shown in the message bar so it can be fixed.
     let _lastLoopError = null;
+    // Performance meter (shown in the Dev Stats Inspector): frames per second and how long one frame's work takes
+    const perf = { frames: 0, stamp: performance.now(), fps: 0, ms: 0 };
     function gameLoop(currentTime) {
+        loopHandle = null;   // this frame has now run; runGameFrame() schedules the next one
+        const started = performance.now();
         try {
             runGameFrame(currentTime);
+            const now = performance.now();
+            perf.ms = perf.ms * 0.95 + (now - started) * 0.05;   // smoothed average, in milliseconds
+            perf.frames++;
+            if (now - perf.stamp >= 1000) { perf.fps = perf.frames * 1000 / (now - perf.stamp); perf.frames = 0; perf.stamp = now; }
         } catch (e) {
             console.error(e);
             if (e.message !== _lastLoopError) {   // only report each different error once
@@ -2280,13 +2341,13 @@ function getScanBoostOreCost()    { return Math.ceil(SCAN_BOOST_ORE_COST * Math.
                 box.innerText = `⚠️ Game error: ${e.message}. The game kept running, but please report this message!`;
             }
             lastTime = 0;
-            if (!gameState.gameOver && !gameState.isPaused && !gameState.inShop && !gameState.inChoice) requestAnimationFrame(gameLoop);
+            if (!gameState.gameOver && !gameState.isPaused && !gameState.inShop && !gameState.inChoice) loopHandle = requestAnimationFrame(gameLoop);
         }
     }
 
     function runGameFrame(currentTime) {
         if (gameState.gameOver || gameState.isPaused || gameState.inShop || gameState.inChoice) { lastTime = 0; return; }
-        if (lastTime === 0) { lastTime = currentTime; requestAnimationFrame(gameLoop); return; }
+        if (lastTime === 0) { lastTime = currentTime; loopHandle = requestAnimationFrame(gameLoop); return; }
 
         const dt = Math.max(0, Math.min((currentTime - lastTime) / 1000, 0.5));   // never negative, never more than half a second
         lastTime = currentTime;
@@ -2336,7 +2397,7 @@ function getScanBoostOreCost()    { return Math.ceil(SCAN_BOOST_ORE_COST * Math.
             updateUI();
             gameState.timeSinceLastUIUpdate = 0;
         }
-        requestAnimationFrame(gameLoop);
+        loopHandle = requestAnimationFrame(gameLoop);
     }
 
     // Loop tick handlers
@@ -2601,12 +2662,12 @@ function getScanBoostOreCost()    { return Math.ceil(SCAN_BOOST_ORE_COST * Math.
         const s = ev.def.status(ev);
         panel.classList.remove('hidden');
         panel.classList.toggle('deep-alert', !!s.alert);
-        document.getElementById('deep-event-title').innerText = `${ev.def.icon} ${ev.def.name} · ${Math.max(0, ev.timeLeft).toFixed(0)}s left`;
-        document.getElementById('deep-event-text').innerText  = s.text;
+        setText(document.getElementById('deep-event-title'), `${ev.def.icon} ${ev.def.name} · ${Math.max(0, ev.timeLeft).toFixed(0)}s left`);
+        setText(document.getElementById('deep-event-text'), s.text);
         document.getElementById('deep-event-bar').style.width = `${Math.max(0, Math.min(1, s.bar)) * 100}%`;
         const btn = document.getElementById('deep-event-btn');
         btn.classList.toggle('hidden', !s.button);
-        if (s.button) btn.innerText = s.button;
+        if (s.button) setText(btn, s.button);
     }
 
     function handleAutoOps() {
@@ -2679,6 +2740,7 @@ function getScanBoostOreCost()    { return Math.ceil(SCAN_BOOST_ORE_COST * Math.
             gameState.message = 'No power! Refill Power before starting the drill.';
             return updateUI();
         }
+		
         gameState.drilling        = !gameState.drilling;
         gameState.autoResumeDrill = false;
         gameState.message         = gameState.drilling ? 'Drill engaged.' : 'Drill stopped. Cooling down.';
@@ -3274,11 +3336,12 @@ function isBanishedItem(item) {
         gameState.salvageEarned += salvageGained;
         gameState.totalAscensions++;
         initializeGame(); startGameLoop();
-        if (salvageGained > 0) {
-            gameState.message = `Ascended for ${prpGained} PRP and ${salvageGained} Salvage. Spend Salvage in the 🛠 Drill tab.` + (gameState.message !== 'Ready to drill!' ? ` ${gameState.message}` : '');
-            updateUI();
-			saveGame();
-        }
+        const extra = gameState.message !== 'Ready to drill!' ? ` ${gameState.message}` : '';   // e.g. the Deep Drop message
+        gameState.message = salvageGained > 0
+            ? `Ascended for ${prpGained} PRP and ${salvageGained} Salvage. Spend Salvage in the 🛠 Drill tab.${extra}`
+            : `Ascended for ${prpGained} PRP.${extra}`;
+        updateUI();
+        saveGame();   // saves on EVERY ascension (before, it was skipped when you earned no Salvage)
     }
 
 
@@ -3792,16 +3855,16 @@ function isBanishedItem(item) {
         }
 
         // The numbers that change every tick: updated in place, never rebuilt
-        const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
-        setText('drone-alloys',  `🔩 ${Math.floor(gameState.alloys).toLocaleString()} Alloys`);
-        setText('drone-housing', `Housing: ${getDroneSpaceUsed()} / ${getDroneHousing()} space used`);
+        const setTextById = (id, text) => setText(document.getElementById(id), text);
+        setTextById('drone-alloys',  `🔩 ${Math.floor(gameState.alloys).toLocaleString()} Alloys`);
+        setTextById('drone-housing', `Housing: ${getDroneSpaceUsed()} / ${getDroneHousing()} space used`);
         const cooling = getDroneCooling();
-        setText('drone-income',  `Fleet: ${fmt(getDroneOrePerSec())} Ore/s from mining` + (cooling > 0 ? `, -${cooling.toFixed(1)} Heat/s cooling` : '') + (getDroneDrillSpeed() > 0 ? `, +${getDroneDrillSpeed()} base Drill Speed` : '') + (getDroneScanBonus() > 0 ? `, +${+getDroneScanBonus().toFixed(1)}s Scan Boost` : ''));
-        setText('drone-svc-all', fmtPrice(allCost));
+        setTextById('drone-income',  `Fleet: ${fmt(getDroneOrePerSec())} Ore/s from mining` + (cooling > 0 ? `, -${cooling.toFixed(1)} Heat/s cooling` : '') + (getDroneDrillSpeed() > 0 ? `, +${getDroneDrillSpeed()} base Drill Speed` : '') + (getDroneScanBonus() > 0 ? `, +${+getDroneScanBonus().toFixed(1)}s Scan Boost` : ''));
+        setTextById('drone-svc-all', fmtPrice(allCost));
         for (const d of ds.list) {
-            setText(`drone-pct-${d.id}`,    `${Math.floor(d.condition)}% condition`);
-            setText(`drone-status-${d.id}`, droneStatusText(d));
-            setText(`drone-svc-${d.id}`,    fmtPrice(getDroneServiceCost(d)));
+            setTextById(`drone-pct-${d.id}`,    `${Math.floor(d.condition)}% condition`);
+            setTextById(`drone-status-${d.id}`, droneStatusText(d));
+            setTextById(`drone-svc-${d.id}`,    fmtPrice(getDroneServiceCost(d)));
             const bar = document.getElementById(`drone-bar-${d.id}`);
             if (bar) { bar.style.width = `${d.condition}%`; bar.style.backgroundColor = d.condition < 30 ? '#dc2626' : '#14b8a6'; }
         }
@@ -4415,23 +4478,23 @@ function isBanishedItem(item) {
 
     function renderEffects() {
         if (!gameState.activeEffects.length) {
-            ui['active-effects'].innerHTML = '<span class="text-gray-500 text-sm">No active conditions.</span>';
+            setHTML(ui['active-effects'], '<span class="text-gray-500 text-sm">No active conditions.</span>');
             return;
         }
-        ui['active-effects'].innerHTML = gameState.activeEffects.map(e => {
+        setHTML(ui['active-effects'], gameState.activeEffects.map(e => {
             const cls = e.bad ? 'bg-red-900 border-red-600 text-red-200' : 'bg-green-900 border-green-600 text-green-200';
             return `<span class="px-2 py-1 mr-2 mb-2 inline-block rounded border text-xs font-semibold ${cls}">${e.name} · ${e.remaining.toFixed(0)}s</span>`;
-        }).join('');
+        }).join(''));
     }
 
     function renderEventLog() {
         if (!gameState.eventLog.length) {
-            ui['event-log'].innerHTML = '<li class="text-gray-500">Nothing has happened yet.</li>';
+            setHTML(ui['event-log'], '<li class="text-gray-500">Nothing has happened yet.</li>');
             return;
         }
-        ui['event-log'].innerHTML = gameState.eventLog
+        setHTML(ui['event-log'], gameState.eventLog
             .map(e => `<li class="${e.bad ? 'text-red-300' : 'text-green-300'}">${e.text}</li>`)
-            .join('');
+            .join(''));
     }
 
     // Module Bay: shows the modules you OWN and lets you swap between them for a small Ore fee.
@@ -4441,6 +4504,8 @@ function isBanishedItem(item) {
     function refreshModuleBay() {
         const container = ui['module-bay-container'];
         if (!container) return;
+        // PERFORMANCE: nothing to draw while the panel is closed. openPanel() redraws it when you open it.
+        if (!document.getElementById('module-sidebar').classList.contains('open')) return;
         const swapCost      = getModuleSwapCost();
         const canAct        = !gameState.gameOver && !gameState.isPaused;
         const canAffordSwap = gameState.ore >= swapCost && canAct;
@@ -4579,14 +4644,18 @@ function isBanishedItem(item) {
     // The 🚫 button is faded out until it is switched on
     function banBtnClass(isBan) { return isBan ? 'opacity-100' : 'opacity-25 grayscale hover:opacity-60'; }
 
+    // PERFORMANCE: the three big menus below are only redrawn while they are open (openPanel() draws them on opening).
+    function isPanelOpen(id) { return document.getElementById(id).classList.contains('open'); }
+
     function refreshWorkshop() {
+        if (!isPanelOpen('workshop-sidebar')) return;
         for (const id in WORKSHOP_UPGRADES) {
             const nodes = workshopNodes[id];
             if (!nodes) continue;
             const upgrade     = WORKSHOP_UPGRADES[id];
             const currentTier = gameState.workshopTiers[id] || 0;
-            nodes.tier.textContent    = currentTier >= upgrade.maxTier ? `Tier ${currentTier} of ${upgrade.maxTier} (maxed)` : `Tier ${currentTier} of ${upgrade.maxTier}`;
-            nodes.current.textContent = `Current: ${typeof gameState[upgrade.stat] === 'number' ? gameState[upgrade.stat].toFixed(2) : 'N/A'}`;
+            setText(nodes.tier,    currentTier >= upgrade.maxTier ? `Tier ${currentTier} of ${upgrade.maxTier} (maxed)` : `Tier ${currentTier} of ${upgrade.maxTier}`);
+            setText(nodes.current, `Current: ${typeof gameState[upgrade.stat] === 'number' ? gameState[upgrade.stat].toFixed(2) : 'N/A'}`);
             const isFav = gameState.favoriteWorkshops.includes(id);
             nodes.fav.textContent = isFav ? '★' : '☆';
             nodes.fav.className   = `fav-btn text-2xl leading-none ${isFav ? 'text-amber-300' : 'text-gray-500 hover:text-amber-200'}`;
@@ -4628,6 +4697,7 @@ function isBanishedItem(item) {
     }
 
     function refreshAscension() {
+        if (!isPanelOpen('ascension-sidebar')) return;
         for (const id in ASCENSION_UPGRADES) {
             const nodes = ascNodes[id];
             if (!nodes) continue;
@@ -4641,7 +4711,7 @@ function isBanishedItem(item) {
             else if (!canAfford) { state = 'bg-red-900 opacity-70 cursor-not-allowed'; status = `Cost: ${u.cost} PRP`; }
             else                 { state = 'bg-purple-700 hover:bg-purple-500 cursor-pointer hover:scale-[1.02]'; status = `Cost: ${u.cost} PRP`; blocked = false; }
             if (gameState.isPaused && !owned) { state += ' opacity-50'; blocked = true; }
-            nodes.status.innerHTML = status;
+            setHTML(nodes.status, status);
             setButtonState(nodes.button, state, blocked);
         }
     }
@@ -4689,6 +4759,7 @@ function isBanishedItem(item) {
     }
 
     function refreshSkillTree() {
+        if (!isPanelOpen('skills-sidebar')) return;
         for (const id in SKILLS) {
             const nodes = skillNodes[id];
             if (!nodes) continue;
@@ -4711,7 +4782,7 @@ function isBanishedItem(item) {
             else if (!isUnlocked && !depthMet) status += `<br><span class="text-orange-300">Drill to ${skill.minDepth.toLocaleString()}m to install</span>`;
             else if (!isUnlocked && tierLock)  status += `<br><span class="text-pink-300">🔒 Needs research: ${tierLock.name}</span>`;
 
-            nodes.status.innerHTML = status;
+            setHTML(nodes.status, status);
             setButtonState(nodes.button, state, blocked);
         }
     }
@@ -4868,7 +4939,7 @@ function isBanishedItem(item) {
     }
 
     // How many Lab Points an achievement gives. Add  lp: 3  to an achievement to override this.
-    // Otherwise: 1 point, or 2 for hidden (secret) achievements.
+    // Otherwise: 2 points, or 4 for hidden (secret) achievements.
     function getAchievementLp(a) { return a.lp !== undefined ? a.lp : (a.hidden ? 4 : 2); }
 
     function unlockAchievement(a) {
@@ -4876,8 +4947,8 @@ function isBanishedItem(item) {
         const lp = getAchievementLp(a);
         gameState.labPoints       += lp;
         gameState.labPointsEarned += lp;
-        logEvent(`🏆 Achievement unlocked: ${a.name} (+${lp} Lab Point${lp === 2 ? '' : 's'})`);
-        showToast(a.icon, 'Achievement unlocked', a.name, `${a.desc} · +${lp} 🧪 Lab Point${lp === 2 ? '' : 's'}`);
+        logEvent(`🏆 Achievement unlocked: ${a.name} (+${lp} Lab Point${lp === 1 ? '' : 's'})`);
+        showToast(a.icon, 'Achievement unlocked', a.name, `${a.desc} · +${lp} 🧪 Lab Point${lp === 1 ? '' : 's'}`);
     }
 
     // The little pop-up at the top of the screen. It removes itself after a few seconds.
@@ -4895,7 +4966,7 @@ function isBanishedItem(item) {
 
     function updateAchievementsButton() {
         const btn = document.getElementById('achievements-btn');
-        if (btn) btn.textContent = `🏆 Achievements (${gameState.achievementsUnlocked.length}/${ACHIEVEMENTS.length})`;
+        setText(btn, `🏆 Achievements (${gameState.achievementsUnlocked.length}/${ACHIEVEMENTS.length})`);
     }
 
 
@@ -5013,7 +5084,10 @@ function isBanishedItem(item) {
         document.getElementById('sidebar-overlay').classList.add('open');
         document.body.classList.toggle('sidebar-open-left',  isLeft);
         document.body.classList.toggle('sidebar-open-right', !isLeft);
-        if (panelId === 'module-sidebar') refreshModuleBay();
+        if (panelId === 'module-sidebar')    refreshModuleBay();
+        if (panelId === 'workshop-sidebar')  refreshWorkshop();
+        if (panelId === 'skills-sidebar')    refreshSkillTree();
+        if (panelId === 'ascension-sidebar') refreshAscension();
         if (panelId === 'goals-sidebar')  refreshGoalsPanel();
         if (panelId === 'drones-sidebar') { _lastDroneKey = null; updateDronePanel(); }
         if (panelId === 'lab-sidebar')    { _lastLabKey = null;   updateLabPanel(); }
@@ -5085,14 +5159,13 @@ function isBanishedItem(item) {
     // ============================================================
     const DEV_BLOG = [
         {
-            title: 'The release of 1.5!',
-            date: '2026-11-13', tag: 'Update Release',
+            title: 'Features for 1.6',
+            date: '2026-11-13', tag: 'Dev Plans',
             body: [
-                'The update is done!',
+                'Crew System',
                 { heading: 'Main Features' },
-                'The update adds in the laboratory, drill upgrades, and the new run building upgrade tier!',
-                { heading: 'What next?' },
-                'Next up will be another big update with the addition of crew members! I wont spoil too much, but it will allow for new abilities and a better choice of how you want to play!',
+                'The update will add the ability to recruit crew members to your team who will have unique abilities!',
+				'Alongside that you will also get new lab research in the form of researching tier 4 upgrades for rooms!',
             ],
         },
     ];
@@ -5230,7 +5303,7 @@ function isBanishedItem(item) {
           modules: { drillHead: 'voidborer', reactorCore: 'darkMatter', hullPlating: 'obsidian', fuelInjector: 'plasma', sensorArray: 'oracle', exhaustVent: 'cryoVent' } },
         { id: 'endgame', name: 'Endgame (32,000m)',
           desc: 'Every skill (even the ones that need research), everything maxed. For testing the very deepest content.',
-          depth: 32000, skillTier: 'J', workshop: 'max', ore: 50000000000, alloys: 500, refineryTier: 6, moduleMk: 3,
+          depth: 32000, skillTier: 'J', workshop: 'max', ore: 5000000000, alloys: 500, refineryTier: 6, moduleMk: 3,
           drones: ['miner', 'miner', 'miner', 'miner', 'coolant', 'coolant', 'driller', 'scouter', 'mechanic'],
           modules: { drillHead: 'voidborer', reactorCore: 'darkMatter', hullPlating: 'obsidian', fuelInjector: 'plasma', sensorArray: 'oracle', exhaustVent: 'voidSink' } },
     ];
@@ -5548,7 +5621,7 @@ function isBanishedItem(item) {
 
     // ============================================================
     //  DEV STATS INSPECTOR
-    //  renderDevInspector() builds the HTML for every section from the live gameState and puts it in the pop-out.
+    //  renderDevInspector() builds the HTML for every section from the live gameState (and the perf meter) and puts it in the pop-out.
     //  It re-draws twice a second while open (see devInspectorTick). Dropdown sections you opened stay open.
     // ============================================================
     let devInspectorOpen = false;
@@ -5598,7 +5671,8 @@ function isBanishedItem(item) {
             row('Drone speed bonus', `+${num(getDroneDrillSpeed())}`) +
             row('Speed multiplier (modules)', mult(Math.max(0.2, m.drillSpeedMultiplier))) +
             row('Phase / Chrono multiplier', mult(m.drillSpeedFinalMult)) +
-            row('Scan Boost', gs.boostTimeRemaining > 0 ? `${mult(getScanBoostMultiplier())} (${num(gs.boostTimeRemaining, 1)}s)` : 'off') +
+            row('Scan Boost', gs.boostTimeRemaining > 0 ? `${mult(getScanBoostMultiplier())} (${num(gs.boostTimeRemaining, 1)}s)` : (gs.boostCooldownRemaining > 0 ? `recharging (${num(gs.boostCooldownRemaining, 0)}s)` : 'off')) +
+            row('Scan Boost length / cost', m.scanner ? `${num(getScanBoostDuration(), 1)}s / ${getScanBoostOreCost()} Ore + ${SCAN_BOOST_POWER_COST} Power` : 'scanner not installed') +
             row('Active effect speed', mult(fx.speedMult)) +
             row('Worn-bit speed', mult(getIntegritySpeedFactor())) +
             row('Raw speed', `${num(getRawDrillSpeed())} m/s`) +
@@ -5704,10 +5778,42 @@ function isBanishedItem(item) {
             row('Next Deep Event at', `${num(gs.nextDeepEventDepth, 0)}m`) +
             row('Next random event in', `${num(Math.max(0, gs.nextEventIn), 0)}s`) +
             row('Refinery', r.unlocked ? `${r.state} · tiers ${r.tiers.eff}/${r.tiers.speed}/${r.tiers.yield} · ${num(getRefineryCycleTime(), 0)}s batch` : 'not found yet') +
-            row('Lab Points', `${gs.labPoints} (${gs.labResearched.length} researched)`) +
-            row('Lab project', lab ? `${LAB_RESEARCH[lab.id].name} · ${fmtDuration(lab.timeLeft)} left` : 'none') +
             row('Challenge', gs.activeChallenge ? `${gs.activeChallenge.id} (${gs.activeChallenge.status})` : 'none') +
-            row('Run counters', `shops ${gs.run.shopPurchases}, skills ${gs.run.skillsBought}, repairs ${gs.run.repairs}`);
+            row('Run counters', `shops ${gs.run.shopPurchases}, skills ${gs.run.skillsBought}, repairs ${gs.run.repairs}, power refills ${gs.run.powerRefills}, oxygen refills ${gs.run.oxygenRefills}`) +
+            row('Shops found this run', gs.shopLog.length) +
+            row('Deep Event running', gs.deepEvent ? gs.deepEvent.def.name : 'none');
+
+        // --- 11) Laboratory & rooms ---
+        const labHTML =
+            row('Lab Points', `${gs.labPoints} (${gs.labPointsEarned} earned in total)`) +
+            row('Research finished', `${gs.labResearched.length} / ${Object.keys(LAB_RESEARCH).length}`) +
+            row('Lab project', lab ? `${LAB_RESEARCH[lab.id].name} · ${fmtDuration(lab.timeLeft / Math.max(0.01, getResearchSpeed()))} left` : 'none') +
+            row('Research speed', hasRoom('lab') ? `x${getResearchSpeed()}` : 'no Laboratory installed') +
+            row('Shop timer', gs.inShop ? fmtDuration(gs.shopTimeLeft) : 'not in a shop') +
+            row('Drill level / space', `${gs.drillLevel} / ${getRoomSpaceUsed()} of ${getDrillSpace()} used`) +
+            row('Rooms installed', gs.roomsInstalled.length ? gs.roomsInstalled.map(id => `${ROOMS[id].name} L${getRoomLevel(id)}`).join(', ') : 'none') +
+            row('Rooms locked this run', gs.roomsLocked ? 'yes' : 'no') +
+            row('Mini Refinery', hasRoom('refinery') ? `1 Alloy per ${getMiniRefineryInterval()}s (next in ${Math.ceil(getMiniRefineryInterval() - gs.miniRefineryTimer)}s)` : 'not installed') +
+            row('Salvage', `${gs.salvage} (${gs.salvageEarned} earned in total, ${getSalvageGain()} if you ascend now)`) +
+            row('Achievements', `${gs.achievementsUnlocked.length} / ${ACHIEVEMENTS.length}`) +
+            row('Challenges beaten', `${gs.challengesCompleted.length} / ${CHALLENGES.length}`) +
+            row('Total Alloys made', gs.totalAlloysMade);
+
+        // --- 12) Refinery ---
+        const refHTML = r.unlocked
+            ? row('State', `${r.on ? 'on' : 'off'} · ${r.state}`) +
+              row('Tiers (efficiency / speed / yield)', `${r.tiers.eff} / ${r.tiers.speed} / ${r.tiers.yield}`) +
+              row('Batch', `${fmtPrice(getRefineryOreCost())} Ore, ${num(getRefineryCycleTime(), 0)}s, makes ${getRefineryYield()}`) +
+              row('Power use while smelting', `${num(getRefineryPowerRate())}/s`) +
+              row('Ore price depth multiplier', mult(getRefineryDepthMult()))
+            : '<p class="dev-ins-note">The refinery has not been found yet this run.</p>';
+
+        // --- 13) Performance (use this to check for lag) ---
+        const perfHTML =
+            row('Frames per second', num(perf.fps, 0)) +
+            row('Work per frame', `${num(perf.ms, 2)} ms`) +
+            row('Game loop running', loopHandle !== null ? 'yes' : 'no (paused or in a pop-up)') +
+            `<p class="dev-ins-note">There should only ever be ONE game loop. If FPS looks about double what your screen shows, something started a second loop.</p>`;
 
         body.innerHTML =
             section('Reductions & resistances', resist) +
@@ -5719,7 +5825,10 @@ function isBanishedItem(item) {
             section('Workshop upgrades', wsHTML) +
             section('Skills & perks', skillsHTML) +
             section('Active effects', effHTML) +
-            section('Run state', runHTML);
+            section('Run state', runHTML) +
+            section('Laboratory & rooms', labHTML) +
+            section('Refinery', refHTML) +
+            section('Performance', perfHTML);
         body.scrollTop = scrollTop;
     }
 
@@ -5817,8 +5926,11 @@ function isBanishedItem(item) {
 		'drillLevel', 'roomLevels', 'roomsInstalled',
 ];
 
+let isResetting = false;
+
 // Copies the permanent fields into a plain object, turns it into text, and stores it
 function saveGame() {
+    if (isResetting) return;
     const data = {};
     SAVE_KEYS.forEach(key => data[key] = gameState[key]);
     try {
@@ -5841,14 +5953,6 @@ function loadGame() {
     } catch (e) {
         console.error('Could not load:', e);
         return false;
-    }
-}
-
-
-function deleteSave() {
-    if (confirm('Delete your save? This cannot be undone.')) {
-        localStorage.removeItem(SAVE_NAME);
-        location.reload();
     }
 }
 
@@ -5910,6 +6014,14 @@ window.addEventListener('beforeunload', saveGame);
             bye.classList.add('flex');
         }, 150);
     }
+	
+	function resetSave() {
+    if (confirm('Reset your save? This cannot be undone.')) {
+		isResetting = true
+        localStorage.removeItem(SAVE_NAME);
+        location.reload();
+    }
+}
 
     function backToTitleMenu() {
         document.getElementById('title-menu').classList.remove('hidden');
