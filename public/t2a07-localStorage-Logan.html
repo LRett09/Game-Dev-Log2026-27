@@ -1,32 +1,127 @@
-<h2>T2A22 Local Storage</h2>
 
-Use local storage to make a to-do list
+<h1 align=center>T2A22 Local Storage</h1><br>
 
-<body onload="{
-   myStorage = localStorage.getItem('myStoredText')
-   if(myStorage  != null){
-      document.getElementById('myText1').value = myStorage 
-    }
-}">
+<script>
 
-<body onunload="{
-   localstorage.setItem('myStoredText',document.getElementById('myText1').value)
-}">   
+let myTasks = JSON.parse(localStorage.getItem('myTasks') || '[]')
 
-Text example: <input id="myText1" type=text size=70 value="" placeholder="Write here to store"><br>
+function myAddTask() {
+   let myText = document.getElementById('myText1').value
+   let mySection = document.getElementById('mySection').value
 
-<input type="button" value="Store Text" onClick="{
-   localStorage.setItem('myStoredText', document.getElementById('myText1').value)
-   alert(document.getElementById('myText1').value + ' \nHas been stored')
+   if (myText == '') {
+      return
+   }
+
+   if (mySection == '') {
+      mySection = 'General'
+   }
+
+   myTasks.push({
+      text: myText,
+      section: mySection,
+      done: false
+   })
+
+   localStorage.setItem('myTasks', JSON.stringify(myTasks))
    document.getElementById('myText1').value = ''
+   myShowTasks()
+}
+
+function myDeleteTask(myIndex) {
+   myTasks.splice(myIndex, 1)
+
+   localStorage.setItem('myTasks', JSON.stringify(myTasks))
+   myShowTasks()
+}
+
+function myCheckTask(myIndex, myChecked) {
+   myTasks[myIndex].done = myChecked
+
+   let mySection = myTasks[myIndex].section
+   let mySectionTasks = myTasks.filter(
+      task => task.section == mySection
+   )
+
+   if (mySectionTasks.length > 0 && mySectionTasks.every(task => task.done)) {
+      myTasks = myTasks.filter(task => task.section != mySection)
+   }
+
+   localStorage.setItem('myTasks', JSON.stringify(myTasks))
+   myShowTasks()
+}
+
+function myShowTasks() {
+   let myTemp = ''
+   let mySections = []
+
+   for (let myLoop = 0; myLoop < myTasks.length; myLoop++) {
+      if (!mySections.includes(myTasks[myLoop].section)) {
+         mySections.push(myTasks[myLoop].section)
+      }
+   }
+
+   for (let myLoop = 0; myLoop < mySections.length; myLoop++) {
+
+      let mySection = mySections[myLoop]
+
+      myTemp += '<h3>' + mySection + '</h3>'
+
+      let myDone = 0
+      let myTotal = 0
+
+      for (let myLoop2 = 0; myLoop2 < myTasks.length; myLoop2++) {
+
+         if (myTasks[myLoop2].section == mySection) {
+
+            myTotal++
+
+            if (myTasks[myLoop2].done) {
+               myDone++
+            }
+
+            myTemp += '<input type="checkbox" '
+            if (myTasks[myLoop2].done) {
+               myTemp += 'checked'
+            }
+
+            myTemp += ' onchange="myCheckTask(' + myLoop2 + ', this.checked)">'
+
+            myTemp += myTasks[myLoop2].text
+
+            myTemp += ' <input type="button" value="Delete" onclick="myDeleteTask(' + myLoop2 + ')"><br>'
+         }
+      }
+
+      myTemp += '<small>' + myDone + ' / ' + myTotal + ' completed</small>'
+      myTemp += '<hr>'
+   }
+
+   document.getElementById('myList').innerHTML = myTemp
+}
+
+</script>
+
+<body onload="myShowTasks()">
+
+Section:
+<input id="mySection" type="text" placeholder="School, Personal, etc.">
+
+<br><br>
+
+Task:
+<input id="myText1" type="text" size="50"
+placeholder="Write a task here"
+onkeydown="{
+   if(event.key == 'Enter') {
+      myAddTask()
+   }
 }">
 
-<input type="button" value="Retrieve Text" onClick="{
-   document.getElementById('myList').innerHTML = localStorage.getItem('myStoredText') + <br> </br>
-}"> 
+<input type="button" value="Add Task" onclick="myAddTask()">
+
+<br><br>
 
 <div id="myList"></div>
 
-
-
-
+</body>
