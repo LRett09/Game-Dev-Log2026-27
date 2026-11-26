@@ -22,8 +22,10 @@ Text example: <input id="myText1" type=text size=70 value="" placeholder="Write 
 }">
 
 <input type="button" value="Retrieve Text" onClick="{
-   document.getElementById('myText1').value = localStorage.getItem('myStoredText')
+   document.getElementById('myList').innerHTML = localStorage.getItem('myStoredText') + <br>
 }"> 
+
+<div id="myList"></div>
 
 
 
